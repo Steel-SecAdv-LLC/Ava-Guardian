@@ -5,7 +5,7 @@
 **Author/Inventor:** Andrew E. A.  
 **Contact:** steel.secadv.llc@outlook.com  
 **Date:** 2025-11-22  
-**Version:** 4.0.0
+**Version:** 1.0.0
 
 **AI-Co Omni-Architects:**  
 Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
@@ -627,7 +627,7 @@ Should show:
 - dilithium_signature
 - timestamp
 - author: "Steel-SecAdv-LLC"
-- version: "4.0.0"
+- version: "1.0.0"
 
 ### 4. Install Dilithium (Optional)
 
@@ -760,7 +760,7 @@ This system represents a complete, production-ready cryptographic solution for p
 
 **Copyright (C) 2025 Steel Security Advisors LLC**  
 **Author/Inventor:** Andrew E. A.  
-**Version:** 4.0.0  
+**Version:** 1.0.0  
 **Date:** 2025-11-22
 
 **AI-Co Omni-Architects:**  

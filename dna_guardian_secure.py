@@ -48,7 +48,7 @@ Standards Compliance:
 - RFC 5869: HMAC-based Extract-and-Expand Key Derivation (HKDF)
 - RFC 3161: Internet X.509 Public Key Infrastructure Time-Stamp Protocol
 
-Version: 4.0.0 - PRODUCTION READY
+Version: 1.0.0 - PRODUCTION READY
 Python: 3.8+
 License: Apache License 2.0
 """
@@ -1205,7 +1205,7 @@ def generate_key_management_system(author: str) -> KeyManagementSystem:
         dilithium_keypair=dilithium_keypair,
         creation_date=datetime.now(timezone.utc).isoformat(),
         rotation_schedule="quarterly",
-        version="4.0.0"
+        version="1.0.0"
     )
 
 
@@ -1364,7 +1364,7 @@ def create_crypto_package(
         author=author,
         ed25519_pubkey=kms.ed25519_keypair.public_key.hex(),
         dilithium_pubkey=kms.dilithium_keypair.public_key.hex(),
-        version="4.0.0"
+        version="1.0.0"
     )
 
 
