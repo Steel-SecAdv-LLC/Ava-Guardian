@@ -186,9 +186,9 @@ class TestDemonstration:
 
         if quantum_available:
             # If quantum libraries available, verify Dilithium is used
-            assert "Dilithium" in result.stdout, (
-                f"Dilithium not found in output despite {quantum_backend} being available"
-            )
+            assert (
+                "Dilithium" in result.stdout
+            ), f"Dilithium not found in output despite {quantum_backend} being available"
             # Should not have warnings about missing quantum libraries
             assert "WARNING: Quantum-resistant" not in result.stdout
         else:
