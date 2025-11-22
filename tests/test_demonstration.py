@@ -246,9 +246,9 @@ class TestErrorHandling:
         )
 
         # Should still complete successfully with fallback
-        assert result.returncode == 0, (
-            "Demonstration should complete successfully even without quantum libraries"
-        )
+        assert (
+            result.returncode == 0
+        ), "Demonstration should complete successfully even without quantum libraries"
 
         # Should have warning about quantum libraries
         # (This is optional; depends on implementation behavior)
