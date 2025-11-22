@@ -155,7 +155,7 @@ jobs:
         bandit -r . -ll || echo "Bandit completed with warnings"
 
     - name: Upload Bandit report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: bandit-security-report
