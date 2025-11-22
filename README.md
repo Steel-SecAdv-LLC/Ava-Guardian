@@ -226,10 +226,9 @@ Deductions:
 
 ### Complete Documentation Set
 
-1. **README.md** (this file) - Overview and quick start
+1. **README.md** (this file) - Overview, architecture, and quick start
 2. **SECURITY_ANALYSIS.md** - Mathematical proofs and cryptographic analysis
 3. **IMPLEMENTATION_GUIDE.md** - Practical deployment guide
-4. **ARCHITECTURE.md** - System design and components (TODO)
 
 ### Key Documents
 

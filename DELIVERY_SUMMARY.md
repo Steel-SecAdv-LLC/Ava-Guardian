@@ -39,7 +39,7 @@ Built a **production-ready cryptographic protection system** for Omni-DNA Helix 
 
 ## 📦 Complete Package Delivered
 
-### 1. Core Implementation (1 file, 2,089 lines)
+### 1. Core Implementation (1 file, 1,515 lines)
 
 **`dna_guardian_secure.py`** - Production-ready Python implementation
 
@@ -488,7 +488,7 @@ def store_master_secret_encrypted(master_secret: bytes, keyfile: str):
 
 ### Core Implementation ✅
 
-- [x] `dna_guardian_secure.py` - 2,089 lines, production-ready
+- [x] `dna_guardian_secure.py` - 1,515 lines, production-ready
 - [x] Full Dilithium integration (liboqs + pqcrypto)
 - [x] RFC 3161 timestamp integration (working)
 - [x] HSM integration examples (3 options)
@@ -686,7 +686,7 @@ python3 dna_guardian_secure.py
 ### What You Got
 
 **Code:**
-- ✅ 2,089 lines of production-ready Python
+- ✅ 1,515 lines of production-ready Python
 - ✅ Full Dilithium quantum-resistant signatures
 - ✅ RFC 3161 trusted timestamping
 - ✅ HSM integration support

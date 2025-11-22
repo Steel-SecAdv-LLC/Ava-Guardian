@@ -1,0 +1,181 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in Ava Guardian
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! Please provide detailed information to help us resolve the issue.
+
+        **⚠️ SECURITY WARNING:** If this is a security vulnerability, DO NOT open a public issue.
+        Please report it privately via email to steel.secadv.llc@outlook.com following our [Security Policy](https://github.com/Steel-SecAdv-LLC/Ava-Guardian/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of the bug
+      placeholder: Describe what went wrong...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe the expected behavior...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually occurred...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: Provide detailed steps to reproduce the issue
+      placeholder: |
+        1. Generate keypair with...
+        2. Sign package with...
+        3. Verify signature...
+        4. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: Minimal Code Sample
+      description: Provide a minimal code example that reproduces the issue
+      placeholder: |
+        ```python
+        from dna_guardian_secure import *
+
+        # Your code here
+        ```
+      render: python
+    validations:
+      required: false
+
+  - type: textarea
+    id: error-output
+    attributes:
+      label: Error Output
+      description: Include any error messages, stack traces, or relevant output
+      placeholder: Paste error output here...
+      render: shell
+    validations:
+      required: false
+
+  - type: dropdown
+    id: cryptographic-layer
+    attributes:
+      label: Affected Cryptographic Layer
+      description: Which security layer is affected?
+      multiple: true
+      options:
+        - SHA3-256 Hashing
+        - HMAC-SHA3-256 Authentication
+        - Ed25519 Signatures
+        - Dilithium Signatures
+        - HKDF Key Derivation
+        - RFC 3161 Timestamps
+        - HSM Integration
+        - General/Other
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python Version
+      description: What version of Python are you using?
+      placeholder: "3.11.5"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you running on?
+      placeholder: "Ubuntu 22.04 / macOS 13.0 / Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Installed Dependencies
+      description: List versions of installed cryptographic libraries
+      placeholder: |
+        cryptography: 41.0.5
+        liboqs-python: 0.8.0
+        (or run: pip list | grep -E 'cryptography|oqs|pqcrypto')
+      render: text
+    validations:
+      required: true
+
+  - type: dropdown
+    id: quantum-libraries
+    attributes:
+      label: Quantum-Resistant Libraries
+      description: Which quantum-resistant library are you using (if any)?
+      options:
+        - None
+        - liboqs-python
+        - pqcrypto
+        - Both installed
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information about the problem
+      placeholder: Add any other context, screenshots, or relevant details...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: standards-compliance
+    attributes:
+      label: Standards Compliance Impact
+      description: Does this bug affect compliance with cryptographic standards?
+      options:
+        - label: This bug affects NIST FIPS 202 (SHA-3) compliance
+        - label: This bug affects NIST FIPS 204 (Dilithium) compliance
+        - label: This bug affects RFC 2104 (HMAC) compliance
+        - label: This bug affects RFC 5869 (HKDF) compliance
+        - label: This bug affects RFC 8032 (Ed25519) compliance
+        - label: This bug affects RFC 3161 (Timestamps) compliance
+        - label: No standards compliance impact
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have provided a minimal code sample that reproduces the issue
+          required: false
+        - label: I have included complete error messages and stack traces
+          required: false
+        - label: This is NOT a security vulnerability (I would report those privately)
+          required: true
+        - label: I have read the [Contributing Guidelines](https://github.com/Steel-SecAdv-LLC/Ava-Guardian/blob/main/CONTRIBUTING.md)
+          required: true

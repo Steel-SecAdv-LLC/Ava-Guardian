@@ -1,0 +1,44 @@
+version: 2
+updates:
+  # Enable version updates for Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Steel-SecAdv-LLC"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+    # Version update strategy
+    versioning-strategy: increase
+    # Allow only security updates and compatible version updates
+    allow:
+      - dependency-type: "all"
+    # Ignore major version updates for critical cryptographic libraries
+    ignore:
+      - dependency-name: "cryptography"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "liboqs-python"
+        update-types: ["version-update:semver-major"]
+
+  # Enable security updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "Steel-SecAdv-LLC"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "github-actions"

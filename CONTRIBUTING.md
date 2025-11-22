@@ -1,0 +1,495 @@
+# Contributing to Ava Guardian ♱
+
+Thank you for your interest in contributing to Ava Guardian! This document provides guidelines for contributing to this quantum-resistant cryptographic protection system.
+
+## Table of Contents
+
+- [Code of Conduct](#code-of-conduct)
+- [Getting Started](#getting-started)
+- [Development Setup](#development-setup)
+- [Contribution Guidelines](#contribution-guidelines)
+- [Cryptographic Standards](#cryptographic-standards)
+- [Code Quality Requirements](#code-quality-requirements)
+- [Testing Requirements](#testing-requirements)
+- [Pull Request Process](#pull-request-process)
+- [Security Considerations](#security-considerations)
+- [Documentation Standards](#documentation-standards)
+- [Community](#community)
+
+## Code of Conduct
+
+This project adheres to a Code of Conduct that all contributors are expected to follow. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before contributing.
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.8 or higher
+- Git
+- Basic understanding of cryptography
+- Familiarity with NIST and IETF standards
+
+### Ways to Contribute
+
+We welcome contributions in the following areas:
+
+- **Bug Reports:** Report issues with cryptographic operations, standards compliance, or implementation errors
+- **Security Fixes:** Address security vulnerabilities (see [SECURITY.md](SECURITY.md))
+- **Documentation:** Improve clarity, add examples, correct errors
+- **Testing:** Add test coverage, improve test quality
+- **Performance:** Optimize cryptographic operations without compromising security
+- **Features:** Implement new cryptographic features (discuss first in an issue)
+- **Standards Updates:** Update implementations to reflect new NIST/IETF standards
+
+### What NOT to Contribute
+
+Please **DO NOT** submit pull requests that:
+
+- Weaken cryptographic security in any way
+- Remove or bypass security layers
+- Introduce unproven or experimental cryptographic algorithms
+- Break standards compliance (NIST FIPS 202, 204, RFC 2104, 5869, 8032, 3161)
+- Add unnecessary dependencies
+- Include proprietary or non-Apache 2.0 compatible code
+- Lack mathematical justification for cryptographic changes
+
+## Development Setup
+
+### 1. Fork and Clone
+
+```bash
+# Fork the repository on GitHub, then clone your fork
+git clone https://github.com/YOUR_USERNAME/Ava-Guardian.git
+cd Ava-Guardian
+```
+
+### 2. Create Development Environment
+
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install --upgrade pip
+pip install cryptography
+
+# Install quantum-resistant libraries (recommended)
+pip install liboqs-python  # or: pip install pqcrypto
+
+# Install development tools
+pip install -e ".[dev]"  # Installs pytest, black, flake8, mypy, isort
+```
+
+### 3. Verify Setup
+
+```bash
+# Run the demonstration
+python dna_guardian_secure.py
+
+# Expected output should include "ALL VERIFICATIONS PASSED"
+```
+
+### 4. Create Feature Branch
+
+```bash
+# Create a new branch for your contribution
+git checkout -b feature/your-feature-name
+# or
+git checkout -b fix/issue-number-description
+```
+
+## Contribution Guidelines
+
+### General Principles
+
+1. **Security First:** Never compromise security for convenience or performance
+2. **Standards Compliance:** Adhere strictly to NIST and IETF specifications
+3. **Mathematical Rigor:** All cryptographic claims must be provable
+4. **Code Quality:** Follow PEP 8 and maintain type hints throughout
+5. **Documentation:** Every change must be documented with academic citations where applicable
+6. **Backwards Compatibility:** Maintain compatibility unless security requires breaking changes
+
+### Critical Rules for Cryptographic Code
+
+**ALWAYS:**
+- Use cryptographically secure random number generation (`secrets` module)
+- Validate all inputs to cryptographic functions
+- Use constant-time operations for security-critical comparisons
+- Follow NIST recommendations for key sizes and algorithm parameters
+- Cite academic papers or standards for algorithm choices
+- Include mathematical proofs for security claims
+- Test against known test vectors from standards documents
+
+**NEVER:**
+- Implement your own cryptographic primitives
+- Use deprecated algorithms (MD5, SHA-1, RSA < 2048 bits)
+- Store secrets in logs, error messages, or debug output
+- Use non-constant-time string comparisons for authentication
+- Ignore error conditions in cryptographic operations
+- Make security claims without mathematical backing
+- Copy-paste cryptographic code without understanding it
+
+## Cryptographic Standards
+
+All contributions must maintain compliance with:
+
+### Required Standards
+
+| Standard | Version | Compliance Level | Documentation |
+|----------|---------|------------------|---------------|
+| NIST FIPS 202 | 2015 | Mandatory | SHA-3 Standard |
+| NIST FIPS 204 | 2023 | Mandatory | Module-Lattice-Based Digital Signature Standard |
+| NIST SP 800-108 | Rev. 1 | Mandatory | Key Derivation Using Pseudorandom Functions |
+| RFC 2104 | 1997 | Mandatory | HMAC |
+| RFC 5869 | 2010 | Mandatory | HKDF |
+| RFC 8032 | 2017 | Mandatory | EdDSA (Ed25519) |
+| RFC 3161 | 2001 | Mandatory | Time-Stamp Protocol |
+
+### Changes to Cryptographic Standards
+
+If you need to update cryptographic standards:
+
+1. Open an issue first to discuss the change
+2. Provide references to the updated standard
+3. Include migration guide for existing users
+4. Maintain backwards compatibility when possible
+5. Update all affected documentation
+6. Add deprecation warnings before removing old standards
+
+## Code Quality Requirements
+
+### PEP 8 Compliance
+
+All Python code must follow PEP 8 style guidelines:
+
+```bash
+# Check formatting
+black --check .
+flake8 .
+isort --check-only .
+```
+
+### Type Hints
+
+All functions must include comprehensive type hints:
+
+```python
+from typing import List, Tuple, Optional
+
+def create_signature(
+    data: bytes,
+    private_key: ed25519.Ed25519PrivateKey
+) -> bytes:
+    """
+    Create Ed25519 signature for data.
+
+    Args:
+        data: Raw bytes to sign
+        private_key: Ed25519 private key
+
+    Returns:
+        64-byte signature
+
+    Raises:
+        ValueError: If data is empty
+    """
+    if not data:
+        raise ValueError("Cannot sign empty data")
+    return private_key.sign(data)
+```
+
+### Documentation Requirements
+
+All functions must have docstrings including:
+
+- **Brief description:** One-line summary
+- **Detailed description:** Cryptographic purpose and operation
+- **Args:** Type and description of each parameter
+- **Returns:** Type and description of return value
+- **Raises:** All possible exceptions
+- **Security:** Any security considerations or constraints
+- **Standards:** Reference to relevant NIST/IETF standards
+- **Examples:** Usage examples for non-trivial functions
+
+### Code Review Checklist
+
+Before submitting, verify:
+
+- [ ] Code follows PEP 8 (run `black`, `flake8`, `isort`)
+- [ ] All functions have type hints
+- [ ] All functions have comprehensive docstrings
+- [ ] No cryptographic security weaknesses introduced
+- [ ] Standards compliance maintained
+- [ ] Tests pass (run `pytest`)
+- [ ] Documentation updated
+- [ ] No secrets or credentials in code
+- [ ] Error handling is comprehensive
+- [ ] Performance impact is acceptable
+
+## Testing Requirements
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=. --cov-report=term-missing
+
+# Run specific test file
+pytest tests/test_specific.py
+
+# Run tests marked as slow
+pytest -m slow
+```
+
+### Test Coverage Requirements
+
+- **Minimum coverage:** 80% for new code
+- **Cryptographic functions:** 100% coverage required
+- **Error paths:** All error conditions must be tested
+- **Edge cases:** Boundary conditions and corner cases
+
+### Test Quality Standards
+
+All tests must:
+
+1. **Use Known Test Vectors:** Use published test vectors from NIST/IETF when available
+2. **Test Success Paths:** Verify correct operation with valid inputs
+3. **Test Failure Paths:** Verify proper error handling with invalid inputs
+4. **Test Edge Cases:** Empty inputs, maximum sizes, boundary conditions
+5. **Be Deterministic:** No random failures or race conditions
+6. **Be Independent:** Tests should not depend on execution order
+7. **Be Fast:** Unit tests should complete in milliseconds
+8. **Be Documented:** Include docstrings explaining what is being tested
+
+### Example Test Structure
+
+```python
+import pytest
+from dna_guardian_secure import generate_ed25519_keypair, sign_data
+
+class TestEd25519Signatures:
+    """Test Ed25519 signature generation and verification."""
+
+    def test_signature_generation_success(self):
+        """Test successful signature generation with valid input."""
+        # Arrange
+        keypair = generate_ed25519_keypair()
+        data = b"Test data for signing"
+
+        # Act
+        signature = sign_data(data, keypair.private_key)
+
+        # Assert
+        assert len(signature) == 64  # Ed25519 signatures are 64 bytes
+        assert isinstance(signature, bytes)
+
+    def test_signature_verification_success(self):
+        """Test successful signature verification."""
+        # Test implementation
+        pass
+
+    def test_signature_empty_data_raises_error(self):
+        """Test that signing empty data raises ValueError."""
+        keypair = generate_ed25519_keypair()
+
+        with pytest.raises(ValueError, match="Cannot sign empty data"):
+            sign_data(b"", keypair.private_key)
+```
+
+## Pull Request Process
+
+### Before Submitting
+
+1. **Update from main:**
+   ```bash
+   git fetch upstream
+   git rebase upstream/main
+   ```
+
+2. **Run all checks:**
+   ```bash
+   black .
+   isort .
+   flake8 .
+   mypy dna_guardian_secure.py
+   pytest
+   ```
+
+3. **Update documentation:**
+   - Update README.md if adding features
+   - Update SECURITY_ANALYSIS.md if affecting security
+   - Update IMPLEMENTATION_GUIDE.md if changing deployment
+   - Add entries to CHANGELOG.md
+
+4. **Commit with clear messages:**
+   ```bash
+   git commit -m "feat: Add support for Kyber key encapsulation
+
+   - Implement Kyber-768 key generation
+   - Add encapsulation and decapsulation functions
+   - Include NIST test vectors
+   - Update documentation with Kyber details
+
+   Refs: NIST FIPS 203
+   Closes: #123"
+   ```
+
+### Commit Message Format
+
+Follow conventional commits:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `security`: Security vulnerability fix
+- `docs`: Documentation only
+- `test`: Adding or updating tests
+- `refactor`: Code refactoring
+- `perf`: Performance improvement
+- `chore`: Maintenance tasks
+
+**Examples:**
+```
+feat(crypto): Add Falcon signature support
+fix(hmac): Correct constant-time comparison
+security(keys): Fix timing attack in key derivation
+docs(readme): Update installation instructions
+test(dilithium): Add NIST test vectors
+```
+
+### Pull Request Template
+
+When you open a PR, include:
+
+1. **Description:** Clear description of changes
+2. **Motivation:** Why is this change needed?
+3. **Security Impact:** Does this affect security? How?
+4. **Standards Compliance:** Which standards does this affect?
+5. **Testing:** What tests were added/modified?
+6. **Breaking Changes:** Any backwards-incompatible changes?
+7. **Checklist:** Complete the PR checklist
+
+### Review Process
+
+1. **Automated Checks:** All CI checks must pass
+2. **Code Review:** At least one maintainer approval required
+3. **Security Review:** Cryptographic changes require additional review
+4. **Documentation Review:** All docs must be accurate
+5. **Testing:** All tests must pass on Python 3.8-3.11
+
+### After Approval
+
+Maintainers will:
+1. Merge your PR into main branch
+2. Update version numbers if needed
+3. Add your contribution to CHANGELOG
+4. Credit you in release notes
+
+## Security Considerations
+
+### Reporting Security Issues
+
+**DO NOT** open public issues for security vulnerabilities. See [SECURITY.md](SECURITY.md) for reporting process.
+
+### Security Review Requirements
+
+Changes affecting cryptographic operations require:
+
+1. **Mathematical Proof:** Formal proof of security properties
+2. **Academic Citations:** References to peer-reviewed papers
+3. **Standards References:** Cite NIST/IETF specifications
+4. **Threat Analysis:** Consider attack vectors
+5. **Performance Analysis:** Ensure constant-time operations where required
+
+### Common Security Pitfalls
+
+Avoid these common mistakes:
+
+- **Timing Attacks:** Use constant-time comparisons for MACs/signatures
+- **Side Channels:** Be aware of cache timing and power analysis
+- **Entropy Issues:** Always use `secrets` module for randomness
+- **Error Information Leakage:** Don't reveal information in error messages
+- **Integer Overflow:** Validate all length calculations
+- **Memory Safety:** Be careful with buffer sizes
+
+## Documentation Standards
+
+### Academic Citations
+
+When referencing cryptographic research:
+
+```markdown
+According to Bernstein et al. [1], Ed25519 provides 128-bit classical security...
+
+**References:**
+
+[1] Bernstein, D. J., Duif, N., Lange, T., Schwabe, P., & Yang, B. Y. (2011).
+    "High-speed high-security signatures."
+    Journal of Cryptographic Engineering, 2(2), 77-89.
+    DOI: 10.1007/s13389-012-0027-1
+```
+
+### Standards References
+
+When citing standards:
+
+```markdown
+SHA3-256 provides 256-bit collision resistance and 128-bit preimage resistance
+as specified in NIST FIPS 202 Section 6.1.
+
+**Reference:** NIST FIPS 202 - SHA-3 Standard: Permutation-Based Hash and
+Extendable-Output Functions (August 2015)
+```
+
+## Community
+
+### Communication Channels
+
+- **GitHub Issues:** Bug reports, feature requests
+- **GitHub Discussions:** General questions, ideas
+- **Email:** steel.secadv.llc@outlook.com (security issues only)
+
+### Getting Help
+
+- Review [README.md](README.md) for project overview
+- Check [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md) for usage
+- Read [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for technical details
+- Search existing issues before opening new ones
+- Ask questions in GitHub Discussions
+
+### Recognition
+
+Contributors will be recognized in:
+- CHANGELOG.md for their contributions
+- Release notes
+- GitHub contributors page
+
+Significant contributors may be invited to join the project as maintainers.
+
+## Questions?
+
+If you have questions about contributing:
+
+1. Check this CONTRIBUTING.md file
+2. Review existing issues and pull requests
+3. Ask in GitHub Discussions
+4. Contact maintainers at steel.secadv.llc@outlook.com
+
+---
+
+**Thank you for contributing to Ava Guardian and helping secure cryptographic protection for DNA codes!**
+
+Copyright (C) 2025 Steel Security Advisors LLC
+Licensed under Apache License 2.0
