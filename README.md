@@ -22,10 +22,10 @@
     ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-**Copyright (C) 2025 Steel Security Advisors LLC**  
-**Author/Inventor:** Andrew E. A.  
-**Contact:** steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com  
-**License:** Apache License 2.0  
+**Copyright (C) 2025 Steel Security Advisors LLC**
+**Author/Inventor:** Andrew E. A.
+**Contact:** steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
+**License:** Apache License 2.0
 **Version:** 1.0.0 - Production Ready
 
 **AI-Co Omni-Architects:**  
