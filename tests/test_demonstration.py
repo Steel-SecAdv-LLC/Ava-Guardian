@@ -87,7 +87,7 @@ class TestDemonstration:
         required_outputs = [
             ("Ava Guardian", "Title banner"),
             ("Generating key management system", "Key generation step"),
-            ("Creating cryptographic package", "Package creation step"),
+            ("Creating DNA cryptographic package", "Package creation step"),
             ("Verifying cryptographic package", "Verification step"),
             ("ALL VERIFICATIONS PASSED", "Success confirmation"),
         ]
@@ -157,23 +157,40 @@ class TestDemonstration:
 
         Note: This test may be skipped if quantum libraries are not installed.
         """
-        try:
-            import oqs  # noqa: F401
-
-            quantum_available = True
-            quantum_backend = "liboqs"
-        except ImportError:
-            try:
-                from pqcrypto.sign import dilithium3  # noqa: F401
-
-                quantum_available = True
-                quantum_backend = "pqcrypto"
-            except ImportError:
-                quantum_available = False
-                quantum_backend = None
-
-        # Get the path to the main script
+        # Test quantum library availability in subprocess to avoid import warnings affecting pytest
         script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
+
+        # Check if quantum libraries work by running a quick test
+        test_script = """
+import sys
+try:
+    import oqs
+    sig = oqs.Signature("ML-DSA-65")
+    print("liboqs_available")
+    sys.exit(0)
+except Exception:
+    pass
+
+try:
+    from pqcrypto.sign import dilithium3
+    print("pqcrypto_available")
+    sys.exit(0)
+except Exception:
+    pass
+
+print("no_quantum_libraries")
+sys.exit(0)
+"""
+
+        quantum_check = subprocess.run(
+            [sys.executable, "-c", test_script],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        quantum_available = "available" in quantum_check.stdout
+        quantum_backend = quantum_check.stdout.strip()
 
         # Run the demonstration
         result = subprocess.run(
@@ -183,17 +200,21 @@ class TestDemonstration:
             timeout=60,
         )
 
+        # Test should pass regardless of quantum library availability
+        assert result.returncode == 0, f"Demonstration failed: {result.stderr}"
+
         if quantum_available:
-            # If quantum libraries available, verify Dilithium is used
+            # If quantum libraries available, verify Dilithium signatures are working
             assert (
                 "Dilithium" in result.stdout
             ), f"Dilithium not found in output despite {quantum_backend} being available"
             # Should not have warnings about missing quantum libraries
-            assert "WARNING: Quantum-resistant" not in result.stdout
+            assert "WARNING: Dilithium not available" not in result.stdout
+            # Should have successful verification
+            assert "✓ dilithium: VALID" in result.stdout
         else:
-            # If not available, should gracefully degrade
-            # (Test passes as long as script completes successfully)
-            assert result.returncode == 0
+            # If not available, should gracefully degrade but still work
+            assert "ALL VERIFICATIONS PASSED" in result.stdout
 
 
 class TestErrorHandling:
@@ -212,29 +233,13 @@ class TestErrorHandling:
 
     def test_graceful_quantum_library_fallback(self):
         """
-        Test that missing quantum libraries result in graceful degradation.
+        Test that quantum libraries work correctly when available.
 
         This test validates:
-        - Script runs without quantum libraries
-        - Appropriate warnings are displayed
-        - Classical cryptography still functions
-        - Verification still passes
+        - Script runs with quantum libraries
+        - Quantum-resistant signatures are generated
+        - All verifications pass
         """
-        try:
-            import oqs  # noqa: F401
-
-            pytest.skip("liboqs-python is installed; cannot test fallback")
-        except ImportError:
-            pass
-
-        try:
-            from pqcrypto.sign import dilithium3  # noqa: F401
-
-            pytest.skip("pqcrypto is installed; cannot test fallback")
-        except ImportError:
-            pass
-
-        # Both quantum libraries are missing, test fallback
         script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
 
         result = subprocess.run(
@@ -244,10 +249,10 @@ class TestErrorHandling:
             timeout=60,
         )
 
-        # Should still complete successfully with fallback
+        # Should complete successfully
         assert (
             result.returncode == 0
-        ), "Demonstration should complete successfully even without quantum libraries"
+        ), "Demonstration should complete successfully with quantum libraries"
 
-        # Should have warning about quantum libraries
-        # (This is optional; depends on implementation behavior)
+        # Should have quantum signatures working
+        assert "ALL VERIFICATIONS PASSED" in result.stdout
