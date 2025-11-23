@@ -9,20 +9,18 @@ Copyright (C) 2025 Steel Security Advisors LLC
 """
 
 import hashlib
-import hmac
 import json
-import secrets
 import statistics
 import sys
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 
 # Add parent directory to path to import dna_guardian_secure
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from dna_guardian_secure import (
+from dna_guardian_secure import (  # noqa: E402
     DILITHIUM_AVAILABLE,
     DILITHIUM_BACKEND,
     MASTER_DNA_CODES,
@@ -275,13 +273,14 @@ class BenchmarkSuite:
         )
 
         # Calculate total package size
+        dilithium_sig_size = len(self.dilithium_keypair.public_key) if DILITHIUM_AVAILABLE else 1952
         package_size = (
             32  # SHA3-256 hash
             + 32  # HMAC tag
             + 64  # Ed25519 signature
-            + (len(signature) if DILITHIUM_AVAILABLE else 3293)  # Dilithium signature
+            + 3293  # Dilithium signature (Dilithium3)
             + 32  # Ed25519 public key
-            + (len(public_key) if DILITHIUM_AVAILABLE else 1952)  # Dilithium public key
+            + dilithium_sig_size  # Dilithium public key
         )
         print(f"  ℹ Total package size: ~{package_size} bytes")
 
@@ -373,7 +372,7 @@ class BenchmarkSuite:
         report.append("=" * 80)
         report.append("Ava Guardian ♱ (AG♱) - Cryptographic Performance Benchmark")
         report.append("=" * 80)
-        report.append(f"\nConfiguration:")
+        report.append("\nConfiguration:")
         report.append(f"  Iterations: {self.iterations}")
         report.append(f"  Dilithium Backend: {DILITHIUM_BACKEND or 'Not Available'}")
         report.append(f"\n{'Operation':<45} {'Time (μs)':<15} {'Ops/Sec':<15} {'Size'}")

@@ -7,7 +7,7 @@ Creates markdown tables, charts, and comparisons using benchmark data.
 
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List
 
 
 def load_benchmark_results(results_file: Path) -> dict:
