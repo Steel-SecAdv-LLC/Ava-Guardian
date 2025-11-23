@@ -17,7 +17,7 @@
 **Project:** Omni-DNA Helix SHA3-256 with Ethical Integration
 **Author/Inventor:** Andrew E. A.
 **Organization:** Steel Security Advisors LLC
-**Contact:** steel.secadv.llc@outlook.com
+**Contact:** steel.secadv.llc@outlook.com or steel.sa.llc@gmail.com
 
 **AI-Co Omni-Architects:**
 Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
