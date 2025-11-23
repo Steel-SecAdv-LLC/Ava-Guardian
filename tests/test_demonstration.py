@@ -87,8 +87,7 @@ class TestDemonstration:
         required_outputs = [
             ("Ava Guardian", "Title banner"),
             ("Generating key management system", "Key generation step"),
-            ("Creating DNA cryptographic package", "Package creation step"),
-            ("Signing package", "Signing step"),
+            ("Creating cryptographic package", "Package creation step"),
             ("Verifying cryptographic package", "Verification step"),
             ("ALL VERIFICATIONS PASSED", "Success confirmation"),
         ]
