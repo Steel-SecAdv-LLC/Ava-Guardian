@@ -66,7 +66,7 @@ def demo_timing_monitoring() -> None:
     test_params = MASTER_HELIX_PARAMS[:3]
 
     for i in range(25):
-        pkg = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
+        _ = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
         if (i + 1) % 5 == 0:
             print(f"  ✓ {i + 1}/25 packages created")
         time.sleep(0.01)
@@ -82,7 +82,7 @@ def demo_timing_monitoring() -> None:
 
     _ = np.random.rand(10000, 10000).sum()  # CPU-intensive operation
 
-    pkg = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
+    _ = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
 
     print("\n[4/4] Security Report:")
     report = monitor.get_security_report()
@@ -111,7 +111,7 @@ def demo_pattern_analysis() -> None:
 
     print("\n[1/3] Creating normal package series...")
     for i in range(15):
-        pkg = create_crypto_package(
+        _ = create_crypto_package(
             MASTER_DNA_CODES_STR, MASTER_HELIX_PARAMS, kms, "demo", monitor=monitor
         )
         if (i + 1) % 5 == 0:
@@ -123,7 +123,7 @@ def demo_pattern_analysis() -> None:
     test_codes = "\n".join(MASTER_DNA_CODES_STR.split("\n")[:2])
     test_params = MASTER_HELIX_PARAMS[:2]
     for i in range(5):
-        pkg = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
+        _ = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
     print("  ⚠️  Burst of 5 packages created instantly")
 
     print("\n[3/3] Pattern Analysis:")
@@ -165,7 +165,7 @@ def demo_resonance_detection() -> None:
     test_params = MASTER_HELIX_PARAMS[:3]
 
     for i in range(50):
-        pkg = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
+        _ = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
 
     print(f"  ✓ Created 50 packages")
 
