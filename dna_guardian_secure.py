@@ -60,6 +60,7 @@ import json
 import secrets
 import struct
 import subprocess
+import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1417,6 +1418,7 @@ def create_crypto_package(
     author: str,
     use_rfc3161: bool = False,
     tsa_url: Optional[str] = None,
+    monitor: Optional["AvaGuardianMonitor"] = None,
 ) -> CryptoPackage:
     """
     Create cryptographically signed package for DNA codes.
@@ -1437,21 +1439,42 @@ def create_crypto_package(
         author: Package creator
         use_rfc3161: Whether to get RFC 3161 timestamp
         tsa_url: TSA server URL (optional)
+        monitor: Optional security monitor for 3R runtime analysis
 
     Returns:
         CryptoPackage with all signatures and timestamps
     """
     # 1. Compute canonical hash
+    if monitor:
+        start_time = time.time()
     content_hash = canonical_hash_dna(dna_codes, helix_params)
+    if monitor:
+        duration_ms = (time.time() - start_time) * 1000
+        monitor.monitor_crypto_operation("sha3_256_hash", duration_ms)
 
     # 2. Generate HMAC authentication tag
+    if monitor:
+        start_time = time.time()
     hmac_tag = hmac_authenticate(content_hash, kms.hmac_key)
+    if monitor:
+        duration_ms = (time.time() - start_time) * 1000
+        monitor.monitor_crypto_operation("hmac_auth", duration_ms)
 
     # 3. Sign with Ed25519
+    if monitor:
+        start_time = time.time()
     ed25519_sig = ed25519_sign(content_hash, kms.ed25519_keypair.private_key)
+    if monitor:
+        duration_ms = (time.time() - start_time) * 1000
+        monitor.monitor_crypto_operation("ed25519_sign", duration_ms)
 
     # 4. Sign with Dilithium
+    if monitor:
+        start_time = time.time()
     dilithium_sig = dilithium_sign(content_hash, kms.dilithium_keypair.private_key)
+    if monitor:
+        duration_ms = (time.time() - start_time) * 1000
+        monitor.monitor_crypto_operation("dilithium_sign", duration_ms)
 
     # 5. Generate timestamp
     timestamp = datetime.now(timezone.utc).isoformat()
@@ -1467,6 +1490,18 @@ def create_crypto_package(
     ethical_vector = kms.ethical_vector.copy()
     ethical_json = json.dumps(ethical_vector, sort_keys=True)
     ethical_hash = hashlib.sha3_256(ethical_json.encode()).hexdigest()
+
+    # 8. Record package metadata for pattern analysis
+    if monitor:
+        # Count DNA codes (split by newline or comma)
+        code_count = len([c.strip() for c in dna_codes.split("\n") if c.strip()])
+        monitor.record_package_signing(
+            {
+                "author": author,
+                "code_count": code_count,
+                "content_hash": content_hash.hex()[:16],
+            }
+        )
 
     return CryptoPackage(
         content_hash=content_hash.hex(),
@@ -1485,7 +1520,11 @@ def create_crypto_package(
 
 
 def verify_crypto_package(
-    dna_codes: str, helix_params: List[Tuple[float, float]], package: CryptoPackage, hmac_key: bytes
+    dna_codes: str,
+    helix_params: List[Tuple[float, float]],
+    package: CryptoPackage,
+    hmac_key: bytes,
+    monitor: Optional["AvaGuardianMonitor"] = None,
 ) -> Dict[str, bool]:
     """
     Verify all cryptographic protections in package.
@@ -1503,6 +1542,7 @@ def verify_crypto_package(
         helix_params: Original helix parameters
         package: Crypto package to verify
         hmac_key: HMAC key for verification
+        monitor: Optional security monitor for 3R runtime analysis
 
     Returns:
         Dictionary of verification results:
@@ -1521,21 +1561,36 @@ def verify_crypto_package(
     results["content_hash"] = computed_hash.hex() == package.content_hash
 
     # 2. Verify HMAC
+    if monitor:
+        start_time = time.time()
     results["hmac"] = hmac_verify(computed_hash, bytes.fromhex(package.hmac_tag), hmac_key)
+    if monitor:
+        duration_ms = (time.time() - start_time) * 1000
+        monitor.monitor_crypto_operation("hmac_verify", duration_ms)
 
     # 3. Verify Ed25519 signature
+    if monitor:
+        start_time = time.time()
     results["ed25519"] = ed25519_verify(
         computed_hash,
         bytes.fromhex(package.ed25519_signature),
         bytes.fromhex(package.ed25519_pubkey),
     )
+    if monitor:
+        duration_ms = (time.time() - start_time) * 1000
+        monitor.monitor_crypto_operation("ed25519_verify", duration_ms)
 
     # 4. Verify Dilithium signature
+    if monitor:
+        start_time = time.time()
     results["dilithium"] = dilithium_verify(
         computed_hash,
         bytes.fromhex(package.dilithium_signature),
         bytes.fromhex(package.dilithium_pubkey),
     )
+    if monitor:
+        duration_ms = (time.time() - start_time) * 1000
+        monitor.monitor_crypto_operation("dilithium_verify", duration_ms)
 
     # 5. Verify timestamp is reasonable
     try:

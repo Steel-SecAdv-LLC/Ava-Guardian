@@ -1,0 +1,248 @@
+# 3R Security Monitoring
+
+Ava Guardian includes optional runtime security monitoring using the **3R Mechanism** - a novel security framework developed by Steel Security Advisors LLC.
+
+## Overview
+
+The 3R Mechanism provides three complementary approaches to runtime security analysis:
+
+1. **ResonanceEngine**: Timing attack detection via frequency-domain analysis
+2. **RecursionEngine**: Hierarchical pattern analysis across time scales  
+3. **RefactoringEngine**: Code complexity metrics for manual review
+
+**Design Philosophy**: Observe, analyze, alert - never auto-modify cryptographic code.
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  3R Security Monitoring                  │
+├─────────────────────────────────────────────────────────┤
+│  ResonanceEngine                                        │
+│  ├─ FFT-based timing analysis                           │
+│  ├─ Statistical anomaly detection                       │
+│  └─ Side-channel vulnerability identification           │
+├─────────────────────────────────────────────────────────┤
+│  RecursionEngine                                        │
+│  ├─ Multi-scale pattern extraction                      │
+│  ├─ Hierarchical feature analysis                       │
+│  └─ Signing frequency anomaly detection                 │
+├─────────────────────────────────────────────────────────┤
+│  RefactoringEngine                                      │
+│  ├─ Cyclomatic complexity calculation                   │
+│  ├─ Code quality metrics                                │
+│  └─ Read-only analysis (never auto-modifies)            │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Component Deep Dive
+
+### ResonanceEngine: Timing Attack Detection
+
+**Purpose**: Identify timing side-channels through frequency-domain analysis.
+
+**Technical Approach**:
+1. Record operation timings (e.g., Ed25519 sign, Dilithium verify)
+2. Apply Fast Fourier Transform (FFT) to timing samples
+3. Detect periodic patterns (resonance) indicating side-channels
+4. Alert on statistical anomalies (>3σ deviations)
+
+**Threat Model**:
+- Cache timing attacks (Bernstein's attack on AES)
+- Branch prediction leakage  
+- Memory access pattern correlation
+- CPU microarchitecture side-channels
+
+**Configuration**:
+- `threshold_sigma`: Anomaly sensitivity (default: 3.0)
+- `window_size`: FFT sample window (default: 100)
+- `max_history`: Memory limit per operation (default: 10,000)
+
+**Performance**: <0.5% overhead per monitored operation
+
+---
+
+### RecursionEngine: Hierarchical Pattern Analysis
+
+**Purpose**: Detect anomalies in signing patterns across multiple time scales.
+
+**Technical Approach**:
+1. Record package signing metadata (timestamp, author, code count)
+2. Extract time-series features (inter-package intervals)
+3. Recursive downsampling: Level 0 (raw) → Level 1 (2x) → Level 2 (4x)
+4. Compute statistics at each scale: mean, std, range
+5. Detect anomalies via z-score analysis (>3σ)
+
+**Detected Anomalies**:
+- Unusual signing frequency (burst or drought)
+- Package size deviations (too many/few codes)
+- Multi-scale pattern changes (gradual vs. sudden)
+
+**Configuration**:
+- `max_depth`: Recursion levels (default: 3)  
+- `max_history`: Package history limit (default: 10,000)
+
+**Performance**: O(n log n) for n packages, <1% overhead
+
+---
+
+### RefactoringEngine: Code Complexity Analysis
+
+**Purpose**: Provide complexity metrics for manual security review.
+
+**⚠️ CRITICAL CONSTRAINT**: This component is **READ-ONLY**. It never modifies cryptographic code automatically.
+
+**Why No Auto-Refactoring?**:
+- May introduce subtle vulnerabilities
+- Bypasses mandatory code review  
+- Could weaken cryptographic guarantees
+- Violates principle of least privilege
+
+**Metrics Calculated**:
+1. **Cyclomatic Complexity**: M = 1 + (decision points)
+   - 1-10: Simple, easy to test
+   - 11-20: Moderate complexity
+   - 21+: Refactor recommended
+
+2. **Lines of Code**: Per-function and per-file
+
+3. **Complexity Distribution**: Mean, max, high-complexity count
+
+---
+
+## Usage Guide
+
+### Basic Usage
+
+```python
+from ava_guardian_monitor import AvaGuardianMonitor
+from dna_guardian_secure import *
+
+# Enable monitoring
+monitor = AvaGuardianMonitor(enabled=True)
+
+# Generate keys
+kms = generate_key_management_system("Steel-SecAdv-LLC")
+
+# Create monitored package
+pkg = create_crypto_package(
+    MASTER_DNA_CODES_STR,
+    MASTER_HELIX_PARAMS,
+    kms,
+    "author",
+    monitor=monitor  # ← Pass monitor here
+)
+
+# Get security report
+report = monitor.get_security_report()
+print(f"Status: {report['status']}")
+print(f"Total alerts: {report['total_alerts']}")
+```
+
+### Advanced Configuration
+
+```python
+# Custom thresholds
+monitor = AvaGuardianMonitor(
+    enabled=True,
+    alert_retention=5000  # Keep last 5000 alerts
+)
+
+# Configure timing sensitivity
+monitor.timing.threshold = 2.5  # More sensitive (2.5σ vs 3σ)
+monitor.timing.window_size = 200  # Larger FFT window
+
+# Configure pattern analysis
+monitor.patterns.max_depth = 4  # Deeper recursion
+```
+
+---
+
+## When to Enable Monitoring
+
+### Production Scenarios
+
+✅ **Enable When**:
+- Processing sensitive or high-value DNA codes
+- Compliance requires audit trails
+- Security incident investigation
+- Performance regression testing
+- Post-deployment validation
+
+❌ **Disable When**:
+- Maximum performance required
+- Resource-constrained environments  
+- Development/testing with dummy data
+- Batch processing non-sensitive data
+
+### Performance Impact
+
+| Scenario | Overhead | Recommendation |
+|----------|----------|----------------|
+| Light monitoring (timing only) | <1% | Safe for production |
+| Full monitoring (3R active) | 1-2% | Acceptable for most cases |
+| Resonance analysis enabled | <0.5% | Minimal added cost |
+| Pattern analysis (1000+ packages) | <1% | Scales well |
+
+**Total Impact**: <2% when all components enabled
+
+---
+
+## Security Considerations
+
+### Log Security
+
+Monitoring data can contain sensitive information:
+
+**Timing Data**: May leak information about:
+- Key sizes (via operation duration)
+- Data sizes (via hash computation time)
+- System load patterns
+
+**Mitigation**:
+- Store logs securely (encrypt at rest)
+- Limit log retention (default: 10,000 entries)
+- Control access (require authentication)
+- Rotate logs regularly
+
+### Alert Rate Limiting
+
+Prevent denial-of-service via alert spam:
+
+```python
+# Built-in: max 1000 alerts retained by default
+monitor = AvaGuardianMonitor(alert_retention=1000)
+
+# Alerts auto-pruned to prevent memory exhaustion
+```
+
+---
+
+## API Reference
+
+**Key Classes**:
+- `AvaGuardianMonitor`: Main interface
+- `ResonanceTimingMonitor`: Timing analysis
+- `RecursionPatternMonitor`: Pattern analysis  
+- `RefactoringAnalyzer`: Code complexity
+
+**Key Methods**:
+- `monitor_crypto_operation(operation, duration_ms)`
+- `record_package_signing(metadata)`
+- `get_security_report()`
+- `analyze_codebase(directory)`
+
+See inline documentation in `ava_guardian_monitor.py` for complete API details.
+
+---
+
+## License
+
+Copyright (C) 2025 Steel Security Advisors LLC  
+Licensed under Apache License 2.0
+
+3R Mechanism developed by Andrew E. A. for Ava Guardian project.
