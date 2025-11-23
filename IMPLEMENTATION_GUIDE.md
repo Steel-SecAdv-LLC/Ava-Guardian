@@ -810,6 +810,343 @@ results = verify_multiple_packages(packages, MASTER_DNA_CODES, MASTER_HELIX_PARA
 
 ---
 
+## Migration Guide: Ethical Integration (v1.0.0 → v2.0.0)
+
+### Overview
+
+Version 2.0.0 introduces ethical integration into the cryptographic framework, adding two new fields to the `CryptoPackage` dataclass. This is a **breaking change** that requires migration for existing packages.
+
+### Breaking Changes
+
+#### CryptoPackage Schema Changes
+
+**v1.0.0 Schema:**
+```python
+@dataclass
+class CryptoPackage:
+    content_hash: str
+    hmac_tag: str
+    ed25519_signature: str
+    dilithium_signature: str
+    timestamp: str
+    timestamp_token: Optional[str]
+    author: str
+    ed25519_pubkey: str
+    dilithium_pubkey: str
+    version: str
+```
+
+**v2.0.0 Schema (NEW):**
+```python
+@dataclass
+class CryptoPackage:
+    content_hash: str
+    hmac_tag: str
+    ed25519_signature: str
+    dilithium_signature: str
+    timestamp: str
+    timestamp_token: Optional[str]
+    author: str
+    ed25519_pubkey: str
+    dilithium_pubkey: str
+    version: str
+    ethical_vector: Dict[str, float]  # NEW: 12 Omni-DNA Ethical Pillars
+    ethical_hash: str                 # NEW: SHA3-256 hash of ethical vector
+```
+
+#### Impact
+
+**Who is affected:**
+- Applications deserializing `DNA_CRYPTO_PACKAGE.json` files
+- Systems verifying packages created with v1.0.0
+- Code that creates `CryptoPackage` instances directly
+
+**What breaks:**
+- Loading v1.0.0 packages into v2.0.0 code will fail with missing field errors
+- Code that creates `CryptoPackage` without `ethical_vector` and `ethical_hash` will fail
+
+### Migration Strategies
+
+#### Strategy 1: Regenerate All Packages (Recommended)
+
+**Best for:** New deployments, systems with few existing packages
+
+```python
+from dna_guardian_secure import *
+
+# Load your DNA codes and helix parameters
+dna_codes = "..."  # Your DNA codes
+helix_params = [...]  # Your helix parameters
+
+# Generate new KMS with ethical integration
+kms = generate_key_management_system("YourOrganization")
+
+# Create new package with ethical integration
+pkg = create_crypto_package(
+    dna_codes,
+    helix_params,
+    kms,
+    author="YourOrganization",
+    use_rfc3161=True
+)
+
+# Save new package
+with open("DNA_CRYPTO_PACKAGE.json", 'w') as f:
+    json.dump(asdict(pkg), f, indent=2)
+
+print("✓ Package regenerated with ethical integration")
+```
+
+#### Strategy 2: Backward-Compatible Verification
+
+**Best for:** Systems that must verify both v1.0.0 and v2.0.0 packages
+
+```python
+import json
+from typing import Optional
+
+def load_package_any_version(package_file: str) -> CryptoPackage:
+    """Load package from any version, adding defaults for missing fields."""
+    
+    with open(package_file, 'r') as f:
+        pkg_dict = json.load(f)
+    
+    # Check if ethical fields are present
+    if 'ethical_vector' not in pkg_dict:
+        # v1.0.0 package - add default ethical vector
+        print("⚠ Loading v1.0.0 package without ethical integration")
+        pkg_dict['ethical_vector'] = ETHICAL_VECTOR.copy()
+        
+        # Compute ethical hash for consistency
+        ethical_json = json.dumps(pkg_dict['ethical_vector'], sort_keys=True)
+        pkg_dict['ethical_hash'] = hashlib.sha3_256(ethical_json.encode()).hexdigest()
+    
+    return CryptoPackage(**pkg_dict)
+
+# Usage
+pkg = load_package_any_version("DNA_CRYPTO_PACKAGE.json")
+
+# Verify with warning if no ethical binding
+results = verify_crypto_package(dna_codes, helix_params, pkg, hmac_key)
+
+if pkg.version == "1.0.0":
+    print("⚠ Package verified but lacks ethical binding")
+    print("  Consider regenerating with v2.0.0 for full security")
+```
+
+#### Strategy 3: Batch Migration Script
+
+**Best for:** Systems with many existing packages
+
+```python
+import os
+from pathlib import Path
+
+def migrate_package_directory(
+    input_dir: str,
+    output_dir: str,
+    kms: KeyManagementSystem,
+    dna_codes: str,
+    helix_params: List[Tuple[float, float]]
+):
+    """Migrate all packages in directory to v2.0.0."""
+    
+    input_path = Path(input_dir)
+    output_path = Path(output_dir)
+    output_path.mkdir(exist_ok=True)
+    
+    # Find all JSON packages
+    packages = list(input_path.glob("*.json"))
+    
+    print(f"Found {len(packages)} packages to migrate")
+    
+    for pkg_file in packages:
+        print(f"Migrating {pkg_file.name}...")
+        
+        # Create new package with ethical integration
+        new_pkg = create_crypto_package(
+            dna_codes,
+            helix_params,
+            kms,
+            author=kms.author if hasattr(kms, 'author') else "Unknown",
+            use_rfc3161=True
+        )
+        
+        # Save to output directory
+        output_file = output_path / pkg_file.name
+        with open(output_file, 'w') as f:
+            json.dump(asdict(new_pkg), f, indent=2)
+        
+        print(f"  ✓ Migrated to {output_file}")
+    
+    print(f"\n✓ Migration complete: {len(packages)} packages")
+
+# Usage
+migrate_package_directory(
+    input_dir="packages_v1",
+    output_dir="packages_v2",
+    kms=kms,
+    dna_codes=MASTER_DNA_CODES,
+    helix_params=MASTER_HELIX_PARAMS
+)
+```
+
+### Key Management Changes
+
+#### Ethical Vector in KMS
+
+**v2.0.0 adds ethical vector to KeyManagementSystem:**
+
+```python
+@dataclass
+class KeyManagementSystem:
+    master_secret: bytes
+    hmac_key: bytes
+    ed25519_keypair: Ed25519KeyPair
+    dilithium_keypair: DilithiumKeyPair
+    creation_date: str
+    rotation_schedule: str
+    version: str
+    ethical_vector: Dict[str, float]  # NEW in v2.0.0
+```
+
+**Default Ethical Vector:**
+```python
+ETHICAL_VECTOR = {
+    "omniscient": 1.0, "omnipercipient": 1.0, "omnilegent": 1.0,
+    "omnipotent": 1.0, "omnificent": 1.0, "omniactive": 1.0,
+    "omnipresent": 1.0, "omnitemporal": 1.0, "omnidirectional": 1.0,
+    "omnibenevolent": 1.0, "omniperfect": 1.0, "omnivalent": 1.0,
+}
+# Constraint: Σw = 12.0
+```
+
+**Custom Ethical Vector (Advanced):**
+```python
+# Define custom ethical vector for domain-specific use
+custom_ethical_vector = {
+    "omniscient": 1.5,      # Increased awareness
+    "omnipercipient": 1.5,  # Enhanced detection
+    "omnilegent": 1.0,
+    "omnipotent": 1.0,
+    "omnificent": 1.0,
+    "omniactive": 1.0,
+    "omnipresent": 1.0,
+    "omnitemporal": 1.0,
+    "omnidirectional": 1.0,
+    "omnibenevolent": 0.5,  # Reduced for specific use case
+    "omniperfect": 1.5,     # Increased correctness
+    "omnivalent": 1.0,
+}
+
+# Verify constraint
+assert sum(custom_ethical_vector.values()) == 12.0
+
+# Generate KMS with custom vector
+kms = generate_key_management_system(
+    author="YourOrganization",
+    ethical_vector=custom_ethical_vector
+)
+```
+
+### Verification Changes
+
+#### Ethical Hash Verification
+
+**v2.0.0 packages include ethical hash for verification:**
+
+```python
+def verify_ethical_binding(pkg: CryptoPackage) -> bool:
+    """Verify ethical vector matches its hash."""
+    
+    # Recompute ethical hash
+    ethical_json = json.dumps(pkg.ethical_vector, sort_keys=True)
+    computed_hash = hashlib.sha3_256(ethical_json.encode()).hexdigest()
+    
+    # Compare with package hash
+    if computed_hash != pkg.ethical_hash:
+        print("✗ Ethical hash mismatch - package may be tampered")
+        return False
+    
+    # Verify constraint
+    total_weight = sum(pkg.ethical_vector.values())
+    if abs(total_weight - 12.0) > 1e-10:
+        print(f"✗ Ethical vector constraint violated: Σw = {total_weight} ≠ 12.0")
+        return False
+    
+    print("✓ Ethical binding verified")
+    return True
+
+# Usage
+if verify_ethical_binding(pkg):
+    print("Package has valid ethical integration")
+```
+
+### Testing Migration
+
+```python
+def test_migration():
+    """Test migration from v1.0.0 to v2.0.0."""
+    
+    print("Testing migration...")
+    
+    # 1. Create v2.0.0 package
+    kms = generate_key_management_system("TestOrg")
+    pkg_v2 = create_crypto_package(
+        MASTER_DNA_CODES,
+        MASTER_HELIX_PARAMS,
+        kms,
+        author="TestOrg"
+    )
+    
+    # 2. Verify all fields present
+    assert hasattr(pkg_v2, 'ethical_vector')
+    assert hasattr(pkg_v2, 'ethical_hash')
+    assert len(pkg_v2.ethical_vector) == 12
+    assert sum(pkg_v2.ethical_vector.values()) == 12.0
+    
+    # 3. Verify ethical hash
+    assert verify_ethical_binding(pkg_v2)
+    
+    # 4. Verify cryptographic integrity
+    results = verify_crypto_package(
+        MASTER_DNA_CODES,
+        MASTER_HELIX_PARAMS,
+        pkg_v2,
+        kms.hmac_key
+    )
+    assert all(results.values())
+    
+    print("✓ Migration test passed")
+
+test_migration()
+```
+
+### Rollback Plan
+
+If you need to rollback to v1.0.0:
+
+```bash
+# 1. Checkout v1.0.0 tag
+git checkout v1.0.0
+
+# 2. Reinstall dependencies
+pip install -r requirements.txt
+
+# 3. Use archived v1.0.0 packages
+# (v2.0.0 packages cannot be used with v1.0.0 code)
+```
+
+**Note:** v2.0.0 packages are **not backward compatible** with v1.0.0 code.
+
+### Support
+
+For migration assistance:
+- Email: steel.secadv.llc@outlook.com
+- GitHub Issues: https://github.com/Steel-SecAdv-LLC/Ava-Guardian/issues
+
+---
+
 ## Support and Resources
 
 ### Documentation
