@@ -136,7 +136,7 @@ def demo_pattern_analysis() -> None:
 
         # Show multi-scale features
         if "level_0_mean" in pattern["features"]:
-            print(f"\n  Multi-Scale Analysis:")
+            print("\n  Multi-Scale Analysis:")
             print(f"    Level 0 (Raw):     {pattern['features']['level_0_mean']:.3f}s mean")
             if "level_1_mean" in pattern["features"]:
                 print(f"    Level 1 (2x):      {pattern['features']['level_1_mean']:.3f}s mean")
@@ -167,7 +167,7 @@ def demo_resonance_detection() -> None:
     for i in range(50):
         _ = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
 
-    print(f"  ✓ Created 50 packages")
+    print("  ✓ Created 50 packages")
 
     print("\n[2/2] Resonance Analysis:")
     for operation in ["dilithium_sign", "ed25519_sign"]:
@@ -179,10 +179,10 @@ def demo_resonance_detection() -> None:
             print(f"    Has resonance:      {'⚠️ YES' if resonance['has_resonance'] else '✓ NO'}")
 
             if resonance["has_resonance"]:
-                print(f"    → Periodic pattern detected! May indicate side-channel.")
+                print("    → Periodic pattern detected! May indicate side-channel.")
         else:
             print(f"\n  Operation: {operation}")
-            print(f"    Status: Insufficient data for FFT analysis")
+            print("    Status: Insufficient data for FFT analysis")
 
 
 def demo_security_report() -> None:
@@ -213,12 +213,12 @@ def demo_security_report() -> None:
 
     print(f"  Status: {report['status']}")
     print(f"  Total alerts: {report['total_alerts']}")
-    print(f"\n  Operations monitored:")
+    print("\n  Operations monitored:")
     for op, stats in report["timing_baseline"].items():
         print(f"    {op}: {stats['mean']:.3f}ms ± {stats['std']:.3f}ms")
 
     if report.get("recommendations"):
-        print(f"\n  Recommendations:")
+        print("\n  Recommendations:")
         for rec in report["recommendations"]:
             print(f"    • {rec}")
 

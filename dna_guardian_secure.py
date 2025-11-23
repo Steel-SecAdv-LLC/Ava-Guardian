@@ -65,7 +65,10 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+
+if TYPE_CHECKING:
+    from ava_guardian_monitor import AvaGuardianMonitor
 
 # Cryptographic dependencies
 try:

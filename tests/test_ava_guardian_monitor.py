@@ -39,14 +39,12 @@ AI-Co Omni-Architects:
 
 import ast
 import time
-from pathlib import Path
 
 import numpy as np
 import pytest
 
 from ava_guardian_monitor import (
     AvaGuardianMonitor,
-    PatternAnomaly,
     RecursionPatternMonitor,
     RefactoringAnalyzer,
     ResonanceTimingMonitor,
@@ -77,7 +75,7 @@ class TestResonanceTimingMonitor:
 
         # Record timings
         for i in range(50):
-            anomaly = monitor.record_timing("test_op", 10.0 + np.random.randn())
+            _ = monitor.record_timing("test_op", 10.0 + np.random.randn())
 
         # Baseline should exist
         assert "test_op" in monitor.baseline_stats
