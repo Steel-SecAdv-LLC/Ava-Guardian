@@ -39,11 +39,6 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         pip install cryptography
 
-    - name: Install optional quantum dependencies (allow failure)
-      continue-on-error: true
-      run: |
-        pip install liboqs-python || echo "liboqs-python not available, skipping"
-
     - name: Run demonstration
       run: |
         python dna_guardian_secure.py
