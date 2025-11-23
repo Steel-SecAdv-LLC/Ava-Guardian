@@ -24,9 +24,7 @@ def test_liboqs_backend():
         # Generate keypair
         public_key = sig.generate_keypair()
         private_key = sig.export_secret_key()
-        print(
-            f"  ✓ Keypair generated: pk={len(public_key)} bytes, sk={len(private_key)} bytes"
-        )
+        print(f"  ✓ Keypair generated: pk={len(public_key)} bytes, sk={len(private_key)} bytes")
 
         # Test signing
         message = b"Test message for Dilithium signature"
@@ -67,9 +65,7 @@ def test_pqcrypto_backend():
 
         # Generate keypair
         public_key, private_key = dilithium3.generate_keypair()
-        print(
-            f"  ✓ Keypair generated: pk={len(public_key)} bytes, sk={len(private_key)} bytes"
-        )
+        print(f"  ✓ Keypair generated: pk={len(public_key)} bytes, sk={len(private_key)} bytes")
 
         # Test signing
         message = b"Test message for Dilithium signature"

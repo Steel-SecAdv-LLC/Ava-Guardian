@@ -397,7 +397,9 @@ class BenchmarkSuite:
 
             for comp in self.comparisons:
                 time_str = (
-                    f"{comp.time_us:.2f}" if comp.time_us else f"~{1_000_000/comp.ops_per_second:.2f}" if comp.ops_per_second else "N/A"
+                    f"{comp.time_us:.2f}"
+                    if comp.time_us
+                    else f"~{1_000_000/comp.ops_per_second:.2f}" if comp.ops_per_second else "N/A"
                 )
                 report.append(
                     f"{comp.source:<20} {comp.operation:<25} {time_str:<15} {comp.notes or ''}"

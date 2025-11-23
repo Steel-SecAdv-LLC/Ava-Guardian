@@ -43,9 +43,7 @@ def generate_comparison_chart(results: List[dict], comparisons: List[dict]) -> s
     chart.append("")
 
     # Ed25519 Signing
-    ag_ed25519_sign = next(
-        (r for r in results if "Ed25519 (sign)" in r["operation"]), None
-    )
+    ag_ed25519_sign = next((r for r in results if "Ed25519 (sign)" in r["operation"]), None)
     supercop_ed25519_sign = next(
         (c for c in comparisons if c["operation"] == "Ed25519 (sign)"), None
     )
@@ -54,20 +52,14 @@ def generate_comparison_chart(results: List[dict], comparisons: List[dict]) -> s
         chart.append("Ed25519 Signing:")
         ag_time = ag_ed25519_sign["mean_time_us"]
         supercop_time = supercop_ed25519_sign.get("time_us", 60)
-        chart.append(
-            f"  AG♱:      {ag_time:>6.2f} μs  {'█' * int(ag_time / 10)}"
-        )
-        chart.append(
-            f"  SUPERCOP: {supercop_time:>6.2f} μs  {'█' * int(supercop_time / 10)}"
-        )
+        chart.append(f"  AG♱:      {ag_time:>6.2f} μs  {'█' * int(ag_time / 10)}")
+        chart.append(f"  SUPERCOP: {supercop_time:>6.2f} μs  {'█' * int(supercop_time / 10)}")
         ratio = ag_time / supercop_time
         chart.append(f"  Ratio: {ratio:.2f}x {'(faster)' if ratio < 1 else '(slower)'}")
         chart.append("")
 
     # Ed25519 Verification
-    ag_ed25519_verify = next(
-        (r for r in results if "Ed25519 (verify)" in r["operation"]), None
-    )
+    ag_ed25519_verify = next((r for r in results if "Ed25519 (verify)" in r["operation"]), None)
     supercop_ed25519_verify = next(
         (c for c in comparisons if c["operation"] == "Ed25519 (verify)"), None
     )
@@ -76,12 +68,8 @@ def generate_comparison_chart(results: List[dict], comparisons: List[dict]) -> s
         chart.append("Ed25519 Verification:")
         ag_time = ag_ed25519_verify["mean_time_us"]
         supercop_time = supercop_ed25519_verify.get("time_us", 160)
-        chart.append(
-            f"  AG♱:      {ag_time:>6.2f} μs  {'█' * int(ag_time / 10)}"
-        )
-        chart.append(
-            f"  SUPERCOP: {supercop_time:>6.2f} μs  {'█' * int(supercop_time / 10)}"
-        )
+        chart.append(f"  AG♱:      {ag_time:>6.2f} μs  {'█' * int(ag_time / 10)}")
+        chart.append(f"  SUPERCOP: {supercop_time:>6.2f} μs  {'█' * int(supercop_time / 10)}")
         ratio = ag_time / supercop_time
         chart.append(f"  Ratio: {ratio:.2f}x {'(faster)' if ratio < 1 else '(slower)'}")
         chart.append("")
@@ -95,9 +83,7 @@ def generate_comparison_chart(results: List[dict], comparisons: List[dict]) -> s
         ag_time = ag_sha3["mean_time_us"]
         supercop_ops = supercop_sha3.get("ops_per_second", 1_000_000)
         supercop_time = 1_000_000 / supercop_ops
-        chart.append(
-            f"  AG♱:      {ag_time:>6.2f} μs  {'█' * max(1, int(ag_time * 10))}"
-        )
+        chart.append(f"  AG♱:      {ag_time:>6.2f} μs  {'█' * max(1, int(ag_time * 10))}")
         chart.append(
             f"  SUPERCOP: {supercop_time:>6.2f} μs  {'█' * max(1, int(supercop_time * 10))}"
         )
@@ -196,7 +182,9 @@ def generate_size_comparison() -> str:
     chart.append("RSA-4096            512      ████████")
     chart.append("Dilithium2         2420      ██████████████████████████████████████")
     chart.append("Dilithium3         3293      ██████████████████████████████████████████████████")
-    chart.append("Dilithium5         4595      ████████████████████████████████████████████████████████████████")
+    chart.append(
+        "Dilithium5         4595      ████████████████████████████████████████████████████████████████"
+    )
     chart.append("")
     chart.append("AG♱ Complete:")
     chart.append("  Hash (SHA3-256)     32")
