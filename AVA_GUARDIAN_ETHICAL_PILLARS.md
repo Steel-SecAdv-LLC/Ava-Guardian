@@ -271,7 +271,7 @@ Coverage:
 **Definition:** Cryptographic operations serve protective, non-malicious purposes.
 
 **Cryptographic Mapping:**
-- Memorial codes honor individuals (ethical constraint)
+- DNA codes honor individuals (ethical constraint)
 - Humanitarian crisis monitoring (CIΨIS integration option)
 - Prevents weaponization through transparent audit trails
 
