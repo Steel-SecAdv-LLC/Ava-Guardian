@@ -57,7 +57,7 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip setuptools wheel
         pip install cryptography
 
         # Install liboqs-python from source to work with our custom liboqs build
@@ -162,7 +162,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip setuptools wheel
         pip install black flake8 isort mypy
         pip install cryptography
 
