@@ -1,0 +1,157 @@
+name: CI - Testing and Code Quality
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openssl
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install cryptography
+
+    - name: Run demonstration
+      run: |
+        python dna_guardian_secure.py
+
+    - name: Verify demonstration output
+      run: |
+        python -c "
+        import subprocess
+        import sys
+
+        result = subprocess.run(['python', 'dna_guardian_secure.py'],
+                              capture_output=True, text=True, timeout=60)
+
+        if result.returncode != 0:
+            print('ERROR: Demonstration failed')
+            print(result.stderr)
+            sys.exit(1)
+
+        output = result.stdout
+
+        # Verify critical outputs
+        checks = [
+            ('Ava Guardian', 'Title present'),
+            ('Generating key management system', 'Key generation'),
+            ('Creating DNA cryptographic package', 'Package creation'),
+            ('Signing package', 'Signing process'),
+            ('Verifying cryptographic package', 'Verification'),
+            ('ALL VERIFICATIONS PASSED', 'Success confirmation')
+        ]
+
+        failed = []
+        for check, desc in checks:
+            if check not in output:
+                failed.append(f'{desc}: \"{check}\" not found')
+
+        if failed:
+            print('ERROR: Output validation failed:')
+            for fail in failed:
+                print(f'  - {fail}')
+            sys.exit(1)
+
+        print('✓ All verification checks passed')
+        "
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black flake8 isort mypy
+        pip install cryptography
+
+    - name: Check code formatting with Black
+      run: |
+        black --check --diff .
+
+    - name: Lint with Flake8
+      run: |
+        flake8 . --count --show-source --statistics
+
+    - name: Check import order with isort
+      run: |
+        isort --check-only --diff .
+
+    - name: Type checking with MyPy
+      continue-on-error: true
+      run: |
+        mypy dna_guardian_secure.py --no-strict-optional --ignore-missing-imports
+
+  security-checks:
+    name: Security Checks
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+
+    - name: Check dependencies for vulnerabilities with Safety
+      continue-on-error: true
+      run: |
+        pip install cryptography
+        safety check --json || echo "Safety check completed with warnings"
+
+    - name: Security linting with Bandit
+      run: |
+        bandit -r . -ll -f json -o bandit-report.json || true
+        bandit -r . -ll || echo "Bandit completed with warnings"
+
+    - name: Upload Bandit report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: bandit-security-report
+        path: bandit-report.json

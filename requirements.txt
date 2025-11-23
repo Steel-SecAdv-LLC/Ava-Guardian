@@ -1,0 +1,9 @@
+# Production Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core cryptographic library (required)
+cryptography>=41.0.0
+
+# Quantum-resistant cryptography (optional but recommended for production)
+# Uncomment to enable quantum-resistant signatures:
+# liboqs-python>=0.8.0

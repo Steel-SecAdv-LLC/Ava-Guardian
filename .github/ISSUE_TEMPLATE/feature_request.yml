@@ -1,0 +1,192 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for Ava Guardian
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please provide detailed information about your proposal.
+
+        **Note:** Features that affect cryptographic security require extensive review, mathematical proofs,
+        and academic citations. Please be prepared for thorough technical discussion.
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: A clear and concise description of the feature you'd like to see
+      placeholder: Describe the feature you're requesting...
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation and Use Case
+      description: Why is this feature needed? What problem does it solve?
+      placeholder: Explain the use case and motivation...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this feature to be implemented?
+      placeholder: Describe your proposed solution...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What alternative solutions or approaches have you considered?
+      placeholder: Describe alternative approaches...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: Feature Category
+      description: What type of feature is this?
+      options:
+        - New Cryptographic Algorithm
+        - Enhanced Key Management
+        - Additional Signature Scheme
+        - Improved HSM Integration
+        - Performance Optimization
+        - Documentation Improvement
+        - API Enhancement
+        - Testing Infrastructure
+        - Developer Tools
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: cryptographic-impact
+    attributes:
+      label: Cryptographic Security Impact
+      description: Does this feature affect cryptographic security?
+      options:
+        - No cryptographic impact
+        - Adds new cryptographic primitive
+        - Modifies existing cryptographic operation
+        - Changes key management
+        - Affects multiple security layers
+        - Other security impact
+    validations:
+      required: true
+
+  - type: textarea
+    id: cryptographic-justification
+    attributes:
+      label: Cryptographic Justification
+      description: If this affects cryptography, provide academic references and security analysis
+      placeholder: |
+        Provide references to:
+        - NIST standards
+        - IETF RFCs
+        - Peer-reviewed academic papers
+        - Security proofs or analysis
+      render: markdown
+    validations:
+      required: false
+
+  - type: textarea
+    id: standards-compliance
+    attributes:
+      label: Standards Compliance
+      description: Which cryptographic standards does this feature relate to?
+      placeholder: |
+        e.g., NIST FIPS 205 (SPHINCS+), RFC 9180 (HPKE), etc.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: code-example
+    attributes:
+      label: Example Usage
+      description: Provide an example of how this feature would be used
+      placeholder: |
+        ```python
+        # Example of how the feature would work
+        from dna_guardian_secure import new_feature
+
+        result = new_feature(params)
+        ```
+      render: python
+    validations:
+      required: false
+
+  - type: textarea
+    id: security-analysis
+    attributes:
+      label: Security Analysis
+      description: What is the security impact and how does it maintain/improve the A+ security grade?
+      placeholder: |
+        Discuss:
+        - Classical security level
+        - Quantum security level
+        - Threat model considerations
+        - Defense-in-depth implications
+    validations:
+      required: false
+
+  - type: dropdown
+    id: breaking-changes
+    attributes:
+      label: Breaking Changes
+      description: Would this feature introduce breaking changes?
+      options:
+        - No breaking changes
+        - Minor breaking changes (with migration path)
+        - Major breaking changes required
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to your use case?
+      options:
+        - Critical (blocking production deployment)
+        - High (significant improvement)
+        - Medium (nice to have)
+        - Low (minor enhancement)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information, diagrams, or references
+      placeholder: Add any other context, links to research papers, or relevant details...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched existing issues and PRs to ensure this isn't a duplicate
+          required: true
+        - label: I have read the [Contributing Guidelines](https://github.com/Steel-SecAdv-LLC/Ava-Guardian/blob/main/CONTRIBUTING.md)
+          required: true
+        - label: I understand that cryptographic features require academic citations and security proofs
+          required: true
+        - label: I am willing to help implement or test this feature
+          required: false
+        - label: This feature maintains or improves the current A+ security grade
+          required: false
