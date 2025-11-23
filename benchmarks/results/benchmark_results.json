@@ -1,0 +1,147 @@
+{
+  "results": [
+    {
+      "operation": "SHA3-256 (DNA codes + helix params)",
+      "mean_time_us": 8.51351200009276,
+      "std_dev_us": 2.6071153976225463,
+      "ops_per_second": 117460.33834087559,
+      "iterations": 1000,
+      "size_bytes": null
+    },
+    {
+      "operation": "SHA3-256 (raw, 43 bytes)",
+      "mean_time_us": 0.9955940003578689,
+      "std_dev_us": 0.4241499169801242,
+      "ops_per_second": 1004425.498386438,
+      "iterations": 1000,
+      "size_bytes": null
+    },
+    {
+      "operation": "HMAC-SHA3-256 (authenticate)",
+      "mean_time_us": 3.9066930004878486,
+      "std_dev_us": 1.2955835297298868,
+      "ops_per_second": 255970.9708121741,
+      "iterations": 1000,
+      "size_bytes": null
+    },
+    {
+      "operation": "HMAC-SHA3-256 (verify)",
+      "mean_time_us": 3.7941649995332227,
+      "std_dev_us": 0.5836358572998805,
+      "ops_per_second": 263562.6020805698,
+      "iterations": 1000,
+      "size_bytes": null
+    },
+    {
+      "operation": "Ed25519 (keygen)",
+      "mean_time_us": 62.409900003217444,
+      "std_dev_us": 115.88801260258403,
+      "ops_per_second": 16023.09889854729,
+      "iterations": 100,
+      "size_bytes": null
+    },
+    {
+      "operation": "Ed25519 (sign)",
+      "mean_time_us": 73.00984099839525,
+      "std_dev_us": 9.22053997682992,
+      "ops_per_second": 13696.783698268566,
+      "iterations": 1000,
+      "size_bytes": 64
+    },
+    {
+      "operation": "Ed25519 (verify)",
+      "mean_time_us": 122.7525880004805,
+      "std_dev_us": 15.895242397503695,
+      "ops_per_second": 8146.467755091939,
+      "iterations": 1000,
+      "size_bytes": null
+    },
+    {
+      "operation": "AG\u2671 Package Creation (6 layers)",
+      "mean_time_us": 131.4941800012548,
+      "std_dev_us": 35.26787924731643,
+      "ops_per_second": 7604.899319425829,
+      "iterations": 100,
+      "size_bytes": null
+    },
+    {
+      "operation": "AG\u2671 Package Verification (6 layers)",
+      "mean_time_us": 142.52490999695056,
+      "std_dev_us": 6.814690480352442,
+      "ops_per_second": 7016.317358287726,
+      "iterations": 100,
+      "size_bytes": null
+    }
+  ],
+  "comparisons": [
+    {
+      "source": "SUPERCOP",
+      "operation": "Ed25519 (sign)",
+      "time_us": 60.0,
+      "ops_per_second": null,
+      "platform": "Intel Core i7",
+      "notes": "Typical fast implementation"
+    },
+    {
+      "source": "SUPERCOP",
+      "operation": "Ed25519 (verify)",
+      "time_us": 160.0,
+      "ops_per_second": null,
+      "platform": "Intel Core i7",
+      "notes": "Typical fast implementation"
+    },
+    {
+      "source": "SUPERCOP",
+      "operation": "SHA3-256",
+      "time_us": null,
+      "ops_per_second": 1000000,
+      "platform": "Intel Core i7",
+      "notes": "~1 \u03bcs per hash"
+    },
+    {
+      "source": "Open Quantum Safe",
+      "operation": "Dilithium3 (keygen)",
+      "time_us": 200.0,
+      "ops_per_second": null,
+      "platform": "x86_64",
+      "notes": "NIST Level 3"
+    },
+    {
+      "source": "Open Quantum Safe",
+      "operation": "Dilithium3 (sign)",
+      "time_us": 800.0,
+      "ops_per_second": null,
+      "platform": "x86_64",
+      "notes": "NIST Level 3"
+    },
+    {
+      "source": "Open Quantum Safe",
+      "operation": "Dilithium3 (verify)",
+      "time_us": 150.0,
+      "ops_per_second": null,
+      "platform": "x86_64",
+      "notes": "NIST Level 3"
+    },
+    {
+      "source": "libsodium",
+      "operation": "Ed25519 (sign)",
+      "time_us": null,
+      "ops_per_second": 16000,
+      "platform": "Various",
+      "notes": "NaCl crypto library"
+    },
+    {
+      "source": "libsodium",
+      "operation": "Ed25519 (verify)",
+      "time_us": null,
+      "ops_per_second": 62000,
+      "platform": "Various",
+      "notes": "NaCl crypto library"
+    }
+  ],
+  "config": {
+    "iterations": 1000,
+    "dilithium_backend": null,
+    "dilithium_available": false
+  }
+}

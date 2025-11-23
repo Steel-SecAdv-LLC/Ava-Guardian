@@ -1,0 +1,36 @@
+================================================================================
+Ava Guardian ♱ (AG♱) - Cryptographic Performance Benchmark
+================================================================================
+
+Configuration:
+  Iterations: 1000
+  Dilithium Backend: Not Available
+
+Operation                                     Time (μs)       Ops/Sec         Size
+--------------------------------------------------------------------------------
+SHA3-256 (DNA codes + helix params)               8.51±2.61       117,460          -
+SHA3-256 (raw, 43 bytes)                          1.00±0.42     1,004,425          -
+HMAC-SHA3-256 (authenticate)                      3.91±1.30       255,971          -
+HMAC-SHA3-256 (verify)                            3.79±0.58       263,563          -
+Ed25519 (keygen)                                 62.41±115.89        16,023          -
+Ed25519 (sign)                                   73.01±9.22        13,697       64 B
+Ed25519 (verify)                                122.75±15.90         8,146          -
+AG♱ Package Creation (6 layers)                 131.49±35.27         7,605          -
+AG♱ Package Verification (6 layers)             142.52±6.81         7,016          -
+
+================================================================================
+External Benchmark Comparisons
+================================================================================
+
+Source               Operation                 Time (μs)       Notes
+--------------------------------------------------------------------------------
+SUPERCOP             Ed25519 (sign)            60.00           Typical fast implementation
+SUPERCOP             Ed25519 (verify)          160.00          Typical fast implementation
+SUPERCOP             SHA3-256                  ~1.00           ~1 μs per hash
+Open Quantum Safe    Dilithium3 (keygen)       200.00          NIST Level 3
+Open Quantum Safe    Dilithium3 (sign)         800.00          NIST Level 3
+Open Quantum Safe    Dilithium3 (verify)       150.00          NIST Level 3
+libsodium            Ed25519 (sign)            ~62.50          NaCl crypto library
+libsodium            Ed25519 (verify)          ~16.13          NaCl crypto library
+
+================================================================================
