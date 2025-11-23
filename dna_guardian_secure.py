@@ -14,18 +14,19 @@
 # limitations under the License.
 
 """
-Ava Guardian ♱ (AG♱): SHA3-256 Security Hash
-==============================================
+Ava Guardian ♱ (AG♱): Ethical-Cryptographic SHA3-256 Security System
+=====================================================================
 
 Complete cryptographic protection system for helical mathematical DNA codes.
 
-Copyright (C) 2025 Steel Security Advisors LLC
-Project: Omni-DNA Helix SHA3-256
-Author/Inventor: Andrew E. A.
 Organization: Steel Security Advisors LLC
-Contact: steel.secadv.llc@outlook.com
+Author/Inventor: Andrew E. A.
+Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
+Date: 2025-11-22
+Version: 1.0.0
+Project: Omni-DNA Helix SHA3-256
 
-Special Recognition - AI-Co Omni-Architects:
+AI-Co Omni-Architects:
     Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
 
 Security Layers:

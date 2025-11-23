@@ -13,5 +13,16 @@
 # limitations under the License.
 
 """
-Test suite for Ava Guardian ♱ (AG♱) cryptographic protection system.
+Ava Guardian ♱ (AG♱): Test Suite Package
+=========================================
+
+Test suite for Ava Guardian cryptographic protection system.
+
+Organization: Steel Security Advisors LLC
+Author/Inventor: Andrew E. A.
+Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
+Version: 1.0.0
+
+AI-Co Omni-Architects:
+    Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
 """

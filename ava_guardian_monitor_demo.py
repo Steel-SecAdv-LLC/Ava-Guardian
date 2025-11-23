@@ -14,8 +14,8 @@
 # limitations under the License.
 
 """
-Ava Guardian 3R Monitoring Demo
-================================
+Ava Guardian ♱ (AG♱): 3R Monitoring Demonstration
+==================================================
 
 Demonstrates:
 1. Timing attack detection (ResonanceEngine)
@@ -23,8 +23,15 @@ Demonstrates:
 3. Security reporting
 4. Integration with existing crypto functions
 
-Copyright (C) 2025 Steel Security Advisors LLC
-License: Apache 2.0
+Organization: Steel Security Advisors LLC
+Author/Inventor: Andrew E. A.
+Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
+Date: 2025-11-23
+Version: 1.0.0
+Project: Ava Guardian 3R Runtime Monitoring
+
+AI-Co Omni-Architects:
+    Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
 """
 
 import time
