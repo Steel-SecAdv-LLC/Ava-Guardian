@@ -2,7 +2,7 @@
 
 ## Overview
 
-Ava Guardian ♱ (AG♱) is a production-grade quantum-resistant cryptographic protection system. Security is our highest priority. We take all security vulnerabilities seriously and appreciate responsible disclosure from the security research community.
+Ava Guardian ♱ (AG♱) is a production-grade quantum-resistant cryptographic protection system. Security is our highest priority. We take all vulnerabilities seriously and appreciate responsible disclosure from the security research community.
 
 ## Supported Versions
 
@@ -24,20 +24,18 @@ Ava Guardian implements defense-in-depth with six independent security layers:
 5. **HKDF Key Derivation** (RFC 5869, NIST SP 800-108)
 6. **RFC 3161 Trusted Timestamps**
 
-Current security grade: **A+ (96/100)**
-
 ## Reporting a Vulnerability
 
 ### Critical Security Issues
 
-If you discover a security vulnerability in Ava Guardian, please report it responsibly:
+If you discover a security vulnerability in AG♱, please report it responsibly:
 
 **DO NOT** open a public GitHub issue for security vulnerabilities.
 
 **Instead, please:**
 
-1. **Email:** steel.secadv.llc@outlook.com
-2. **Subject:** [SECURITY] Ava Guardian Vulnerability Report
+1. **Email:** steel.secadv.llc@outlook.com or stee.sa.llc@gmail.com
+2. **Subject:** [SECURITY] Ava Guardian ♱ (AG♱)  Vulnerability Report
 3. **Include:**
    - Detailed description of the vulnerability
    - Steps to reproduce the issue

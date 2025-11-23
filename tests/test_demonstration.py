@@ -13,10 +13,22 @@
 # limitations under the License.
 
 """
+Ava Guardian ♱ (AG♱): Demonstration Test Suite
+===============================================
+
 Test suite for validating Ava Guardian demonstration functionality.
 
 This test module validates that the demonstration function executes successfully
 and produces correct output, verifying all six cryptographic layers.
+
+Organization: Steel Security Advisors LLC
+Author/Inventor: Andrew E. A.
+Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
+Date: 2025-11-22
+Version: 1.0.0
+
+AI-Co Omni-Architects:
+    Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
 """
 
 import subprocess

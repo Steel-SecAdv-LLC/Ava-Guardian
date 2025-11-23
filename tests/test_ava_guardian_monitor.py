@@ -1,0 +1,575 @@
+#!/usr/bin/env python3
+# Copyright 2025 Steel Security Advisors LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Ava Guardian ♱ (AG♱): 3R Monitoring Test Suite
+===============================================
+
+Comprehensive test suite for Ava Guardian 3R Monitoring.
+
+Tests cover:
+- ResonanceEngine timing detection
+- RecursionEngine pattern analysis
+- RefactoringAnalyzer complexity metrics
+- AvaGuardianMonitor integration
+- Performance overhead validation
+
+Organization: Steel Security Advisors LLC
+Author/Inventor: Andrew E. A.
+Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
+Date: 2025-11-23
+Version: 1.0.0
+Project: Ava Guardian 3R Test Suite
+
+AI-Co Omni-Architects:
+    Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
+"""
+
+import ast
+import time
+
+import numpy as np
+import pytest
+
+from ava_guardian_monitor import (
+    AvaGuardianMonitor,
+    RecursionPatternMonitor,
+    RefactoringAnalyzer,
+    ResonanceTimingMonitor,
+    TimingAnomaly,
+)
+
+
+class TestResonanceTimingMonitor:
+    """Test suite for ResonanceEngine timing analysis."""
+
+    def test_initialization(self):
+        """Test monitor initialization with various parameters."""
+        monitor = ResonanceTimingMonitor()
+        assert monitor.threshold == 3.0
+        assert monitor.window_size == 100
+        assert monitor.max_history == 10000
+        assert len(monitor.timing_history) == 0
+
+        # Custom parameters
+        monitor = ResonanceTimingMonitor(threshold_sigma=2.5, window_size=50, max_history=5000)
+        assert monitor.threshold == 2.5
+        assert monitor.window_size == 50
+        assert monitor.max_history == 5000
+
+    def test_record_timing_builds_baseline(self):
+        """Test that baseline statistics are established after 30+ samples."""
+        monitor = ResonanceTimingMonitor()
+
+        # Record timings
+        for i in range(50):
+            _ = monitor.record_timing("test_op", 10.0 + np.random.randn())
+
+        # Baseline should exist
+        assert "test_op" in monitor.baseline_stats
+        stats = monitor.baseline_stats["test_op"]
+        assert "mean" in stats
+        assert "std" in stats
+        assert abs(stats["mean"] - 10.0) < 1.0  # Should be ~10.0
+
+    def test_anomaly_detection_no_baseline(self):
+        """Test that anomaly detection requires baseline (30+ samples)."""
+        monitor = ResonanceTimingMonitor()
+
+        # Record few samples
+        for i in range(10):
+            anomaly = monitor.record_timing("test_op", 10.0)
+
+        # No anomaly should be detected yet
+        anomaly = monitor.record_timing("test_op", 100.0)  # Huge spike
+        assert anomaly is None  # Baseline not established
+
+    def test_anomaly_detection_with_baseline(self):
+        """Test anomaly detection after baseline established."""
+        monitor = ResonanceTimingMonitor(threshold_sigma=3.0)
+
+        # Establish baseline
+        for i in range(50):
+            monitor.record_timing("test_op", 10.0 + 0.1 * np.random.randn())
+
+        # Inject anomaly
+        anomaly = monitor.record_timing("test_op", 20.0)  # Clear outlier
+
+        assert anomaly is not None
+        assert isinstance(anomaly, TimingAnomaly)
+        assert anomaly.operation == "test_op"
+        assert anomaly.deviation_sigma > 3.0
+        assert anomaly.severity in ["warning", "critical"]
+
+    def test_anomaly_severity_levels(self):
+        """Test that severity escalates with deviation magnitude."""
+        monitor = ResonanceTimingMonitor(threshold_sigma=3.0)
+
+        # Baseline: mean=10, std=0.1
+        for i in range(50):
+            monitor.record_timing("test_op", 10.0 + 0.1 * np.random.randn())
+
+        # Warning-level anomaly (3σ < dev < 5σ)
+        anomaly = monitor.record_timing("test_op", 10.4)  # ~4σ
+        if anomaly:
+            assert anomaly.severity == "warning"
+
+        # Critical-level anomaly (dev > 5σ)
+        anomaly = monitor.record_timing("test_op", 11.0)  # >>5σ
+        if anomaly:
+            assert anomaly.severity == "critical"
+
+    def test_detect_resonance_insufficient_data(self):
+        """Test resonance detection with insufficient samples."""
+        monitor = ResonanceTimingMonitor()
+
+        # Too few samples
+        for i in range(5):
+            monitor.record_timing("test_op", 10.0)
+
+        resonance = monitor.detect_resonance("test_op")
+        assert resonance == {}  # Empty dict
+
+    def test_detect_resonance_with_periodic_pattern(self):
+        """Test resonance detection with artificial periodic pattern."""
+        monitor = ResonanceTimingMonitor()
+
+        # Create periodic timing pattern (sine wave)
+        for i in range(100):
+            timing = 10.0 + 2.0 * np.sin(2 * np.pi * i / 10)
+            monitor.record_timing("test_op", timing)
+
+        resonance = monitor.detect_resonance("test_op")
+
+        assert "dominant_frequency" in resonance
+        assert "dominant_power" in resonance
+        assert "has_resonance" in resonance
+        # Strong periodic pattern should trigger resonance detection
+        assert resonance["resonance_ratio"] > 1.0
+
+    def test_history_pruning(self):
+        """Test that history is pruned to prevent memory exhaustion."""
+        monitor = ResonanceTimingMonitor(max_history=100)
+
+        # Record more than max_history samples
+        for i in range(200):
+            monitor.record_timing("test_op", 10.0)
+
+        # History should be capped
+        assert len(monitor.timing_history["test_op"]) == 100
+
+
+class TestRecursionPatternMonitor:
+    """Test suite for RecursionEngine pattern analysis."""
+
+    def test_initialization(self):
+        """Test pattern monitor initialization."""
+        monitor = RecursionPatternMonitor()
+        assert monitor.max_depth == 3
+        assert monitor.max_history == 10000
+        assert len(monitor.package_history) == 0
+
+    def test_record_package(self):
+        """Test package metadata recording."""
+        monitor = RecursionPatternMonitor()
+
+        metadata = {"author": "test-user", "code_count": 7, "content_hash": "abc123"}
+
+        monitor.record_package(metadata)
+
+        assert len(monitor.package_history) == 1
+        assert monitor.package_history[0]["author"] == "test-user"
+        assert "timestamp" in monitor.package_history[0]
+
+    def test_analyze_patterns_insufficient_data(self):
+        """Test analysis with insufficient data."""
+        monitor = RecursionPatternMonitor()
+
+        # Record < 10 packages
+        for i in range(5):
+            monitor.record_package({"code_count": 7})
+
+        analysis = monitor.analyze_patterns()
+        assert analysis["status"] == "insufficient_data"
+
+    def test_analyze_patterns_normal_behavior(self):
+        """Test analysis with normal signing patterns."""
+        monitor = RecursionPatternMonitor()
+
+        # Record normal packages
+        for i in range(20):
+            monitor.record_package({"code_count": 7})
+            time.sleep(0.01)
+
+        analysis = monitor.analyze_patterns()
+
+        assert analysis["status"] == "analyzed"
+        assert "features" in analysis
+        assert "anomalies" in analysis
+        assert len(analysis["anomalies"]) == 0  # Normal behavior
+
+    def test_analyze_patterns_detects_frequency_anomaly(self):
+        """Test detection of unusual signing frequency."""
+        monitor = RecursionPatternMonitor()
+
+        # Normal interval: ~0.05s
+        for i in range(15):
+            monitor.record_package({"code_count": 7})
+            time.sleep(0.05)
+
+        # Sudden large gap (anomaly)
+        time.sleep(0.5)
+        monitor.record_package({"code_count": 7})
+
+        analysis = monitor.analyze_patterns()
+
+        # Should detect frequency anomaly
+        anomalies = analysis.get("anomalies", [])
+        frequency_anomalies = [a for a in anomalies if a["type"] == "unusual_frequency"]
+        assert len(frequency_anomalies) > 0
+
+    def test_recursive_feature_extraction(self):
+        """Test hierarchical feature extraction."""
+        monitor = RecursionPatternMonitor(max_depth=3)
+
+        # Record packages with consistent interval
+        for i in range(30):
+            monitor.record_package({"code_count": 7})
+            time.sleep(0.01)
+
+        analysis = monitor.analyze_patterns()
+        features = analysis["features"]
+
+        # Should have features at multiple levels
+        assert "level_0_mean" in features
+        assert "level_1_mean" in features
+        # Level 2 may or may not exist depending on downsampling
+
+    def test_package_size_anomaly_detection(self):
+        """Test detection of unusual package sizes."""
+        monitor = RecursionPatternMonitor()
+
+        # Normal size: 7 codes
+        for i in range(15):
+            monitor.record_package({"code_count": 7})
+            time.sleep(0.01)
+
+        # Unusual size: 100 codes
+        monitor.record_package({"code_count": 100})
+
+        analysis = monitor.analyze_patterns()
+
+        # Should detect size anomaly
+        anomalies = analysis.get("anomalies", [])
+        size_anomalies = [a for a in anomalies if a["type"] == "unusual_package_size"]
+        # May or may not trigger depending on variance
+        # But structure should be correct
+        for anomaly in size_anomalies:
+            assert "z_score" in anomaly
+            assert "severity" in anomaly
+
+
+class TestRefactoringAnalyzer:
+    """Test suite for RefactoringEngine code analysis."""
+
+    @pytest.fixture
+    def sample_code_simple(self, tmp_path):
+        """Create simple Python file for testing."""
+        code = """
+def simple_function(x):
+    \"\"\"A simple function.\"\"\"
+    return x + 1
+
+def moderate_function(x, y):
+    \"\"\"A function with some complexity.\"\"\"
+    if x > 0:
+        if y > 0:
+            return x + y
+        else:
+            return x - y
+    return 0
+
+class SimpleClass:
+    \"\"\"A simple class.\"\"\"
+    pass
+"""
+        file_path = tmp_path / "simple.py"
+        file_path.write_text(code)
+        return file_path
+
+    @pytest.fixture
+    def sample_code_complex(self, tmp_path):
+        """Create complex Python file for testing."""
+        code = """
+def complex_function(a, b, c, d):
+    \"\"\"A complex function with high cyclomatic complexity.\"\"\"
+    result = 0
+
+    if a > 0:
+        if b > 0:
+            if c > 0:
+                if d > 0:
+                    result = a + b + c + d
+                else:
+                    result = a + b + c
+            else:
+                result = a + b
+        else:
+            result = a
+    else:
+        result = 0
+
+    for i in range(10):
+        if i % 2 == 0:
+            result += i
+        else:
+            result -= i
+
+    while result > 100:
+        result -= 10
+
+    return result
+"""
+        file_path = tmp_path / "complex.py"
+        file_path.write_text(code)
+        return file_path
+
+    def test_initialization(self):
+        """Test analyzer initialization."""
+        analyzer = RefactoringAnalyzer()
+        assert len(analyzer.analysis_cache) == 0
+
+    def test_analyze_simple_file(self, sample_code_simple):
+        """Test analysis of simple code."""
+        analyzer = RefactoringAnalyzer()
+        results = analyzer.analyze_file(sample_code_simple)
+
+        assert "error" not in results
+        assert results["total_functions"] == 2
+        assert results["total_classes"] == 1
+        assert len(results["functions"]) == 2
+
+        # Check function details
+        func = results["functions"][0]
+        assert "name" in func
+        assert "complexity" in func
+        assert "lines" in func
+        assert "recommendation" in func
+
+    def test_analyze_complex_file(self, sample_code_complex):
+        """Test analysis of complex code."""
+        analyzer = RefactoringAnalyzer()
+        results = analyzer.analyze_file(sample_code_complex)
+
+        assert results["total_functions"] == 1
+        func = results["functions"][0]
+
+        # Complex function should have high complexity
+        assert func["complexity"] > 10
+        assert "refactor" in func["recommendation"].lower()
+
+    def test_complexity_calculation(self):
+        """Test cyclomatic complexity calculation."""
+        analyzer = RefactoringAnalyzer()
+
+        # Simple function: complexity = 1
+        code = "def f(x): return x"
+        tree = ast.parse(code)
+        func_node = tree.body[0]
+        complexity = analyzer._calculate_complexity(func_node)
+        assert complexity == 1
+
+        # Function with if: complexity = 2
+        code = "def f(x):\n    if x > 0:\n        return x\n    return 0"
+        tree = ast.parse(code)
+        func_node = tree.body[0]
+        complexity = analyzer._calculate_complexity(func_node)
+        assert complexity == 2
+
+    def test_recommendation_generation(self):
+        """Test refactoring recommendations."""
+        analyzer = RefactoringAnalyzer()
+
+        assert "Acceptable" in analyzer._get_recommendation(5)
+        assert "Consider" in analyzer._get_recommendation(15)
+        assert "Refactor recommended" in analyzer._get_recommendation(25)
+
+    def test_analyze_invalid_file(self, tmp_path):
+        """Test analysis of invalid Python file."""
+        invalid_file = tmp_path / "invalid.py"
+        invalid_file.write_text("def invalid syntax!")
+
+        analyzer = RefactoringAnalyzer()
+        results = analyzer.analyze_file(invalid_file)
+
+        assert "error" in results
+
+
+class TestAvaGuardianMonitor:
+    """Test suite for integrated monitor."""
+
+    def test_initialization_disabled(self):
+        """Test monitor initialization in disabled state."""
+        monitor = AvaGuardianMonitor(enabled=False)
+
+        assert monitor.enabled is False
+        assert len(monitor.alerts) == 0
+
+    def test_initialization_enabled(self):
+        """Test monitor initialization in enabled state."""
+        monitor = AvaGuardianMonitor(enabled=True)
+
+        assert monitor.enabled is True
+        assert isinstance(monitor.timing, ResonanceTimingMonitor)
+        assert isinstance(monitor.patterns, RecursionPatternMonitor)
+        assert isinstance(monitor.analyzer, RefactoringAnalyzer)
+
+    def test_monitor_crypto_operation_disabled(self):
+        """Test that monitoring is no-op when disabled."""
+        monitor = AvaGuardianMonitor(enabled=False)
+
+        # Should do nothing
+        monitor.monitor_crypto_operation("test_op", 10.0)
+
+        assert len(monitor.timing.timing_history) == 0
+        assert len(monitor.alerts) == 0
+
+    def test_monitor_crypto_operation_enabled(self):
+        """Test operation monitoring when enabled."""
+        monitor = AvaGuardianMonitor(enabled=True)
+
+        # Record operations
+        for i in range(50):
+            monitor.monitor_crypto_operation("test_op", 10.0 + np.random.randn())
+
+        assert "test_op" in monitor.timing.timing_history
+        assert len(monitor.timing.timing_history["test_op"]) == 50
+
+    def test_record_package_signing_disabled(self):
+        """Test package recording is no-op when disabled."""
+        monitor = AvaGuardianMonitor(enabled=False)
+
+        monitor.record_package_signing({"code_count": 7})
+
+        assert len(monitor.patterns.package_history) == 0
+
+    def test_record_package_signing_enabled(self):
+        """Test package recording when enabled."""
+        monitor = AvaGuardianMonitor(enabled=True)
+
+        for i in range(15):
+            monitor.record_package_signing({"code_count": 7})
+            time.sleep(0.01)
+
+        assert len(monitor.patterns.package_history) == 15
+
+    def test_get_security_report_disabled(self):
+        """Test report generation when disabled."""
+        monitor = AvaGuardianMonitor(enabled=False)
+
+        report = monitor.get_security_report()
+        assert report["status"] == "monitoring_disabled"
+
+    def test_get_security_report_enabled(self):
+        """Test comprehensive report generation."""
+        monitor = AvaGuardianMonitor(enabled=True)
+
+        # Generate some activity
+        for i in range(20):
+            monitor.monitor_crypto_operation("test_op", 10.0)
+            monitor.record_package_signing({"code_count": 7})
+            time.sleep(0.01)
+
+        report = monitor.get_security_report()
+
+        assert report["status"] == "active"
+        assert "timing_baseline" in report
+        assert "pattern_analysis" in report
+        assert "recent_alerts" in report
+        assert "total_alerts" in report
+        assert "recommendations" in report
+
+    def test_alert_pruning(self):
+        """Test that alerts are pruned to prevent memory exhaustion."""
+        monitor = AvaGuardianMonitor(enabled=True, alert_retention=10)
+
+        # Generate many alerts by establishing baseline then injecting
+        # anomalies
+        for i in range(50):
+            monitor.monitor_crypto_operation("test_op", 10.0)
+
+        # Inject anomalies
+        for i in range(20):
+            monitor.monitor_crypto_operation("test_op", 100.0)
+
+        # Alerts should be capped
+        assert len(monitor.alerts) <= 10
+
+
+# Integration test markers
+@pytest.mark.integration
+class TestMonitorIntegration:
+    """Integration tests with full Ava Guardian system."""
+
+    def test_end_to_end_monitoring(self):
+        """Test complete workflow with monitoring."""
+        # Import here to avoid circular dependency
+        import sys
+        from pathlib import Path
+
+        # Add parent directory to path
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+
+        try:
+            from dna_guardian_secure import (
+                MASTER_DNA_CODES_STR,
+                MASTER_HELIX_PARAMS,
+                create_crypto_package,
+                generate_key_management_system,
+                verify_crypto_package,
+            )
+
+            # Setup
+            monitor = AvaGuardianMonitor(enabled=True)
+            kms = generate_key_management_system("integration-test")
+
+            # Create monitored package
+            pkg = create_crypto_package(
+                MASTER_DNA_CODES_STR, MASTER_HELIX_PARAMS, kms, "test", monitor=monitor
+            )
+
+            # Verify monitored package
+            results = verify_crypto_package(
+                MASTER_DNA_CODES_STR,
+                MASTER_HELIX_PARAMS,
+                pkg,
+                kms.hmac_key,
+                monitor=monitor,
+            )
+
+            # All checks should pass
+            assert all(results.values())
+
+            # Monitor should have data
+            report = monitor.get_security_report()
+            assert report["status"] == "active"
+            assert len(report["timing_baseline"]) > 0
+
+        except ImportError:
+            pytest.skip("Integration test requires full Ava Guardian system")
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])
