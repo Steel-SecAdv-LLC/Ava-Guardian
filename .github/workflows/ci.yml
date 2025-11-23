@@ -32,7 +32,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y openssl cmake build-essential ninja-build pkg-config libssl-dev
+        sudo apt-get install -y openssl cmake build-essential ninja-build pkg-config libssl-dev python3-dev libffi-dev
 
     - name: Build and install liboqs
       run: |
@@ -60,12 +60,18 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         pip install cryptography
 
+        # Install build dependencies for liboqs-python
+        pip install cffi
+
         # Install liboqs-python from source to work with our custom liboqs build
         git clone --depth 1 https://github.com/open-quantum-safe/liboqs-python.git
         cd liboqs-python
-        pip install .
+        pip install -v .
         cd ..
         rm -rf liboqs-python
+
+        # Verify installation
+        python -c "import oqs; print('liboqs-python version:', oqs.oqs_version())"
       env:
         PKG_CONFIG_PATH: /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
         LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
@@ -143,7 +149,7 @@ jobs:
     - name: Install system dependencies for liboqs
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake build-essential ninja-build pkg-config libssl-dev
+        sudo apt-get install -y cmake build-essential ninja-build pkg-config libssl-dev python3-dev libffi-dev
 
     - name: Build and install liboqs
       run: |
@@ -166,12 +172,18 @@ jobs:
         pip install black flake8 isort mypy
         pip install cryptography
 
+        # Install build dependencies for liboqs-python
+        pip install cffi
+
         # Install liboqs-python from source to work with our custom liboqs build
         git clone --depth 1 https://github.com/open-quantum-safe/liboqs-python.git
         cd liboqs-python
-        pip install .
+        pip install -v .
         cd ..
         rm -rf liboqs-python
+
+        # Verify installation
+        python -c "import oqs; print('liboqs-python version:', oqs.oqs_version())"
       env:
         PKG_CONFIG_PATH: /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
         LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
