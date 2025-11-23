@@ -1443,7 +1443,7 @@ def main():
         print(f"     Helix: radius={r}, pitch={p}")
 
     # Create cryptographic package
-    print("\n[3/5] Creating cryptographic package...")
+    print("\n[3/5] Creating DNA cryptographic package...")
     crypto_pkg = create_crypto_package(
         MASTER_DNA_CODES,
         MASTER_HELIX_PARAMS,
@@ -1453,6 +1453,7 @@ def main():
     )
     print(f"  ✓ Content hash: {crypto_pkg.content_hash[:32]}...")
     print(f"  ✓ HMAC tag: {crypto_pkg.hmac_tag[:32]}...")
+    print("  ✓ Signing package...")
     print(f"  ✓ Ed25519 signature: {crypto_pkg.ed25519_signature[:32]}...")
     print(f"  ✓ Dilithium signature: {crypto_pkg.dilithium_signature[:32]}...")
     print(f"  ✓ Timestamp: {crypto_pkg.timestamp}")
