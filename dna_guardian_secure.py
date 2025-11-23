@@ -86,14 +86,17 @@ try:
 
     DILITHIUM_AVAILABLE = True
     DILITHIUM_BACKEND = "liboqs"
-except ImportError:
+except (ImportError, RuntimeError, OSError):
+    # ImportError: package not installed
+    # RuntimeError: package installed but shared library missing
+    # OSError: library loading issues
     try:
         # Fall back to pqcrypto
         from pqcrypto.sign import dilithium3
 
         DILITHIUM_AVAILABLE = True
         DILITHIUM_BACKEND = "pqcrypto"
-    except ImportError:
+    except (ImportError, RuntimeError, OSError):
         DILITHIUM_AVAILABLE = False
         DILITHIUM_BACKEND = None
         print("WARNING: Dilithium not available - install liboqs-python or pqcrypto")
