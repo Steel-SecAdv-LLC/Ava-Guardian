@@ -66,9 +66,7 @@ def demo_timing_monitoring() -> None:
     test_params = MASTER_HELIX_PARAMS[:3]
 
     for i in range(25):
-        pkg = create_crypto_package(
-            test_codes, test_params, kms, "demo", monitor=monitor
-        )
+        pkg = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
         if (i + 1) % 5 == 0:
             print(f"  ✓ {i + 1}/25 packages created")
         time.sleep(0.01)
@@ -125,9 +123,7 @@ def demo_pattern_analysis() -> None:
     test_codes = "\n".join(MASTER_DNA_CODES_STR.split("\n")[:2])
     test_params = MASTER_HELIX_PARAMS[:2]
     for i in range(5):
-        pkg = create_crypto_package(
-            test_codes, test_params, kms, "demo", monitor=monitor
-        )
+        pkg = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
     print("  ⚠️  Burst of 5 packages created instantly")
 
     print("\n[3/3] Pattern Analysis:")
@@ -141,17 +137,11 @@ def demo_pattern_analysis() -> None:
         # Show multi-scale features
         if "level_0_mean" in pattern["features"]:
             print(f"\n  Multi-Scale Analysis:")
-            print(
-                f"    Level 0 (Raw):     {pattern['features']['level_0_mean']:.3f}s mean"
-            )
+            print(f"    Level 0 (Raw):     {pattern['features']['level_0_mean']:.3f}s mean")
             if "level_1_mean" in pattern["features"]:
-                print(
-                    f"    Level 1 (2x):      {pattern['features']['level_1_mean']:.3f}s mean"
-                )
+                print(f"    Level 1 (2x):      {pattern['features']['level_1_mean']:.3f}s mean")
             if "level_2_mean" in pattern["features"]:
-                print(
-                    f"    Level 2 (4x):      {pattern['features']['level_2_mean']:.3f}s mean"
-                )
+                print(f"    Level 2 (4x):      {pattern['features']['level_2_mean']:.3f}s mean")
 
         if pattern["anomalies"]:
             print(f"\n  ⚠️  {len(pattern['anomalies'])} anomaly(ies) detected:")
@@ -175,9 +165,7 @@ def demo_resonance_detection() -> None:
     test_params = MASTER_HELIX_PARAMS[:3]
 
     for i in range(50):
-        pkg = create_crypto_package(
-            test_codes, test_params, kms, "demo", monitor=monitor
-        )
+        pkg = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
 
     print(f"  ✓ Created 50 packages")
 
@@ -188,14 +176,10 @@ def demo_resonance_detection() -> None:
             print(f"\n  Operation: {operation}")
             print(f"    Dominant frequency: {resonance['dominant_frequency']:.4f} Hz")
             print(f"    Resonance ratio:    {resonance['resonance_ratio']:.2f}")
-            print(
-                f"    Has resonance:      {'⚠️ YES' if resonance['has_resonance'] else '✓ NO'}"
-            )
+            print(f"    Has resonance:      {'⚠️ YES' if resonance['has_resonance'] else '✓ NO'}")
 
             if resonance["has_resonance"]:
-                print(
-                    f"    → Periodic pattern detected! May indicate side-channel."
-                )
+                print(f"    → Periodic pattern detected! May indicate side-channel.")
         else:
             print(f"\n  Operation: {operation}")
             print(f"    Status: Insufficient data for FFT analysis")
