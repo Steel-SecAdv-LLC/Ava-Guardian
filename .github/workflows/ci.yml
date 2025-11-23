@@ -32,7 +32,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y openssl cmake build-essential ninja-build
+        sudo apt-get install -y openssl cmake build-essential ninja-build pkg-config libssl-dev
 
     - name: Build and install liboqs
       run: |
@@ -51,28 +51,43 @@ jobs:
 
         cd ../..
         rm -rf liboqs
+      env:
+        PKG_CONFIG_PATH: /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+        LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
 
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install cryptography liboqs-python
+        python -m pip install --upgrade pip
+        pip install cryptography
+        pip install liboqs-python
+      env:
+        PKG_CONFIG_PATH: /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+        LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
 
     - name: Test Dilithium backend
       run: |
         python tests/test_dilithium_backend.py
+      env:
+        LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
 
     - name: Run demonstration
       run: |
         python dna_guardian_secure.py
+      env:
+        LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
 
     - name: Verify demonstration output
       run: |
         python -c "
         import subprocess
         import sys
+        import os
+
+        env = os.environ.copy()
+        env['LD_LIBRARY_PATH'] = '/usr/local/lib:' + env.get('LD_LIBRARY_PATH', '')
 
         result = subprocess.run(['python', 'dna_guardian_secure.py'],
-                              capture_output=True, text=True, timeout=60)
+                              capture_output=True, text=True, timeout=60, env=env)
 
         if result.returncode != 0:
             print('ERROR: Demonstration failed')
@@ -122,7 +137,7 @@ jobs:
     - name: Install system dependencies for liboqs
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake build-essential ninja-build
+        sudo apt-get install -y cmake build-essential ninja-build pkg-config libssl-dev
 
     - name: Build and install liboqs
       run: |
@@ -135,12 +150,19 @@ jobs:
         sudo ldconfig
         cd ../..
         rm -rf liboqs
+      env:
+        PKG_CONFIG_PATH: /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+        LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install black flake8 isort mypy
-        pip install cryptography liboqs-python
+        pip install cryptography
+        pip install liboqs-python
+      env:
+        PKG_CONFIG_PATH: /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+        LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
 
     - name: Check code formatting with Black
       run: |
