@@ -66,9 +66,7 @@ class TestResonanceTimingMonitor:
         assert len(monitor.timing_history) == 0
 
         # Custom parameters
-        monitor = ResonanceTimingMonitor(
-            threshold_sigma=2.5, window_size=50, max_history=5000
-        )
+        monitor = ResonanceTimingMonitor(threshold_sigma=2.5, window_size=50, max_history=5000)
         assert monitor.threshold == 2.5
         assert monitor.window_size == 50
         assert monitor.max_history == 5000

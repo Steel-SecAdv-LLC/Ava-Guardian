@@ -136,9 +136,7 @@ class ResonanceTimingMonitor:
         self.timing_history: Dict[str, List[float]] = {}
         self.baseline_stats: Dict[str, Dict[str, float]] = {}
 
-    def record_timing(
-        self, operation: str, duration_ms: float
-    ) -> Optional[TimingAnomaly]:
+    def record_timing(self, operation: str, duration_ms: float) -> Optional[TimingAnomaly]:
         """
         Record operation timing and detect anomalies.
 
@@ -164,9 +162,7 @@ class ResonanceTimingMonitor:
             return None
 
         # Update baseline statistics
-        timings = np.array(
-            self.timing_history[operation][-self.window_size :]
-        )
+        timings = np.array(self.timing_history[operation][-self.window_size :])
         mean = np.mean(timings)
         std = np.std(timings)
 
@@ -213,9 +209,7 @@ class ResonanceTimingMonitor:
         if operation not in self.timing_history:
             return {}
 
-        timings = np.array(
-            self.timing_history[operation][-self.window_size :]
-        )
+        timings = np.array(self.timing_history[operation][-self.window_size :])
 
         if len(timings) < 8:
             return {}
@@ -237,18 +231,14 @@ class ResonanceTimingMonitor:
             "dominant_frequency": float(dominant_freq),
             "dominant_power": float(dominant_power),
             "mean_power": float(mean_power),
-            "resonance_ratio": (
-                float(dominant_power / mean_power) if mean_power > 0 else 0
-            ),
+            "resonance_ratio": (float(dominant_power / mean_power) if mean_power > 0 else 0),
             "has_resonance": dominant_power > 3.0 * mean_power,
         }
 
     def _prune_history(self, operation: str) -> None:
         """Limit memory usage by pruning old timing data."""
         if len(self.timing_history[operation]) > self.max_history:
-            self.timing_history[operation] = self.timing_history[operation][
-                -self.max_history :
-            ]
+            self.timing_history[operation] = self.timing_history[operation][-self.max_history :]
 
 
 class RecursionPatternMonitor:
@@ -261,9 +251,7 @@ class RecursionPatternMonitor:
     short-term spikes and long-term drift in signing behavior.
     """
 
-    def __init__(
-        self, max_depth: int = 3, max_history: int = 10000
-    ) -> None:
+    def __init__(self, max_depth: int = 3, max_history: int = 10000) -> None:
         """
         Initialize pattern monitor.
 
@@ -323,10 +311,7 @@ class RecursionPatternMonitor:
         if "level_0_mean" in features and "level_0_std" in features:
             recent_interval = intervals[-1] if len(intervals) > 0 else 0
             if features["level_0_std"] > 0:
-                z_score = (
-                    abs(recent_interval - features["level_0_mean"])
-                    / features["level_0_std"]
-                )
+                z_score = abs(recent_interval - features["level_0_mean"]) / features["level_0_std"]
 
                 if z_score > 3.0:
                     anomalies.append(
@@ -481,9 +466,7 @@ class RefactoringAnalyzer:
                         "name": node.name,
                         "complexity": complexity,
                         "lines": (
-                            node.end_lineno - node.lineno
-                            if hasattr(node, "end_lineno")
-                            else 0
+                            node.end_lineno - node.lineno if hasattr(node, "end_lineno") else 0
                         ),
                         "recommendation": self._get_recommendation(complexity),
                     }
@@ -497,9 +480,7 @@ class RefactoringAnalyzer:
                 metrics["complexity_summary"] = {
                     "mean": float(np.mean(complexity_values)),
                     "max": int(np.max(complexity_values)),
-                    "high_complexity_functions": sum(
-                        1 for c in complexity_values if c > 10
-                    ),
+                    "high_complexity_functions": sum(1 for c in complexity_values if c > 10),
                 }
 
             return metrics
@@ -620,9 +601,7 @@ class AvaGuardianMonitor:
 
         anomaly = self.timing.record_timing(operation, duration_ms)
         if anomaly:
-            self.alerts.append(
-                {"type": "timing", "anomaly": anomaly, "timestamp": time.time()}
-            )
+            self.alerts.append({"type": "timing", "anomaly": anomaly, "timestamp": time.time()})
             self._prune_alerts()
 
     def record_package_signing(self, metadata: Dict) -> None:
@@ -681,9 +660,7 @@ class AvaGuardianMonitor:
         all_complexities = []
         for r in results:
             if "functions" in r["analysis"]:
-                all_complexities.extend(
-                    [f["complexity"] for f in r["analysis"]["functions"]]
-                )
+                all_complexities.extend([f["complexity"] for f in r["analysis"]["functions"]])
 
         aggregate = {}
         if all_complexities:
@@ -745,8 +722,7 @@ class AvaGuardianMonitor:
             anomalies = report["pattern_analysis"].get("anomalies", [])
             if any(a["severity"] == "critical" for a in anomalies):
                 report["recommendations"].append(
-                    "Critical pattern anomalies detected. "
-                    "Immediate security review recommended."
+                    "Critical pattern anomalies detected. " "Immediate security review recommended."
                 )
 
         return report
@@ -760,9 +736,7 @@ class AvaGuardianMonitor:
 # Module-level convenience functions
 
 
-def create_monitor(
-    enabled: bool = False, alert_retention: int = 1000
-) -> AvaGuardianMonitor:
+def create_monitor(enabled: bool = False, alert_retention: int = 1000) -> AvaGuardianMonitor:
     """
     Factory function for creating monitor instances.
 
