@@ -46,7 +46,7 @@ Complete performance analysis of Ava Guardian cryptographic system with 3R monit
 | ML-DSA-65 Verify | ~0.07 | ~15k | **Faster than Ed25519!** |
 
 **Key Insights**:
-- Quantum signatures 2x slower for signing but **faster for verification** 🚀
+- Quantum signatures 2x slower for signing but **faster for verification**
 - SHA3-256 delivers >1M ops/sec
 - Signature operations are the bottleneck (expected for PKC)
 

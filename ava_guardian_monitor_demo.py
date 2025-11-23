@@ -254,7 +254,7 @@ def main():
 
     # Final summary
     print("\n" + "=" * 70)
-    print("  ✅ 3R MONITORING DEMO COMPLETE")
+    print("  3R MONITORING DEMO COMPLETE")
     print("=" * 70)
     print("\n  Key Takeaways:")
     print("    • ResonanceEngine detects timing anomalies via FFT analysis")
