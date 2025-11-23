@@ -24,10 +24,10 @@ Author/Inventor: Andrew E. A.
 Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
 Date: 2025-11-22
 Version: 1.0.0
-Project: Omni-DNA Helix SHA3-256
+Project: Post-quantum cryptographic security system
 
-AI-Co Omni-Architects:
-    Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
+AI-Co Architects:
+    Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 
 Security Layers:
 ----------------
@@ -918,7 +918,7 @@ def get_rfc3161_timestamp(data: bytes, tsa_url: str = None) -> Optional[bytes]:
 # 12 OMNI-DNA ETHICAL PILLARS INTEGRATION
 # ============================================================================
 
-# 12 Omni-DNA Ethical Pillars as balanced vector (Σw = 12.0)
+# 12 Ethical Pillars as balanced vector (Σw = 12.0)
 ETHICAL_VECTOR = {
     # Triad 1: Knowledge Domain (Verification Layer)
     "omniscient": 1.0,  # Complete verification
@@ -1140,24 +1140,24 @@ MASTER_DNA_CODES = (
 
 # Helical parameters (radius, pitch) for each DNA code
 MASTER_HELIX_PARAMS = [
-    (20.0, 0.7),  # 👁20A07∞ - Omni-Directional System
-    (15.0, 1.1),  # Ϙ15A11ϵ - Omni-Percipient Future
-    (7.0, 0.9),  # Φ07A09ϖ - Omni-Indivisible Guardian
-    (19.0, 1.2),  # Σ19L12ϵ - Omni-Benevolent Stone
-    (20.0, 1.1),  # Ω20V11ϖ - Omni-Scient Curiosity
-    (25.0, 0.1),  # Θ25M01ϵ - Omni-Universal Discipline
-    (19.0, 1.1),  # Γ19L11ϖ - Omni-Potent Lifeforce
+    (20.0, 0.7),  # 👁20A07∞ - Directional System
+    (15.0, 1.1),  # Ϙ15A11ϵ - Percipient Future
+    (7.0, 0.9),  # Φ07A09ϖ - Indivisible Guardian
+    (19.0, 1.2),  # Σ19L12ϵ - Benevolent Stone
+    (20.0, 1.1),  # Ω20V11ϖ - Scient Curiosity
+    (25.0, 0.1),  # Θ25M01ϵ - Universal Discipline
+    (19.0, 1.1),  # Γ19L11ϖ - Potent Lifeforce
 ]
 
 # Human-readable names for each DNA code
 DNA_CODE_NAMES = [
-    "Omni-Directional System",
-    "Omni-Percipient Future",
-    "Omni-Indivisible Guardian",
-    "Omni-Benevolent Stone",
-    "Omni-Scient Curiosity",
-    "Omni-Universal Discipline",
-    "Omni-Potent Lifeforce",
+    "Directional System",
+    "Percipient Future",
+    "Indivisible Guardian",
+    "Benevolent Stone",
+    "Scient Curiosity",
+    "Universal Discipline",
+    "Potent Lifeforce",
 ]
 
 # Individual DNA code strings (for reference)
@@ -1246,7 +1246,7 @@ class KeyManagementSystem:
     creation_date: str  # ISO 8601 timestamp
     rotation_schedule: str  # e.g., "quarterly"
     version: str  # KMS version
-    ethical_vector: Dict[str, float]  # 12 Omni-DNA Ethical Pillars
+    ethical_vector: Dict[str, float]  # 12 Ethical Pillars
 
 
 def generate_key_management_system(
@@ -1267,7 +1267,7 @@ def generate_key_management_system(
 
     Ethical Integration:
     --------------------
-    The 12 Omni-DNA Ethical Pillars are integrated into key derivation via:
+    The 12 Ethical Pillars are integrated into key derivation via:
     1. Enhanced HKDF context includes 128-bit ethical signature
     2. Keys are cryptographically bound to ethical constraints
     3. Ethical vector is stored with KMS for verification
@@ -1411,7 +1411,7 @@ class CryptoPackage:
     ed25519_pubkey: str  # Ed25519 public key hex
     dilithium_pubkey: str  # Dilithium public key hex
     version: str  # Package version
-    ethical_vector: Dict[str, float]  # 12 Omni-DNA Ethical Pillars
+    ethical_vector: Dict[str, float]  # 12 Ethical Pillars
     ethical_hash: str  # SHA3-256 hash of ethical vector (hex)
 
 
@@ -1622,8 +1622,8 @@ def main():
     print("=" * 70)
     print("\nCopyright (C) 2025 Steel Security Advisors LLC")
     print("Author/Inventor: Andrew E. A.")
-    print("\nAI-Co Omni-Architects:")
-    print("  Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡")
+    print("\nAI-Co Architects:")
+    print("  Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡")
     print("\n" + "=" * 70)
 
     # Generate key management system
@@ -1635,7 +1635,7 @@ def main():
     print(f"  ✓ Dilithium keypair: {len(kms.dilithium_keypair.public_key)} bytes")
 
     # Display DNA codes
-    print("\n[2/5] Master Omni-DNA Helix Codes:")
+    print("\n[2/5] Master DNA Helix Codes:")
     for i, (code, name) in enumerate(zip(DNA_CODES_INDIVIDUAL, DNA_CODE_NAMES)):
         r, p = MASTER_HELIX_PARAMS[i]
         print(f"  {i + 1}. {code}")
@@ -1682,7 +1682,7 @@ def main():
     print("\n" + "=" * 70)
     if all_valid:
         print("✓ ALL VERIFICATIONS PASSED")
-        print("\nThe Omni-DNA Helix codes are cryptographically protected.")
+        print("\nThe DNA Helix codes are cryptographically protected.")
         print("All integrity checks, authentication, and signatures verified.")
     else:
         print("✗ VERIFICATION FAILED")

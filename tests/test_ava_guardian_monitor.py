@@ -33,8 +33,8 @@ Date: 2025-11-23
 Version: 1.0.0
 Project: Ava Guardian 3R Test Suite
 
-AI-Co Omni-Architects:
-    Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
+AI-Co Architects:
+    Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 """
 
 import ast
