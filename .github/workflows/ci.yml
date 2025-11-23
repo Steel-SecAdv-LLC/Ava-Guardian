@@ -61,20 +61,34 @@ jobs:
         pip install cryptography
 
         # Install build dependencies for liboqs-python
-        pip install cffi
+        pip install cffi pytest
 
-        # Install liboqs-python from source to work with our custom liboqs build
+        # Verify liboqs installation before building liboqs-python
+        echo "Checking liboqs installation..."
+        pkg-config --exists liboqs && echo "✓ liboqs found via pkg-config" || echo "✗ liboqs not found"
+        pkg-config --modversion liboqs || true
+        ls -la /usr/local/lib/liboqs* || echo "No liboqs libraries found"
+        ls -la /usr/local/include/oqs || echo "No oqs headers found"
+
+        # Install liboqs-python from source with proper environment
+        echo "Installing liboqs-python..."
         git clone --depth 1 https://github.com/open-quantum-safe/liboqs-python.git
         cd liboqs-python
+
+        # Build and install with verbose output
+        python setup.py build_ext --inplace
         pip install -v .
+
         cd ..
         rm -rf liboqs-python
 
         # Verify installation
-        python -c "import oqs; print('liboqs-python version:', oqs.oqs_version())"
+        echo "Verifying liboqs-python installation..."
+        python -c "import sys; import oqs; print('✓ liboqs-python imported successfully'); print('  Version:', oqs.oqs_version()); print('  Python:', sys.version)"
       env:
         PKG_CONFIG_PATH: /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
         LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
+        LIBOQS_INSTALL_PATH: /usr/local
 
     - name: Test Dilithium backend
       run: |
@@ -173,20 +187,32 @@ jobs:
         pip install cryptography
 
         # Install build dependencies for liboqs-python
-        pip install cffi
+        pip install cffi pytest
 
-        # Install liboqs-python from source to work with our custom liboqs build
+        # Verify liboqs installation before building liboqs-python
+        echo "Checking liboqs installation..."
+        pkg-config --exists liboqs && echo "✓ liboqs found via pkg-config" || echo "✗ liboqs not found"
+        pkg-config --modversion liboqs || true
+
+        # Install liboqs-python from source with proper environment
+        echo "Installing liboqs-python..."
         git clone --depth 1 https://github.com/open-quantum-safe/liboqs-python.git
         cd liboqs-python
+
+        # Build and install with verbose output
+        python setup.py build_ext --inplace
         pip install -v .
+
         cd ..
         rm -rf liboqs-python
 
         # Verify installation
-        python -c "import oqs; print('liboqs-python version:', oqs.oqs_version())"
+        echo "Verifying liboqs-python installation..."
+        python -c "import sys; import oqs; print('✓ liboqs-python imported successfully'); print('  Version:', oqs.oqs_version()); print('  Python:', sys.version)"
       env:
         PKG_CONFIG_PATH: /usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
         LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
+        LIBOQS_INSTALL_PATH: /usr/local
 
     - name: Check code formatting with Black
       run: |
