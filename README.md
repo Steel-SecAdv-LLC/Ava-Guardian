@@ -148,7 +148,7 @@ Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 
 ## ⚡ Quick Start
 
-<details open>
+<details>
 <summary><strong>📦 Installation (Click to expand)</strong></summary>
 
 ### Standard Installation
@@ -203,7 +203,7 @@ python setup.py install
 
 </details>
 
-<details open>
+<details>
 <summary><strong>🚀 Basic Usage (Click to expand)</strong></summary>
 
 ### Simple Example
@@ -249,7 +249,7 @@ print(f"Anomalies detected: {report['total_alerts']}")
 
 </details>
 
-<details open>
+<details>
 <summary><strong>🐳 Docker Quick Start (Click to expand)</strong></summary>
 
 ### Ubuntu Image (Production)
