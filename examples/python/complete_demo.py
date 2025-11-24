@@ -23,32 +23,22 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src" / "python"))
 
-from crypto_api import (
-    AvaGuardianCrypto,
-    AlgorithmType,
-    quick_sign,
-    quick_verify,
-    quick_kem
-)
-from key_management import (
-    HDKeyDerivation,
-    KeyRotationManager,
-    SecureKeyStorage
-)
+from crypto_api import AvaGuardianCrypto, AlgorithmType, quick_sign, quick_verify, quick_kem
+from key_management import HDKeyDerivation, KeyRotationManager, SecureKeyStorage
 from double_helix_engine import AvaEquationEngine
 
 
 def demo_crypto_api():
     """Demonstrate algorithm-agnostic crypto API"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("1. ALGORITHM-AGNOSTIC CRYPTOGRAPHIC API")
-    print("="*70)
+    print("=" * 70)
 
     # Test different algorithms
     algorithms = [
         (AlgorithmType.ED25519, "Ed25519 (Classical)"),
         (AlgorithmType.ML_DSA_65, "ML-DSA-65 (Post-Quantum)"),
-        (AlgorithmType.HYBRID_SIG, "Hybrid (Ed25519 + ML-DSA-65)")
+        (AlgorithmType.HYBRID_SIG, "Hybrid (Ed25519 + ML-DSA-65)"),
     ]
 
     message = b"Ava Guardian protects people, data, and networks!"
@@ -67,10 +57,7 @@ def demo_crypto_api():
 
             # Verify
             valid = quick_verify(
-                message,
-                signature.signature,
-                keypair.public_key,
-                algorithm=algorithm
+                message, signature.signature, keypair.public_key, algorithm=algorithm
             )
 
             print(f"  Signature valid:  {'✓ PASS' if valid else '✗ FAIL'}")
@@ -78,10 +65,7 @@ def demo_crypto_api():
             # Try to verify with wrong message
             wrong_msg = b"Wrong message"
             invalid = quick_verify(
-                wrong_msg,
-                signature.signature,
-                keypair.public_key,
-                algorithm=algorithm
+                wrong_msg, signature.signature, keypair.public_key, algorithm=algorithm
             )
 
             print(f"  Wrong msg rejects: {'✓ PASS' if not invalid else '✗ FAIL'}")
@@ -92,9 +76,9 @@ def demo_crypto_api():
 
 def demo_kem():
     """Demonstrate key encapsulation"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("2. KEY ENCAPSULATION MECHANISM (KEM)")
-    print("="*70)
+    print("=" * 70)
 
     try:
         # Generate keypair and encapsulate
@@ -108,16 +92,10 @@ def demo_kem():
 
         # Decapsulate
         crypto = AvaGuardianCrypto(algorithm=AlgorithmType.KYBER_1024)
-        recovered_secret = crypto.decapsulate(
-            encapsulated.ciphertext,
-            keypair.secret_key
-        )
+        recovered_secret = crypto.decapsulate(encapsulated.ciphertext, keypair.secret_key)
 
         # Verify shared secrets match
-        match = crypto.constant_time_compare(
-            encapsulated.shared_secret,
-            recovered_secret
-        )
+        match = crypto.constant_time_compare(encapsulated.shared_secret, recovered_secret)
 
         print(f"  Shared secret match: {'✓ PASS' if match else '✗ FAIL'}")
 
@@ -127,15 +105,15 @@ def demo_kem():
 
 def demo_hd_keys():
     """Demonstrate HD key derivation"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("3. HIERARCHICAL DETERMINISTIC KEY DERIVATION")
-    print("="*70)
+    print("=" * 70)
 
     # Create HD derivation from seed phrase
     seed_phrase = "ava guardian quantum resistant cryptography protection"
     hd = HDKeyDerivation(seed_phrase=seed_phrase)
 
-    print(f"\nSeed phrase: \"{seed_phrase}\"")
+    print(f'\nSeed phrase: "{seed_phrase}"')
     print("-" * 70)
 
     # Derive keys for different purposes
@@ -160,9 +138,9 @@ def demo_hd_keys():
 
 def demo_key_rotation():
     """Demonstrate key rotation"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("4. KEY ROTATION AND LIFECYCLE MANAGEMENT")
-    print("="*70)
+    print("=" * 70)
 
     from datetime import timedelta
 
@@ -174,18 +152,11 @@ def demo_key_rotation():
 
     # Register multiple key versions
     key1 = rotation_mgr.register_key(
-        "signing-key-v1",
-        "signing",
-        max_usage=1000,
-        expires_in=timedelta(days=30)
+        "signing-key-v1", "signing", max_usage=1000, expires_in=timedelta(days=30)
     )
     print(f"  Registered: {key1.key_id} (version {key1.version})")
 
-    key2 = rotation_mgr.register_key(
-        "signing-key-v2",
-        "signing",
-        parent_id="signing-key-v1"
-    )
+    key2 = rotation_mgr.register_key("signing-key-v2", "signing", parent_id="signing-key-v1")
     print(f"  Registered: {key2.key_id} (version {key2.version})")
 
     print(f"\n  Active key: {rotation_mgr.get_active_key()}")
@@ -213,19 +184,16 @@ def demo_key_rotation():
 
 def demo_secure_storage():
     """Demonstrate secure key storage"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("5. SECURE KEY STORAGE")
-    print("="*70)
+    print("=" * 70)
 
     import tempfile
     import secrets
 
     # Create temporary storage
     with tempfile.TemporaryDirectory() as tmpdir:
-        storage = SecureKeyStorage(
-            Path(tmpdir),
-            master_password="strong_master_password_123!"
-        )
+        storage = SecureKeyStorage(Path(tmpdir), master_password="strong_master_password_123!")
 
         print(f"\nStorage path: {tmpdir}")
         print("-" * 70)
@@ -239,9 +207,7 @@ def demo_secure_storage():
 
         for key_id, key_data in keys_to_store.items():
             storage.store_key(
-                key_id,
-                key_data,
-                metadata={'size': len(key_data), 'purpose': 'demonstration'}
+                key_id, key_data, metadata={"size": len(key_data), "purpose": "demonstration"}
             )
             print(f"  Stored: {key_id} ({len(key_data)} bytes)")
 
@@ -265,9 +231,9 @@ def demo_secure_storage():
 
 def demo_helix_engine():
     """Demonstrate double-helix evolution engine"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("6. DOUBLE-HELIX EVOLUTION ENGINE (18+ VARIANTS)")
-    print("="*70)
+    print("=" * 70)
 
     # Create engine
     engine = AvaEquationEngine(state_dim=100, random_seed=42)
@@ -293,15 +259,16 @@ def demo_helix_engine():
 
     # Calculate sigma_quadratic
     from equations import calculate_sigma_quadratic
+
     sigma = calculate_sigma_quadratic(final_state, engine.ethical_matrix)
     print(f"  σ_quadratic: {sigma:.6f} ({'✓ PASS' if sigma >= 0.96 else '✗ FAIL'} ≥ 0.96)")
 
 
 def demo_performance():
     """Demonstrate performance comparison"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("7. PERFORMANCE BENCHMARKING")
-    print("="*70)
+    print("=" * 70)
 
     try:
         # Try to import optimized Cython engine
@@ -355,9 +322,9 @@ def demo_performance():
 
 def main():
     """Run all demonstrations"""
-    print("="*70)
+    print("=" * 70)
     print("AVA GUARDIAN ♱ COMPLETE FEATURE DEMONSTRATION")
-    print("="*70)
+    print("=" * 70)
     print("\nDemonstrating all capabilities of Ava Guardian 2.0")
     print("Production-grade multi-language PQC system")
     print()
@@ -371,9 +338,9 @@ def main():
         demo_helix_engine()
         demo_performance()
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("✓ ALL DEMONSTRATIONS COMPLETED SUCCESSFULLY")
-        print("="*70)
+        print("=" * 70)
         print("\nAva Guardian ♱ - Protecting people, data, and networks")
         print("with quantum-resistant cryptography and ethical AI")
         print()
@@ -381,6 +348,7 @@ def main():
     except Exception as e:
         print(f"\n✗ Error during demonstration: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

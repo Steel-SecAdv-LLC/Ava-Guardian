@@ -70,14 +70,16 @@ def get_compiler_flags():
         flags.extend(["/O2", "/W3"])
     else:
         # Linux/macOS
-        flags.extend([
-            "-std=c11",
-            "-Wall",
-            "-Wextra",
-            "-Wpedantic",
-            "-Wformat=2",
-            "-fstack-protector-strong",
-        ])
+        flags.extend(
+            [
+                "-std=c11",
+                "-Wall",
+                "-Wextra",
+                "-Wpedantic",
+                "-Wformat=2",
+                "-fstack-protector-strong",
+            ]
+        )
 
         if DEBUG:
             flags.extend(["-O0", "-g3", "-DDEBUG"])
@@ -195,29 +197,26 @@ class CMakeBuild(build_ext):
         build_args = ["--config", "Debug" if DEBUG else "Release"]
 
         if platform.system() == "Windows":
-            cmake_args.extend([
-                f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{('Debug' if DEBUG else 'Release').upper()}={build_directory}",
-                f"-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{('Debug' if DEBUG else 'Release').upper()}={build_directory}",
-            ])
+            cmake_args.extend(
+                [
+                    f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{('Debug' if DEBUG else 'Release').upper()}={build_directory}",
+                    f"-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{('Debug' if DEBUG else 'Release').upper()}={build_directory}",
+                ]
+            )
             build_args.extend(["--", "/m"])
         else:
             cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={build_directory}")
             # Parallel build
             import multiprocessing
+
             build_args.extend(["--", f"-j{multiprocessing.cpu_count()}"])
 
         # Run CMake with error handling
         try:
-            subprocess.check_call(
-                ["cmake", str(Path.cwd())] + cmake_args,
-                cwd=str(build_directory)
-            )
+            subprocess.check_call(["cmake", str(Path.cwd())] + cmake_args, cwd=str(build_directory))
 
             # Build
-            subprocess.check_call(
-                ["cmake", "--build", "."] + build_args,
-                cwd=str(build_directory)
-            )
+            subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=str(build_directory))
         except subprocess.CalledProcessError as e:
             print(f"WARNING: CMake build failed: {e}")
             print("         Continuing with Python-only installation.")
@@ -282,7 +281,7 @@ setup(
         "cryptography>=41.0.0",
         'numpy>=1.24.0,<2.0.0; python_version < "3.9"',
         'numpy>=1.24.0; python_version >= "3.9"',
-        'scipy>=1.11.0,<1.14.0; python_version < "3.9"',
+        'scipy>=1.10.0,<1.11.0; python_version < "3.9"',
         'scipy>=1.11.0; python_version >= "3.9"',
     ],
     extras_require={
@@ -331,7 +330,7 @@ setup(
 # Print build configuration
 if __name__ == "__main__":
     print("=" * 70)
-    print("Ava Guardian ♱ Build Configuration")
+    print("Ava Guardian Build Configuration")
     print("=" * 70)
     print(f"Version:          {VERSION}")
     print(f"Python:           {sys.version.split()[0]}")
