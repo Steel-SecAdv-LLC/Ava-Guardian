@@ -111,15 +111,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Build package (without C extensions on Windows)
+      - name: Build and install package (without C extensions on Windows)
         if: matrix.os == 'windows-latest'
         env:
           AVA_NO_C_EXTENSIONS: 1
-        run: python setup.py build_ext --inplace
+        run: pip install -e .
 
-      - name: Build package (with C extensions)
+      - name: Build and install package (with C extensions)
         if: matrix.os != 'windows-latest'
-        run: python setup.py build_ext --inplace
+        run: pip install -e .
 
       - name: Run tests
         run: pytest tests/ -v --cov=ava_guardian --cov-report=xml
