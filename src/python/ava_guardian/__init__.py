@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+# Copyright 2025 Steel Security Advisors LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Ava Guardian ♱ (AG♱) - Mathematical Suite Package
+==================================================
+
+Post-quantum cryptographic security system with rigorous mathematical foundations.
+
+Organization: Steel Security Advisors LLC
+Author/Inventor: Andrew E. A.
+Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
+Version: 1.0.0
+
+AI-Co Architects:
+    Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
+"""
+
+__version__ = "1.0.0"
+__author__ = "Andrew E. A., Steel Security Advisors LLC"
+
+from ava_guardian.double_helix_engine import AvaEquationEngine
+from ava_guardian.equations import (
+    DNA_CODES,
+    HELIX_PARAMS,
+    LAMBDA_DECAY,
+    PHI,
+    PHI_CUBED,
+    PHI_SQUARED,
+    SIGMA_QUADRATIC_THRESHOLD,
+    calculate_sigma_quadratic,
+    enforce_sigma_quadratic_threshold,
+    golden_ratio_convergence_proof,
+    helix_curvature,
+    helix_torsion,
+    initialize_ethical_matrix,
+    lyapunov_function,
+    lyapunov_stability_proof,
+    verify_all_dna_codes,
+    verify_mathematical_foundations,
+)
+
+__all__ = [
+    "__version__",
+    "__author__",
+    "PHI",
+    "PHI_SQUARED",
+    "PHI_CUBED",
+    "SIGMA_QUADRATIC_THRESHOLD",
+    "LAMBDA_DECAY",
+    "DNA_CODES",
+    "HELIX_PARAMS",
+    "helix_curvature",
+    "helix_torsion",
+    "verify_all_dna_codes",
+    "lyapunov_function",
+    "lyapunov_stability_proof",
+    "golden_ratio_convergence_proof",
+    "calculate_sigma_quadratic",
+    "enforce_sigma_quadratic_threshold",
+    "initialize_ethical_matrix",
+    "verify_mathematical_foundations",
+    "AvaEquationEngine",
+]

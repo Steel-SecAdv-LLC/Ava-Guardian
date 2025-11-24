@@ -1,0 +1,68 @@
+# Copyright 2025 Steel Security Advisors LLC
+# Licensed under the Apache License, Version 2.0
+#
+# Docker Compose configuration for Ava Guardian
+
+version: '3.8'
+
+services:
+  # Main Ava Guardian service
+  ava-guardian:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: ava-guardian:latest
+    container_name: ava-guardian-main
+    restart: unless-stopped
+    volumes:
+      - ../data:/data
+      - ../logs:/var/log/ava-guardian
+    environment:
+      - AVA_LOG_LEVEL=INFO
+      - AVA_DATA_DIR=/data
+    networks:
+      - ava-net
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import ava_guardian"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Monitoring service
+  ava-monitor:
+    image: ava-guardian:latest
+    container_name: ava-guardian-monitor
+    restart: unless-stopped
+    command: python3 /app/examples/ava_guardian_monitor_demo.py
+    volumes:
+      - ../data:/data
+      - ../logs:/var/log/ava-guardian
+    networks:
+      - ava-net
+    depends_on:
+      - ava-guardian
+
+  # Benchmark service (run periodically)
+  ava-benchmark:
+    image: ava-guardian:latest
+    container_name: ava-guardian-benchmark
+    command: python3 /app/examples/benchmark_suite.py
+    volumes:
+      - ../data:/data
+      - ../benchmarks:/app/benchmarks
+    networks:
+      - ava-net
+    profiles:
+      - benchmark
+
+networks:
+  ava-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  data:
+  logs:
+  benchmarks:

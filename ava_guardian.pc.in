@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: Ava Guardian
+Description: Quantum-Resistant Cryptographic Protection System
+Version: @PROJECT_VERSION@
+Requires: openssl >= 1.1.1
+Libs: -L${libdir} -lava_guardian
+Cflags: -I${includedir}
