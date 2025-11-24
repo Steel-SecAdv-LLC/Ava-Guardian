@@ -37,19 +37,20 @@ AI-Co Architects:
 """
 
 from typing import Dict, List, Optional, Tuple
+
 import numpy as np
 import numpy.typing as npt
 
 from ava_guardian.equations import (
+    LAMBDA_DECAY,
     PHI,
     PHI_CUBED,
     SIGMA_QUADRATIC_THRESHOLD,
-    LAMBDA_DECAY,
     calculate_sigma_quadratic,
     enforce_sigma_quadratic_threshold,
     initialize_ethical_matrix,
-    lyapunov_function,
     lyapunov_derivative,
+    lyapunov_function,
 )
 
 __version__ = "1.0.0"

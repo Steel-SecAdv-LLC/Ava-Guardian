@@ -37,10 +37,11 @@ AI-Co Architects:
 """
 
 from typing import Dict, List, Optional, Tuple
+
 import numpy as np
 import numpy.typing as npt
 
-__version__ = "2.0.0"
+__version__ = "1.0.0"
 __author__ = "Andrew E. A., Steel Security Advisors LLC"
 __all__ = [
     "PHI",

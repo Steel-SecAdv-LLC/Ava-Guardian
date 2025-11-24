@@ -31,27 +31,26 @@ AI-Co Architects:
 __version__ = "1.0.0"
 __author__ = "Andrew E. A., Steel Security Advisors LLC"
 
+from ava_guardian.double_helix_engine import AvaEquationEngine
 from ava_guardian.equations import (
+    DNA_CODES,
+    HELIX_PARAMS,
+    LAMBDA_DECAY,
     PHI,
     PHI_CUBED,
     PHI_SQUARED,
     SIGMA_QUADRATIC_THRESHOLD,
-    LAMBDA_DECAY,
-    DNA_CODES,
-    HELIX_PARAMS,
-    helix_curvature,
-    helix_torsion,
-    verify_all_dna_codes,
-    lyapunov_function,
-    lyapunov_stability_proof,
-    golden_ratio_convergence_proof,
     calculate_sigma_quadratic,
     enforce_sigma_quadratic_threshold,
+    golden_ratio_convergence_proof,
+    helix_curvature,
+    helix_torsion,
     initialize_ethical_matrix,
+    lyapunov_function,
+    lyapunov_stability_proof,
+    verify_all_dna_codes,
     verify_mathematical_foundations,
 )
-
-from ava_guardian.double_helix_engine import AvaEquationEngine
 
 __all__ = [
     "__version__",
