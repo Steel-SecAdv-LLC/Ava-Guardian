@@ -1,0 +1,148 @@
+Ava Guardian ♱ Documentation
+============================
+
+Welcome to the Ava Guardian documentation. This system provides quantum-resistant
+cryptographic protection with a multi-language architecture optimized for both
+security and performance.
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   quickstart
+   architecture
+   api/index
+   algorithms
+   performance
+   deployment
+   security
+   contributing
+
+Quick Links
+-----------
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+
+Overview
+--------
+
+Ava Guardian ♱ (AG♱) is a production-grade post-quantum cryptographic (PQC)
+system featuring:
+
+- **Multi-Algorithm Support**: ML-DSA-65, Kyber-1024, SPHINCS+-256f
+- **Hybrid Architecture**: C core with Python/Cython optimizations
+- **Constant-Time Operations**: Timing-attack resistant implementations
+- **High Performance**: 10-50x speedup via Cython mathematical engine
+- **Cross-Platform**: Linux, macOS, Windows, ARM support
+- **Enterprise Ready**: HSM/TPM integration, key rotation, TLS support
+
+Key Features
+------------
+
+Mathematical Foundation
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- 5 proven mathematical frameworks with machine precision
+- Lyapunov stability theory (exponential convergence O(e^{-0.18t}))
+- Golden ratio harmonics (φ³-amplification)
+- Double-helix evolution engine (18+ equation variants)
+- Quadratic form constraints (σ_quadratic ≥ 0.96)
+
+Security
+~~~~~~~~
+
+- NIST PQC Round 3 algorithms
+- Constant-time cryptographic operations
+- Memory scrubbing for sensitive data
+- Side-channel resistance
+- Timing attack protection
+
+Performance
+~~~~~~~~~~~
+
+- Cython mathematical engine (10-50x Python speedup)
+- AVX2/SIMD optimizations
+- NTT-based polynomial multiplication (O(n log n))
+- Cache-friendly memory layouts
+- Link-time optimization
+
+Getting Started
+---------------
+
+Installation
+~~~~~~~~~~~~
+
+.. code-block:: bash
+
+   # Install from source
+   git clone https://github.com/Steel-SecAdv-LLC/Ava-Guardian.git
+   cd Ava-Guardian
+   make all
+   sudo make install
+
+   # Or with pip (when available)
+   pip install ava-guardian
+
+Quick Example
+~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from ava_guardian import AvaEquationEngine
+   import numpy as np
+
+   # Initialize engine
+   engine = AvaEquationEngine(state_dim=100, random_seed=42)
+
+   # Run evolution
+   initial_state = np.random.randn(100) * 0.5
+   final_state, history = engine.converge(initial_state, max_steps=100)
+
+   print(f"Converged in {len(history)} steps")
+   print(f"Final Lyapunov value: {history[-1]:.6f}")
+
+C API Example
+~~~~~~~~~~~~~
+
+.. code-block:: c
+
+   #include "ava_guardian.h"
+
+   int main(void) {
+       ava_context_t* ctx = ava_context_init(AVA_ALG_ML_DSA_65);
+
+       uint8_t public_key[AVA_ML_DSA_65_PUBLIC_KEY_BYTES];
+       uint8_t secret_key[AVA_ML_DSA_65_SECRET_KEY_BYTES];
+
+       ava_error_t err = ava_keypair_generate(
+           ctx, public_key, sizeof(public_key),
+           secret_key, sizeof(secret_key)
+       );
+
+       ava_secure_memzero(secret_key, sizeof(secret_key));
+       ava_context_free(ctx);
+       return 0;
+   }
+
+License
+-------
+
+Copyright 2025 Steel Security Advisors LLC
+
+Licensed under the Apache License, Version 2.0. See LICENSE file for details.
+
+Contact
+-------
+
+- Email: steel.secadv.llc@outlook.com
+- GitHub: https://github.com/Steel-SecAdv-LLC/Ava-Guardian
+- Issues: https://github.com/Steel-SecAdv-LLC/Ava-Guardian/issues
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

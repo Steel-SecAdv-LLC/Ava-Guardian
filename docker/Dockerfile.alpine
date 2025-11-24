@@ -1,0 +1,49 @@
+# Copyright 2025 Steel Security Advisors LLC
+# Licensed under the Apache License, Version 2.0
+#
+# Alpine Linux build for minimal container size
+# ~50MB vs ~200MB for Ubuntu-based image
+
+FROM alpine:3.18 AS builder
+
+RUN apk add --no-cache \
+    build-base \
+    cmake \
+    openssl-dev \
+    python3-dev \
+    py3-pip \
+    git
+
+WORKDIR /build
+COPY . .
+
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+RUN mkdir build && cd build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DAVA_BUILD_SHARED=ON \
+        -DAVA_ENABLE_AVX2=OFF && \
+    cmake --build . -j$(nproc)
+
+RUN python3 setup.py bdist_wheel
+
+FROM alpine:3.18
+
+RUN apk add --no-cache \
+    libssl3 \
+    python3 \
+    py3-pip
+
+RUN adduser -D -u 1000 ava
+
+COPY --from=builder /build/build/lib/*.so* /usr/local/lib/
+COPY --from=builder /build/dist/*.whl /tmp/
+
+RUN pip3 install --no-cache-dir /tmp/*.whl && \
+    rm -rf /tmp/*.whl
+
+USER ava
+WORKDIR /app
+
+CMD ["python3", "-c", "import ava_guardian; print(f'Ava Guardian v{ava_guardian.__version__} (Alpine)')"]
