@@ -42,9 +42,27 @@ def test_imports():
         verify_mathematical_foundations,
     )
 
+    # Verify constants are defined
     assert PHI is not None
     assert PHI_SQUARED is not None
     assert PHI_CUBED is not None
+    assert DNA_CODES is not None
+    assert HELIX_PARAMS is not None
+    assert LAMBDA_DECAY is not None
+    assert SIGMA_QUADRATIC_THRESHOLD is not None
+
+    # Verify callables exist
+    assert callable(AvaEquationEngine)
+    assert callable(calculate_sigma_quadratic)
+    assert callable(enforce_sigma_quadratic_threshold)
+    assert callable(golden_ratio_convergence_proof)
+    assert callable(helix_curvature)
+    assert callable(helix_torsion)
+    assert callable(initialize_ethical_matrix)
+    assert callable(lyapunov_function)
+    assert callable(lyapunov_stability_proof)
+    assert callable(verify_all_dna_codes)
+    assert callable(verify_mathematical_foundations)
 
 
 def test_equation_engine_exists():
