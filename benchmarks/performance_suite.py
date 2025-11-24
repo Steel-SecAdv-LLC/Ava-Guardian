@@ -25,6 +25,7 @@ from datetime import datetime
 @dataclass
 class BenchmarkResult:
     """Result of a single benchmark"""
+
     name: str
     iterations: int
     total_time: float
@@ -69,7 +70,7 @@ class PerformanceBenchmark:
             total_time=total_time,
             avg_time=avg_time,
             throughput=throughput,
-            unit=unit
+            unit=unit,
         )
 
         self.results.append(result)
@@ -81,13 +82,7 @@ class PerformanceBenchmark:
         return result
 
     def compare_implementations(
-        self,
-        name: str,
-        impl1_name: str,
-        impl1_func,
-        impl2_name: str,
-        impl2_func,
-        *args
+        self, name: str, impl1_name: str, impl1_func, impl2_name: str, impl2_func, *args
     ):
         """Compare two implementations"""
         print(f"\n{'='*70}")
@@ -112,10 +107,10 @@ class PerformanceBenchmark:
             "system_info": {
                 "python": sys.version,
                 "numpy": np.__version__,
-            }
+            },
         }
 
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             json.dump(data, f, indent=2)
 
         print(f"\nResults saved to {filename}")
@@ -144,7 +139,7 @@ def benchmark_lyapunov_functions():
             "Cython",
             lyapunov_function_fast,
             state,
-            target
+            target,
         )
     except ImportError:
         print("Cython math_engine not available, skipping comparison")
@@ -178,7 +173,7 @@ def benchmark_matrix_operations():
             "Cython",
             matrix_vector_multiply,
             matrix,
-            vector
+            vector,
         )
     except ImportError:
         print("Cython matrix operations not available")
@@ -207,14 +202,11 @@ def benchmark_constant_time_ops():
     try:
         # Try to import C library
         import ctypes
+
         lib = ctypes.CDLL("build/lib/libava_guardian.so")
 
         # Setup function signatures
-        lib.ava_consttime_memcmp.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_size_t
-        ]
+        lib.ava_consttime_memcmp.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t]
         lib.ava_consttime_memcmp.restype = ctypes.c_int
 
         a = b"A" * 1024
@@ -237,37 +229,37 @@ def benchmark_constant_time_ops():
 
 def main():
     """Run all benchmarks"""
-    print("="*70)
+    print("=" * 70)
     print("Ava Guardian ♱ Performance Benchmark Suite")
-    print("="*70)
+    print("=" * 70)
 
     all_results = []
 
     # Lyapunov benchmarks
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("LYAPUNOV FUNCTION BENCHMARKS")
-    print("="*70)
+    print("=" * 70)
     lyap_bench = benchmark_lyapunov_functions()
     all_results.extend(lyap_bench.results)
 
     # Matrix operation benchmarks
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("MATRIX OPERATION BENCHMARKS")
-    print("="*70)
+    print("=" * 70)
     matrix_bench = benchmark_matrix_operations()
     all_results.extend(matrix_bench.results)
 
     # Helix evolution benchmarks
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("HELIX EVOLUTION BENCHMARKS")
-    print("="*70)
+    print("=" * 70)
     helix_bench = benchmark_helix_evolution()
     all_results.extend(helix_bench.results)
 
     # Constant-time operation benchmarks
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("CONSTANT-TIME OPERATION BENCHMARKS")
-    print("="*70)
+    print("=" * 70)
     ct_bench = benchmark_constant_time_ops()
     if ct_bench:
         all_results.extend(ct_bench.results)
@@ -278,9 +270,9 @@ def main():
     combined.save_results("benchmarks/performance_results.json")
 
     # Summary
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("BENCHMARK SUMMARY")
-    print("="*70)
+    print("=" * 70)
     for result in all_results:
         print(f"{result.name:50s} {result.throughput:12.2f} {result.unit}")
 

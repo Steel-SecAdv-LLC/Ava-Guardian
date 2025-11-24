@@ -26,11 +26,11 @@ def test_math_engine_has_matrix_vector_multiply():
     """Test that math_engine exports matrix_vector_multiply function."""
     try:
         mod = importlib.import_module("ava_guardian.math_engine")
-        assert hasattr(mod, "matrix_vector_multiply"), \
-            "matrix_vector_multiply function not found in math_engine"
+        assert hasattr(
+            mod, "matrix_vector_multiply"
+        ), "matrix_vector_multiply function not found in math_engine"
         # Verify it's callable
-        assert callable(mod.matrix_vector_multiply), \
-            "matrix_vector_multiply is not callable"
+        assert callable(mod.matrix_vector_multiply), "matrix_vector_multiply is not callable"
     except ImportError as e:
         pytest.skip(f"math_engine not built (Cython extension): {e}")
 
@@ -50,10 +50,8 @@ def test_math_engine_has_core_functions():
         ]
 
         for func_name in expected_functions:
-            assert hasattr(mod, func_name), \
-                f"{func_name} function not found in math_engine"
-            assert callable(getattr(mod, func_name)), \
-                f"{func_name} is not callable"
+            assert hasattr(mod, func_name), f"{func_name} function not found in math_engine"
+            assert callable(getattr(mod, func_name)), f"{func_name} is not callable"
     except ImportError as e:
         pytest.skip(f"math_engine not built (Cython extension): {e}")
 
