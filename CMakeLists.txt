@@ -1,0 +1,160 @@
+# Copyright 2025 Steel Security Advisors LLC
+# Licensed under the Apache License, Version 2.0
+
+cmake_minimum_required(VERSION 3.15)
+
+project(AvaGuardian
+    VERSION 1.0.0
+    DESCRIPTION "Quantum-Resistant Cryptographic Protection System"
+    LANGUAGES C CXX
+)
+
+# Build options
+option(AVA_BUILD_SHARED "Build shared library" ON)
+option(AVA_BUILD_STATIC "Build static library" ON)
+option(AVA_BUILD_TESTS "Build test suite" ON)
+option(AVA_BUILD_EXAMPLES "Build examples" ON)
+option(AVA_ENABLE_SIMD "Enable SIMD optimizations" ON)
+option(AVA_ENABLE_AVX2 "Enable AVX2 instructions" ON)
+option(AVA_ENABLE_SANITIZERS "Enable address/undefined sanitizers" OFF)
+option(AVA_ENABLE_LTO "Enable link-time optimization" ON)
+
+# C standard
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
+# Output directories
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Include directories
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+# Compiler flags
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wformat=2 -Wformat-security")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wstrict-prototypes -Wmissing-prototypes")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong")
+
+# Release optimizations
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -DNDEBUG")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
+
+# Debug flags
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3 -DDEBUG")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer")
+
+# Sanitizers for debug builds
+if(AVA_ENABLE_SANITIZERS)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address,undefined")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=address,undefined")
+endif()
+
+# SIMD flags
+if(AVA_ENABLE_SIMD)
+    if(AVA_ENABLE_AVX2)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2 -DAVA_HAS_AVX2")
+    endif()
+endif()
+
+# LTO for release builds
+if(AVA_ENABLE_LTO)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
+
+# Source files
+set(AVA_SOURCES
+    src/c/ava_core.c
+    src/c/ava_consttime.c
+)
+
+# Find dependencies
+find_package(OpenSSL REQUIRED)
+
+# Create shared library
+if(AVA_BUILD_SHARED)
+    add_library(ava_guardian_shared SHARED ${AVA_SOURCES})
+    set_target_properties(ava_guardian_shared PROPERTIES
+        OUTPUT_NAME "ava_guardian"
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR}
+        PUBLIC_HEADER "include/ava_guardian.h"
+    )
+    target_link_libraries(ava_guardian_shared
+        PRIVATE OpenSSL::Crypto
+    )
+    target_compile_definitions(ava_guardian_shared PRIVATE AVA_BUILDING_SHARED)
+endif()
+
+# Create static library
+if(AVA_BUILD_STATIC)
+    add_library(ava_guardian_static STATIC ${AVA_SOURCES})
+    set_target_properties(ava_guardian_static PROPERTIES
+        OUTPUT_NAME "ava_guardian_static"
+        PUBLIC_HEADER "include/ava_guardian.h"
+    )
+    target_link_libraries(ava_guardian_static
+        PRIVATE OpenSSL::Crypto
+    )
+endif()
+
+# Examples
+if(AVA_BUILD_EXAMPLES)
+    add_subdirectory(examples/c)
+endif()
+
+# Tests
+if(AVA_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests/c)
+endif()
+
+# Installation
+if(AVA_BUILD_SHARED)
+    install(TARGETS ava_guardian_shared
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        PUBLIC_HEADER DESTINATION include
+    )
+endif()
+
+if(AVA_BUILD_STATIC)
+    install(TARGETS ava_guardian_static
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        PUBLIC_HEADER DESTINATION include
+    )
+endif()
+
+# pkg-config
+configure_file(
+    ${CMAKE_SOURCE_DIR}/ava_guardian.pc.in
+    ${CMAKE_BINARY_DIR}/ava_guardian.pc
+    @ONLY
+)
+install(FILES ${CMAKE_BINARY_DIR}/ava_guardian.pc
+    DESTINATION lib/pkgconfig
+)
+
+# Print configuration summary
+message(STATUS "")
+message(STATUS "Ava Guardian ♱ Configuration Summary")
+message(STATUS "=====================================")
+message(STATUS "Version:          ${PROJECT_VERSION}")
+message(STATUS "Build type:       ${CMAKE_BUILD_TYPE}")
+message(STATUS "C compiler:       ${CMAKE_C_COMPILER}")
+message(STATUS "Install prefix:   ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "")
+message(STATUS "Build options:")
+message(STATUS "  Shared library: ${AVA_BUILD_SHARED}")
+message(STATUS "  Static library: ${AVA_BUILD_STATIC}")
+message(STATUS "  Tests:          ${AVA_BUILD_TESTS}")
+message(STATUS "  Examples:       ${AVA_BUILD_EXAMPLES}")
+message(STATUS "  SIMD:           ${AVA_ENABLE_SIMD}")
+message(STATUS "  AVX2:           ${AVA_ENABLE_AVX2}")
+message(STATUS "  Sanitizers:     ${AVA_ENABLE_SANITIZERS}")
+message(STATUS "  LTO:            ${AVA_ENABLE_LTO}")
+message(STATUS "")

@@ -1,0 +1,236 @@
+/**
+ * Copyright 2025 Steel Security Advisors LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @file ava_consttime.c
+ * @brief Constant-time cryptographic operations
+ * @author Andrew E. A., Steel Security Advisors LLC
+ * @date 2025-11-24
+ *
+ * Timing-attack resistant implementations of critical cryptographic primitives.
+ * All operations execute in constant time regardless of input values.
+ */
+
+#include "../include/ava_guardian.h"
+#include <string.h>
+#include <stdint.h>
+
+/**
+ * Constant-time memory comparison
+ *
+ * Compares two memory regions in constant time to prevent timing attacks.
+ * Uses bitwise OR to accumulate differences without branching.
+ *
+ * @param a First buffer
+ * @param b Second buffer
+ * @param len Number of bytes to compare
+ * @return 0 if equal, 1 if different (constant time)
+ */
+int ava_consttime_memcmp(const void* a, const void* b, size_t len) {
+    const volatile uint8_t* va = (const volatile uint8_t*)a;
+    const volatile uint8_t* vb = (const volatile uint8_t*)b;
+    uint8_t diff = 0;
+    size_t i;
+
+    /* Accumulate differences without branching */
+    for (i = 0; i < len; i++) {
+        diff |= va[i] ^ vb[i];
+    }
+
+    /* Convert any non-zero to 1 */
+    return (int)((diff | -diff) >> 7) & 1;
+}
+
+/**
+ * Secure memory zeroing
+ *
+ * Scrubs memory to zero in a way that cannot be optimized away by the compiler.
+ * Uses volatile pointer to prevent optimization.
+ *
+ * @param ptr Memory to zero
+ * @param len Number of bytes to zero
+ */
+void ava_secure_memzero(void* ptr, size_t len) {
+    volatile uint8_t* vptr = (volatile uint8_t*)ptr;
+    size_t i;
+
+    for (i = 0; i < len; i++) {
+        vptr[i] = 0;
+    }
+
+    /* Additional barrier to prevent optimization */
+    __asm__ __volatile__("" ::: "memory");
+}
+
+/**
+ * Constant-time conditional swap
+ *
+ * Swaps two buffers if condition is non-zero, in constant time.
+ * Uses XOR swap to avoid branching.
+ *
+ * @param condition Swap if non-zero (constant time in condition value)
+ * @param a First buffer
+ * @param b Second buffer
+ * @param len Number of bytes to swap
+ */
+void ava_consttime_swap(int condition, void* a, void* b, size_t len) {
+    volatile uint8_t* va = (volatile uint8_t*)a;
+    volatile uint8_t* vb = (volatile uint8_t*)b;
+    size_t i;
+    uint8_t mask;
+    uint8_t tmp;
+
+    /* Convert condition to mask: 0x00 or 0xFF */
+    mask = (uint8_t)(-(int8_t)(condition != 0));
+
+    /* XOR-based conditional swap */
+    for (i = 0; i < len; i++) {
+        tmp = mask & (va[i] ^ vb[i]);
+        va[i] ^= tmp;
+        vb[i] ^= tmp;
+    }
+}
+
+/**
+ * Constant-time byte selection
+ *
+ * Returns a if condition is non-zero, b otherwise, in constant time.
+ *
+ * @param condition Selection condition
+ * @param a First value
+ * @param b Second value
+ * @return a if condition != 0, b if condition == 0
+ */
+static inline uint8_t consttime_select_u8(int condition, uint8_t a, uint8_t b) {
+    uint8_t mask = (uint8_t)(-(int8_t)(condition != 0));
+    return (mask & a) | (~mask & b);
+}
+
+/**
+ * Constant-time 32-bit selection
+ *
+ * @param condition Selection condition
+ * @param a First value
+ * @param b Second value
+ * @return a if condition != 0, b if condition == 0
+ */
+static inline uint32_t consttime_select_u32(int condition, uint32_t a, uint32_t b) {
+    uint32_t mask = (uint32_t)(-(int32_t)(condition != 0));
+    return (mask & a) | (~mask & b);
+}
+
+/**
+ * Constant-time 64-bit selection
+ *
+ * @param condition Selection condition
+ * @param a First value
+ * @param b Second value
+ * @return a if condition != 0, b if condition == 0
+ */
+static inline uint64_t consttime_select_u64(int condition, uint64_t a, uint64_t b) {
+    uint64_t mask = (uint64_t)(-(int64_t)(condition != 0));
+    return (mask & a) | (~mask & b);
+}
+
+/**
+ * Constant-time equality check
+ *
+ * @param a First value
+ * @param b Second value
+ * @return 1 if equal, 0 otherwise (constant time)
+ */
+static inline int consttime_eq_u32(uint32_t a, uint32_t b) {
+    uint32_t diff = a ^ b;
+    return (int)(1 & ((diff - 1) >> 31));
+}
+
+/**
+ * Constant-time less-than comparison
+ *
+ * @param a First value
+ * @param b Second value
+ * @return 1 if a < b, 0 otherwise (constant time)
+ */
+static inline int consttime_lt_u32(uint32_t a, uint32_t b) {
+    uint32_t diff = a ^ b;
+    uint32_t lt = a ^ ((a ^ b) | ((a - b) ^ b));
+    return (int)(lt >> 31);
+}
+
+/**
+ * Constant-time array lookup
+ *
+ * Looks up an element in an array in constant time.
+ * Always scans entire array to prevent timing leaks.
+ *
+ * @param table Array to search
+ * @param table_len Number of elements
+ * @param elem_size Size of each element in bytes
+ * @param index Index to retrieve
+ * @param output Output buffer for element
+ */
+void ava_consttime_lookup(
+    const void* table,
+    size_t table_len,
+    size_t elem_size,
+    size_t index,
+    void* output
+) {
+    const uint8_t* tbl = (const uint8_t*)table;
+    uint8_t* out = (uint8_t*)output;
+    size_t i, j;
+    int match;
+    uint8_t mask;
+
+    /* Initialize output to zero */
+    ava_secure_memzero(output, elem_size);
+
+    /* Scan entire table */
+    for (i = 0; i < table_len; i++) {
+        match = (i == index);
+        mask = (uint8_t)(-(int8_t)match);
+
+        /* Conditionally OR in this element */
+        for (j = 0; j < elem_size; j++) {
+            out[j] |= mask & tbl[i * elem_size + j];
+        }
+    }
+}
+
+/**
+ * Constant-time conditional copy
+ *
+ * Copies src to dst if condition is non-zero, in constant time.
+ *
+ * @param condition Copy if non-zero
+ * @param dst Destination buffer
+ * @param src Source buffer
+ * @param len Number of bytes
+ */
+void ava_consttime_copy(int condition, void* dst, const void* src, size_t len) {
+    volatile uint8_t* vdst = (volatile uint8_t*)dst;
+    const volatile uint8_t* vsrc = (const volatile uint8_t*)src;
+    size_t i;
+    uint8_t mask;
+
+    /* Convert condition to mask */
+    mask = (uint8_t)(-(int8_t)(condition != 0));
+
+    /* Conditional copy */
+    for (i = 0; i < len; i++) {
+        vdst[i] = (vdst[i] & ~mask) | (vsrc[i] & mask);
+    }
+}
