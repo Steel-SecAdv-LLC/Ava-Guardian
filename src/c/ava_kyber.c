@@ -24,8 +24,13 @@
  */
 
 #include "../include/ava_guardian.h"
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+
+/* Suppress unused function warnings for stub implementations */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 
 /* Kyber-1024 parameters */
 #define KYBER_N 256
@@ -116,6 +121,10 @@ ava_error_t kyber_keypair_generate(
         return AVA_ERROR_INVALID_PARAM;
     }
 
+    /* Suppress unused parameter warnings for stub implementation */
+    (void)public_key;
+    (void)secret_key;
+
     /* TODO: Implement full Kyber keygen
      * For now, return not implemented
      */
@@ -144,6 +153,12 @@ ava_error_t kyber_encapsulate(
         return AVA_ERROR_INVALID_PARAM;
     }
 
+    /* Suppress unused parameter warnings for stub implementation */
+    (void)public_key;
+    (void)ciphertext;
+    (void)ciphertext_len;
+    (void)shared_secret;
+
     /* TODO: Implement full encapsulation */
     return AVA_ERROR_NOT_IMPLEMENTED;
 }
@@ -171,6 +186,11 @@ ava_error_t kyber_decapsulate(
         shared_secret_len != AVA_KYBER_1024_SHARED_SECRET_BYTES) {
         return AVA_ERROR_INVALID_PARAM;
     }
+
+    /* Suppress unused parameter warnings for stub implementation */
+    (void)ciphertext;
+    (void)secret_key;
+    (void)shared_secret;
 
     /* TODO: Implement full decapsulation */
     return AVA_ERROR_NOT_IMPLEMENTED;

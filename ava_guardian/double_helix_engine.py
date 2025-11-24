@@ -285,7 +285,9 @@ class AvaEquationEngine:
         """𝐐𝐁𝐌: Quantum Boltzmann Machine sampling."""
         # Energy-based sampling
         energy = -0.5 * (state @ self.qbm_matrix @ state)
-        prob = 1.0 / (1.0 + np.exp(-energy / (self.temperature + 0.1)))
+        # Clip to prevent overflow in exp
+        energy_scaled = np.clip(-energy / (self.temperature + 0.1), -700, 700)
+        prob = 1.0 / (1.0 + np.exp(energy_scaled))
         sample = np.random.binomial(1, min(0.9, max(0.1, prob)), size=self.state_dim)
         return 0.05 * (2 * sample - 1)
 
@@ -297,7 +299,9 @@ class AvaEquationEngine:
 
         # Attention weights
         attention_scores = np.dot(query, key) / np.sqrt(self.state_dim)
-        attention_weights = 1.0 / (1.0 + np.exp(-attention_scores))  # Sigmoid
+        # Clip to prevent overflow in exp
+        attention_scores_clipped = np.clip(-attention_scores, -700, 700)
+        attention_weights = 1.0 / (1.0 + np.exp(attention_scores_clipped))  # Sigmoid
 
         # Weighted value
         attended = attention_weights * value

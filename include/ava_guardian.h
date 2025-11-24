@@ -262,6 +262,31 @@ void ava_secure_memzero(void* ptr, size_t len);
  */
 void ava_consttime_swap(int condition, void* a, void* b, size_t len);
 
+/**
+ * @brief Constant-time table lookup
+ * @param table Table to lookup from
+ * @param element_size Size of each element
+ * @param num_elements Number of elements in table
+ * @param index Index to lookup
+ * @param output Output buffer for selected element
+ */
+void ava_consttime_lookup(
+    const void* table,
+    size_t element_size,
+    size_t num_elements,
+    size_t index,
+    void* output
+);
+
+/**
+ * @brief Constant-time conditional copy
+ * @param condition Copy if non-zero
+ * @param dst Destination buffer
+ * @param src Source buffer
+ * @param len Length to copy
+ */
+void ava_consttime_copy(int condition, void* dst, const void* src, size_t len);
+
 /* ============================================================================
  * HASHING AND KEY DERIVATION
  * ============================================================================ */
