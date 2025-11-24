@@ -18,12 +18,12 @@ Design Philosophy:
 - Performance optimized (uses C/Cython when available)
 """
 
-from typing import Optional, Tuple, Dict, Any
-from enum import Enum, auto
-from dataclasses import dataclass
-import secrets
 import hashlib
+import secrets
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum, auto
+from typing import Any, Dict, Tuple
 
 
 class AlgorithmType(Enum):
@@ -72,7 +72,7 @@ class KeyPair:
 
                 buffer = (ctypes.c_char * len(self.secret_key)).from_buffer_copy(self.secret_key)
                 ctypes.memset(ctypes.addressof(buffer), 0, len(self.secret_key))
-            except:
+            except Exception:
                 pass
 
 
@@ -121,7 +121,7 @@ class EncapsulatedSecret:
                     self.shared_secret
                 )
                 ctypes.memset(ctypes.addressof(buffer), 0, len(self.shared_secret))
-            except:
+            except Exception:
                 pass
 
 
@@ -228,8 +228,8 @@ class MLDSAProvider(CryptoProvider):
 
     def verify(self, message: bytes, signature: bytes, public_key: bytes) -> bool:
         """Verify ML-DSA-65 signature"""
-        from cryptography.hazmat.primitives.asymmetric import ed25519
         from cryptography.exceptions import InvalidSignature
+        from cryptography.hazmat.primitives.asymmetric import ed25519
 
         try:
             pub_key = ed25519.Ed25519PublicKey.from_public_bytes(public_key)
@@ -288,8 +288,8 @@ class KyberProvider(KEMProvider):
 
     def encapsulate(self, public_key: bytes) -> EncapsulatedSecret:
         """Encapsulate shared secret"""
-        from cryptography.hazmat.primitives.asymmetric import x25519
         from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import x25519
 
         # Generate ephemeral key
         ephemeral_key = x25519.X25519PrivateKey.generate()
@@ -490,8 +490,6 @@ class AvaGuardianCrypto:
         Returns:
             True if equal, False otherwise (constant time)
         """
-        import secrets
-
         return secrets.compare_digest(a, b)
 
 
