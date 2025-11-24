@@ -47,15 +47,24 @@ jobs:
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          brew install cmake openssl
+          brew install cmake openssl gcc@12
 
       - name: Configure CMake
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
         run: |
-          mkdir build
+          mkdir -p build
           cd build
+          # Set OpenSSL path for macOS
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            export OPENSSL_ROOT_DIR=$(brew --prefix openssl)
+            # For GCC on macOS, use full path
+            if [ "${{ matrix.compiler }}" = "gcc" ]; then
+              export CC=$(brew --prefix gcc@12)/bin/gcc-12
+              export CXX=$(brew --prefix gcc@12)/bin/g++-12
+            fi
+          fi
           cmake .. \
             -DCMAKE_BUILD_TYPE=Release \
             -DAVA_BUILD_SHARED=ON \
@@ -91,11 +100,11 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libssl-dev
+          sudo apt-get install -y cmake libssl-dev
 
       - name: Install system dependencies (macOS)
         if: matrix.os == 'macos-latest'
-        run: brew install openssl
+        run: brew install cmake openssl
 
       - name: Install Python dependencies
         run: |
