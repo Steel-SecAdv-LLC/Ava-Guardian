@@ -29,7 +29,7 @@ Where:
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
-Date: 2025-11-23
+Date: 2025-11-24
 Version: 1.0.0
 
 AI-Co Architects:
@@ -372,7 +372,7 @@ class AvaEquationEngine:
     # DOUBLE-HELIX EVOLUTION STEP
     # ========================================================================
 
-    def step(self, state: npt.NDArray, t: int = 0) -> npt.NDArray:
+    def step(self, state: npt.NDArray, t: int = 0) -> npt.NDArray:  # noqa: C901
         """
         Execute one Double-Helix evolution step.
 
@@ -520,18 +520,20 @@ if __name__ == "__main__":
     # Create engine with default configuration
     engine = AvaEquationEngine(state_dim=50, random_seed=42)
 
-    print(f"\nEngine Configuration:")
+    print("\nEngine Configuration:")
     print(f"  State dimension: {engine.state_dim}")
     print(f"  Target state norm: {np.linalg.norm(engine.target_state):.4f}")
-    print(f"  Ethical matrix eigenvalues: [{np.min(np.linalg.eigvals(engine.ethical_matrix).real):.2f}, "
-          f"{np.max(np.linalg.eigvals(engine.ethical_matrix).real):.2f}]")
+    print(
+        f"  Ethical matrix eigenvalues: [{np.min(np.linalg.eigvals(engine.ethical_matrix).real):.2f}, "
+        f"{np.max(np.linalg.eigvals(engine.ethical_matrix).real):.2f}]"
+    )
 
     # Run convergence
     print("\nRunning Double-Helix evolution...")
     initial_state = np.random.randn(50) * 0.5
     final_state, history = engine.converge(initial_state, max_steps=50)
 
-    print(f"\nConvergence Results:")
+    print("\nConvergence Results:")
     print(f"  Initial Lyapunov V(x₀): {history[0]:.6f}")
     print(f"  Final Lyapunov V(xₙ):   {history[-1]:.6f}")
     print(f"  Convergence steps: {len(history)}")
@@ -541,10 +543,12 @@ if __name__ == "__main__":
 
     # Verify σ_quadratic
     sigma = calculate_sigma_quadratic(final_state, engine.ethical_matrix)
-    print(f"\nEthical Constraints:")
+    print("\nEthical Constraints:")
     print(f"  σ_quadratic: {sigma:.6f}")
-    print(f"  {'✓' if sigma >= SIGMA_QUADRATIC_THRESHOLD else '✗'} Threshold (≥ 0.96): "
-          f"{sigma >= SIGMA_QUADRATIC_THRESHOLD}")
+    print(
+        f"  {'✓' if sigma >= SIGMA_QUADRATIC_THRESHOLD else '✗'} Threshold (≥ 0.96): "
+        f"{sigma >= SIGMA_QUADRATIC_THRESHOLD}"
+    )
 
     print("\n" + "=" * 70)
     print("✓ Double-Helix Evolution Engine operational")

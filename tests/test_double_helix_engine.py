@@ -22,7 +22,7 @@ Tests for 18+ Ava Equation variants and Double-Helix architecture.
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
-Date: 2025-11-23
+Date: 2025-11-24
 Version: 1.0.0
 
 AI-Co Architects:
@@ -36,12 +36,8 @@ import numpy as np
 
 sys.path.insert(0, "/home/user/Ava-Guardian")
 
-from ava_guardian.double_helix_engine import AvaEquationEngine
-from ava_guardian.equations import (
-    PHI_CUBED,
-    SIGMA_QUADRATIC_THRESHOLD,
-    calculate_sigma_quadratic,
-)
+from ava_guardian.double_helix_engine import AvaEquationEngine  # noqa: E402
+from ava_guardian.equations import PHI_CUBED, calculate_sigma_quadratic  # noqa: E402
 
 
 class TestAvaEquationEngineInitialization(unittest.TestCase):

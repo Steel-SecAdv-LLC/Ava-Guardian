@@ -29,7 +29,7 @@ Frameworks:
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
-Date: 2025-11-23
+Date: 2025-11-24
 Version: 1.0.0
 
 AI-Co Architects:
@@ -411,7 +411,9 @@ def enforce_sigma_quadratic_threshold(
     return False, corrected_state
 
 
-def initialize_ethical_matrix(dim: int, scalars: Optional[List[float]] = None) -> npt.NDArray[np.float64]:
+def initialize_ethical_matrix(
+    dim: int, scalars: Optional[List[float]] = None
+) -> npt.NDArray[np.float64]:
     """
     Create positive-definite ethical constraint matrix E.
 
