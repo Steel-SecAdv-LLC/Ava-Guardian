@@ -15,16 +15,16 @@
 ║                    AVA GUARDIAN ♱ 1.0                            ║
 ║         Production Multi-Language PQC Security System            ║
 ║                                                                  ║
-║  🔐 6-Layer Defense          🛡️ Quantum-Resistant              ║
-║  ⚡ Cython-Optimized         🔬 3R Runtime Monitoring            ║
+║  🔐 6-Layer Defense          🛡️ Quantum-Resistant               ║
+║  ⚡ Cython-Optimized         🔬 3R Runtime Monitoring           ║
 ║  🏢 Enterprise Ready         🌍 Cross-Platform                  ║
 ║                                                                  ║
-║  C Core (Constant-Time)  |  Cython Optimization Layer          ║
-║  HD Key Derivation       |  Algorithm-Agnostic API              ║
-║  Key Rotation            |  18+ Equation Variants               ║
-║  Docker + CI/CD          |  Side-Channel Resistant              ║
+║  C Core (Constant-Time)  |  Cython Optimization Layer            ║
+║  HD Key Derivation       |  Algorithm-Agnostic API               ║
+║  Key Rotation            |  18+ Equation Variants                ║
+║  Docker + CI/CD          |  Side-Channel Resistant               ║
 ║                                                                  ║
-║           Built with Mathematical Rigor & Transparency          ║
+║           Built with Mathematical Rigor & Transparency           ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -301,16 +301,16 @@ docker-compose exec ava-guardian python -m pytest
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     APPLICATION LAYER                        │
-│                    (Python / CLI / Web)                      │
+│                     APPLICATION LAYER                       │
+│                    (Python / CLI / Web)                     │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
-│              PYTHON API (High-Level Interface)               │
-│            src/python/crypto_api.py                          │
-│            src/python/key_management.py                      │
+│              PYTHON API (High-Level Interface)              │
+│            src/python/crypto_api.py                         │
+│            src/python/key_management.py                     │
 └──┬───────────────────────────────────────────────────────┬──┘
-   │                                                        │
+   │                                                       │
 ┌──▼────────────────────────────┐   ┌─────────────────────▼───┐
 │   CYTHON OPTIMIZATION LAYER   │   │   PURE PYTHON FALLBACK  │
 │   • Optimized math operations │   │   (portability)         │
@@ -321,9 +321,9 @@ docker-compose exec ava-guardian python -m pytest
 ┌──▼────────────────────────────────────────────────────────┐
 │              C CORE LIBRARY (libava_guardian)             │
 │  • Constant-time cryptographic primitives                 │
-│  • ML-DSA-65, Kyber-1024, SPHINCS+-256f                  │
+│  • ML-DSA-65, Kyber-1024, SPHINCS+-256f                   │
 │  • Memory-safe context management                         │
-│  • AVX2 SIMD optimizations                               │
+│  • AVX2 SIMD optimizations                                │
 └───────────────────────────────────────────────────────────┘
 ```
 
@@ -344,7 +344,7 @@ docker-compose exec ava-guardian python -m pytest
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  3R Security Monitoring                  │
+│                  3R Security Monitoring                 │
 ├─────────────────────────────────────────────────────────┤
 │  ResonanceEngine                                        │
 │  ├─ FFT-based timing analysis                           │
