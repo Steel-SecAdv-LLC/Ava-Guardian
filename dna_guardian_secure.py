@@ -1140,24 +1140,24 @@ MASTER_DNA_CODES = (
 
 # Helical parameters (radius, pitch) for each DNA code
 MASTER_HELIX_PARAMS = [
-    (20.0, 0.7),  # 👁20A07∞ - Directional System
-    (15.0, 1.1),  # Ϙ15A11ϵ - Percipient Future
-    (7.0, 0.9),  # Φ07A09ϖ - Indivisible Guardian
-    (19.0, 1.2),  # Σ19L12ϵ - Benevolent Stone
-    (20.0, 1.1),  # Ω20V11ϖ - Scient Curiosity
-    (25.0, 0.1),  # Θ25M01ϵ - Universal Discipline
-    (19.0, 1.1),  # Γ19L11ϖ - Potent Lifeforce
+    (20.0, 0.7),  # 👁20A07∞ - Omni-Directional System
+    (15.0, 1.1),  # Ϙ15A11ϵ - Omni-Percipient Future
+    (7.0, 0.9),  # Φ07A09ϖ - Omni-Indivisible Guardian
+    (19.0, 1.2),  # Σ19L12ϵ - Omni-Benevolent Stone
+    (20.0, 1.1),  # Ω20V11ϖ - Omni-Scient Curiosity
+    (25.0, 0.1),  # Θ25M01ϵ - Omni-Universal Discipline
+    (19.0, 1.1),  # Γ19L11ϖ - Omni-Potent Lifeforce
 ]
 
 # Human-readable names for each DNA code
 DNA_CODE_NAMES = [
-    "Directional System",
-    "Percipient Future",
-    "Indivisible Guardian",
-    "Benevolent Stone",
-    "Scient Curiosity",
-    "Universal Discipline",
-    "Potent Lifeforce",
+    "Omni-Directional System",
+    "Omni-Percipient Future",
+    "Omni-Indivisible Guardian",
+    "Omni-Benevolent Stone",
+    "Omni-Scient Curiosity",
+    "Omni-Universal Discipline",
+    "Omni-Potent Lifeforce",
 ]
 
 # Individual DNA code strings (for reference)
