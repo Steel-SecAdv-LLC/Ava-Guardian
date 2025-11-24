@@ -1,6 +1,6 @@
 # Contributing to Ava Guardian ♱
 
-Thank you for your interest in contributing to Ava Guardian! This document provides guidelines for contributing to this quantum-resistant cryptographic protection system.
+Thank you for your interest in contributing to Ava Guardian ♱! This document provides guidelines for contributing to this quantum-resistant cryptographic protection system.
 
 ## Table of Contents
 
@@ -489,7 +489,7 @@ If you have questions about contributing:
 
 ---
 
-**Thank you for contributing to Ava Guardian and helping secure cryptographic protection for DNA codes!**
+**Thank you for contributing to Ava Guardian ♱ and helping secure cryptographic protection for DNA codes!**
 
 Copyright (C) 2025 Steel Security Advisors LLC
 Licensed under Apache License 2.0

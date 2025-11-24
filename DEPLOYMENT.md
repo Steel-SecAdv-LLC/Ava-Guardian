@@ -1,4 +1,4 @@
-# Ava Guardian Production Deployment Guide
+# Ava Guardian ♱ Production Deployment Guide
 
 Comprehensive checklist and procedures for deploying Ava Guardian in production environments.
 

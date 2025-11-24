@@ -29,7 +29,7 @@ Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
 
 ## Executive Summary
 
-Ava Guardian provides cryptographic protection for Omni-DNA Helix codes through a defense-in-depth security architecture with six independent layers:
+Ava Guardian ♱ provides cryptographic protection for Omni-DNA Helix codes through a defense-in-depth security architecture with six independent layers:
 
 1. **SHA3-256 Content Hashing** - Collision-resistant integrity verification (NIST FIPS 202)
 2. **HMAC-SHA3-256 Authentication** - Keyed message authentication (RFC 2104)
