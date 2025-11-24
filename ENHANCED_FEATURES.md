@@ -1,8 +1,8 @@
-# Ava Guardian ♱ 2.0 - Enhanced Features
+# Ava Guardian ♱ 1.0 - Enhanced Features
 
 ## Multi-Language Architecture
 
-Ava Guardian 2.0 introduces a revolutionary multi-language architecture that combines the security of C, the performance of Cython, and the usability of Python.
+Ava Guardian 1.0 introduces a revolutionary multi-language architecture that combines the security of C, the performance of Cython, and the usability of Python.
 
 ### Architecture Overview
 

@@ -1,4 +1,4 @@
-# Ava Guardian ♱ 2.0
+# Ava Guardian ♱ 1.0
 
 ## Production-Grade Multi-Language Post-Quantum Cryptographic Security System
 
@@ -13,7 +13,7 @@
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║                    AVA GUARDIAN ♱ 2.0                            ║
+║                    AVA GUARDIAN ♱ 1.0                            ║
 ║              Multi-Language PQC Security System                  ║
 ║                                                                  ║
 ║  C Core (Constant-Time)  |  Cython (10-50x faster)              ║
@@ -29,7 +29,7 @@
 **License:** Apache License 2.0  
 **Version:** 2.0.0 - Production Ready
 
-## 🚀 What's New in 2.0
+## 🚀 What's New in 1.0
 
 ### Multi-Language Architecture
 - **C Core**: Constant-time cryptographic primitives
