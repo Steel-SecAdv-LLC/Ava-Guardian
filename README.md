@@ -41,9 +41,40 @@ Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 
 ## 📖 Executive Summary
 
-**Ava Guardian** is a production-grade, multi-language cryptographic security system designed to protect people, data, and networks against both classical and quantum threats. Built on a foundation of mathematically rigorous post-quantum cryptography (PQC), Ava Guardian delivers enterprise-ready features with exceptional performance.
+**Ava Guardian ♱** is a production-grade, multi-language cryptographic security system designed to protect people, data, and networks against both classical and quantum threats. Built on a foundation of mathematically rigorous post-quantum cryptography (PQC), Ava Guardian delivers enterprise-ready features with exceptional performance.
 
-### What Makes Ava Guardian Unique?
+**Novel in assimilation**, Ava Guardian ♱ combines cutting-edge NIST-approved post-quantum algorithms with a unique 3R runtime security monitoring framework, creating a defense-in-depth architecture that provides unprecedented visibility into cryptographic operations while maintaining <2% performance overhead. The system's multi-language architecture (C + Cython + Python) enables both maximum security through constant-time implementations and optimal performance through 18-37x Cython acceleration, making it suitable for environments ranging from high-security government applications to performance-critical enterprise systems.
+
+<details>
+<summary><strong>🎯 Why Ava Guardian ♱ Exists (Click to expand)</strong></summary>
+
+### The Problem We Solve
+
+**Current cryptographic systems face three critical challenges:**
+
+1. **Quantum Threat**: Traditional cryptography (RSA, ECDSA) will be broken by large-scale quantum computers within 5-15 years
+2. **Black Box Security**: Most cryptographic libraries provide no runtime visibility into side-channel vulnerabilities or anomalous behavior
+3. **Performance vs Security Trade-off**: Quantum-resistant algorithms are significantly slower, creating adoption barriers
+
+### Our Solution
+
+**Ava Guardian ♱ addresses all three:**
+
+✅ **Quantum Resistance**: NIST-approved ML-DSA-65 (FIPS 204) and Kyber-1024 (FIPS 203) provide 50+ years of protection
+✅ **Transparent Security**: 3R monitoring (Resonance-Recursion-Refactoring) provides real-time cryptographic operation analysis
+✅ **Optimized Performance**: Cython acceleration delivers 18-37x speedup over pure Python, making PQC practical
+
+### Target Use Cases
+
+- **Government & Defense**: Classified data protection with quantum resistance
+- **Financial Services**: Transaction security future-proofed against quantum threats
+- **Healthcare**: HIPAA-compliant data encryption with audit trails
+- **Critical Infrastructure**: SCADA systems requiring long-term security guarantees
+- **Blockchain & Crypto**: Post-quantum secure digital signatures
+
+</details>
+
+### What Makes Ava Guardian ♱ Unique?
 
 🔬 **3R Runtime Security Monitoring** - Our signature innovation providing real-time cryptographic operation analysis:
 - **Resonance Engine**: FFT-based timing attack detection
@@ -117,7 +148,10 @@ Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 
 ## ⚡ Quick Start
 
-### Installation
+<details open>
+<summary><strong>📦 Installation (Click to expand)</strong></summary>
+
+### Standard Installation
 
 ```bash
 # Clone repository
@@ -137,7 +171,42 @@ make test
 sudo make install
 ```
 
-### Basic Usage
+### Platform-Specific Notes
+
+**Linux (Ubuntu/Debian)**:
+```bash
+# Install build dependencies
+sudo apt-get install build-essential cmake python3-dev libssl-dev
+
+# Build and install
+make all && sudo make install
+```
+
+**macOS**:
+```bash
+# Install dependencies via Homebrew
+brew install cmake openssl
+
+# Build and install
+make all && sudo make install
+```
+
+**Windows (MSVC)**:
+```powershell
+# Install Visual Studio Build Tools
+# Install CMake and Python from official websites
+
+# Build
+cmake --build build --config Release
+python setup.py install
+```
+
+</details>
+
+<details open>
+<summary><strong>🚀 Basic Usage (Click to expand)</strong></summary>
+
+### Simple Example
 
 ```python
 from ava_guardian.crypto_api import AvaGuardianCrypto, AlgorithmType
@@ -156,23 +225,79 @@ valid = crypto.verify(b"Hello, World!", signature.signature, keypair.public_key)
 print(f"Signature valid: {valid}")  # True
 ```
 
-### Docker Quick Start
+### Advanced Example with 3R Monitoring
+
+```python
+from ava_guardian.crypto_api import AvaGuardianCrypto, AlgorithmType
+from ava_guardian_monitor import AvaGuardianMonitor
+
+# Enable 3R security monitoring
+monitor = AvaGuardianMonitor(enabled=True)
+
+# Create crypto instance
+crypto = AvaGuardianCrypto(algorithm=AlgorithmType.ML_DSA_65)
+
+# Generate and use keys with monitoring
+keypair = crypto.generate_keypair()
+signature = crypto.sign(b"Sensitive data", keypair.secret_key)
+
+# Get security report
+report = monitor.get_security_report()
+print(f"Security status: {report['status']}")
+print(f"Anomalies detected: {report['total_alerts']}")
+```
+
+</details>
+
+<details open>
+<summary><strong>🐳 Docker Quick Start (Click to expand)</strong></summary>
+
+### Ubuntu Image (Production)
 
 ```bash
-# Build and run Ubuntu image
+# Build Ubuntu-based image (~200MB)
 docker build -t ava-guardian -f docker/Dockerfile .
-docker run --rm ava-guardian
 
-# Or use minimal Alpine image (~50MB)
+# Run interactive session
+docker run -it ava-guardian /bin/bash
+
+# Run tests
+docker run --rm ava-guardian make test
+```
+
+### Alpine Image (Minimal)
+
+```bash
+# Build Alpine image (~50MB)
 docker build -t ava-guardian:alpine -f docker/Dockerfile.alpine .
+
+# Run
 docker run --rm ava-guardian:alpine
 ```
+
+### Docker Compose
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f ava-guardian
+
+# Execute commands
+docker-compose exec ava-guardian python -m pytest
+```
+
+</details>
 
 ---
 
 ## 🏗️ Architecture
 
-### System Overview
+<details>
+<summary><strong>🏛️ System Overview (Click to expand)</strong></summary>
+
+### Multi-Layer Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -202,7 +327,20 @@ docker run --rm ava-guardian:alpine
 └───────────────────────────────────────────────────────────┘
 ```
 
-### 3R Runtime Security Monitoring
+### Design Principles
+
+1. **Defense-in-Depth**: Multiple independent security layers
+2. **Performance Optimization**: C core with Cython acceleration
+3. **Flexibility**: Algorithm-agnostic API with automatic fallback
+4. **Transparency**: 3R monitoring provides runtime visibility
+5. **Standards Compliance**: NIST FIPS and IETF RFC adherence
+
+</details>
+
+<details>
+<summary><strong>🔬 3R Runtime Security Monitoring (Click to expand)</strong></summary>
+
+### Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -225,15 +363,57 @@ docker run --rm ava-guardian:alpine
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Performance Impact**: <2% overhead with full monitoring enabled
+### Key Features
+
+- **ResonanceEngine**: Detects timing anomalies via FFT analysis
+- **RecursionEngine**: Multi-scale hierarchical pattern detection
+- **RefactoringEngine**: Code complexity metrics (read-only)
+- **Performance**: <2% overhead with full monitoring enabled
+- **Real-time**: Continuous analysis during cryptographic operations
 
 See [MONITORING.md](MONITORING.md) for complete 3R documentation.
+
+</details>
+
+<details>
+<summary><strong>📁 Directory Structure (Click to expand)</strong></summary>
+
+```
+Ava-Guardian/
+├── src/
+│   ├── c/                    # C core library
+│   │   ├── ava_core.c
+│   │   ├── ava_consttime.c
+│   │   ├── ava_kyber.c
+│   │   └── ava_mldsa.c
+│   ├── cython/               # Cython optimization layer
+│   │   ├── math_engine.pyx
+│   │   └── helix_engine_complete.pyx
+│   └── python/               # Python high-level API
+│       ├── crypto_api.py
+│       └── key_management.py
+├── include/                  # C headers
+│   └── ava_guardian.h
+├── lib/                      # Compiled libraries
+├── examples/                 # Example code
+│   ├── c/
+│   └── python/
+├── tests/                    # Test suites
+├── docker/                   # Docker configurations
+├── docs/                     # Documentation
+└── CMakeLists.txt           # Build configuration
+```
+
+</details>
 
 ---
 
 ## 🔐 Cryptographic Algorithms
 
-### Signature Algorithms
+<details>
+<summary><strong>✍️ Digital Signature Algorithms (Click to expand)</strong></summary>
+
+### Comparison Table
 
 | Algorithm | Type | Public Key | Secret Key | Signature | Security Level |
 |-----------|------|------------|------------|-----------|----------------|
@@ -242,11 +422,108 @@ See [MONITORING.md](MONITORING.md) for complete 3R documentation.
 | Ed25519 | Classical | 32 bytes | 64 bytes | 64 bytes | 128-bit |
 | **Hybrid** | Classical+PQC | 1984 bytes | 4080 bytes | 3373 bytes | Both |
 
-### Key Encapsulation Mechanisms (KEM)
+### ML-DSA-65 (Module-Lattice Digital Signature Algorithm)
+
+**Standard**: NIST FIPS 204 (formerly Dilithium)
+**Type**: Post-Quantum Lattice-based
+**Security**: NIST Level 3 (192-bit quantum security)
+
+**Advantages**:
+- ✅ Quantum-resistant (safe against Shor's algorithm)
+- ✅ NIST-approved standard
+- ✅ Relatively small signatures compared to hash-based schemes
+- ✅ Fast verification
+
+**Trade-offs**:
+- ⚠️ Larger keys than classical schemes
+- ⚠️ Slower signing than Ed25519
+
+### SPHINCS+-256f (Stateless Hash-Based Signatures)
+
+**Standard**: NIST PQC Round 3 Alternate Candidate
+**Type**: Post-Quantum Hash-based
+**Security**: 256-bit classical and quantum
+
+**Advantages**:
+- ✅ Quantum-resistant
+- ✅ Stateless (no state management required)
+- ✅ Conservative security assumptions (hash functions only)
+- ✅ Tiny public keys (64 bytes)
+
+**Trade-offs**:
+- ⚠️ Very large signatures (49856 bytes)
+- ⚠️ Slower signing than lattice-based schemes
+
+### Ed25519 (Edwards-curve Digital Signature Algorithm)
+
+**Standard**: RFC 8032
+**Type**: Classical Elliptic Curve
+**Security**: 128-bit classical (broken by quantum)
+
+**Advantages**:
+- ✅ Very fast signing and verification
+- ✅ Tiny signatures (64 bytes)
+- ✅ Deterministic (no nonce reuse vulnerability)
+- ✅ Wide deployment and testing
+
+**Trade-offs**:
+- ⚠️ Vulnerable to quantum computers (Shor's algorithm)
+- ⚠️ Will need migration in 5-15 years
+
+### Hybrid Mode (Ed25519 + ML-DSA-65)
+
+**Best of both worlds**: Combines classical and post-quantum
+
+**Advantages**:
+- ✅ Secure if either algorithm is unbroken
+- ✅ Smooth migration path
+- ✅ Backward compatibility
+
+**Use When**:
+- Transitioning to PQC
+- Maximum security is required
+- Backward compatibility needed
+
+</details>
+
+<details>
+<summary><strong>🔑 Key Encapsulation Mechanisms - KEM (Click to expand)</strong></summary>
+
+### Comparison Table
 
 | Algorithm | Type | Public Key | Ciphertext | Shared Secret | Security Level |
 |-----------|------|------------|------------|---------------|----------------|
 | Kyber-1024 | PQC | 1568 bytes | 1568 bytes | 32 bytes | NIST Level 5 |
+
+### Kyber-1024 (CRYSTALS-Kyber)
+
+**Standard**: NIST FIPS 203
+**Type**: Post-Quantum Lattice-based KEM
+**Security**: NIST Level 5 (256-bit quantum security)
+
+**How it Works**:
+1. **Key Generation**: Alice generates public key (pk) and secret key (sk)
+2. **Encapsulation**: Bob uses pk to generate shared secret and ciphertext
+3. **Decapsulation**: Alice uses sk and ciphertext to recover shared secret
+
+**Advantages**:
+- ✅ Highest NIST security level (Level 5)
+- ✅ NIST-approved standard
+- ✅ Efficient encapsulation/decapsulation
+- ✅ Small ciphertext overhead
+
+**Use Cases**:
+- TLS 1.3 key exchange
+- Encrypted session keys
+- Hybrid encryption schemes
+- Long-term secure communications
+
+**Security Properties**:
+- IND-CCA2 secure (chosen-ciphertext attack resistant)
+- Quantum-safe under MLWE hardness assumption
+- 256-bit quantum security (>192-bit classical)
+
+</details>
 
 ---
 
