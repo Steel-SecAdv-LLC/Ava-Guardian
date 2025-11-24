@@ -153,6 +153,10 @@ class CMakeBuild(build_ext):
     """Custom build_ext command that builds CMake projects."""
 
     def run(self):
+        # Skip if no extensions to build
+        if not self.extensions:
+            return
+
         # Check if CMake is available
         try:
             subprocess.check_output(["cmake", "--version"])
@@ -187,17 +191,24 @@ class CMakeBuild(build_ext):
             import multiprocessing
             build_args.extend(["--", f"-j{multiprocessing.cpu_count()}"])
 
-        # Run CMake
-        subprocess.check_call(
-            ["cmake", str(Path.cwd())] + cmake_args,
-            cwd=str(build_directory)
-        )
+        # Run CMake with error handling
+        try:
+            subprocess.check_call(
+                ["cmake", str(Path.cwd())] + cmake_args,
+                cwd=str(build_directory)
+            )
 
-        # Build
-        subprocess.check_call(
-            ["cmake", "--build", "."] + build_args,
-            cwd=str(build_directory)
-        )
+            # Build
+            subprocess.check_call(
+                ["cmake", "--build", "."] + build_args,
+                cwd=str(build_directory)
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"WARNING: CMake build failed: {e}")
+            print("         Continuing with Python-only installation.")
+            print("         C extensions will not be available.")
+            # Don't re-raise - allow installation to continue
+            return
 
         # Continue with Python extension build
         super().run()
@@ -251,12 +262,13 @@ setup(
         "security",
     ],
     python_requires=">=3.8",
-    packages=find_packages(where="src/python"),
-    package_dir={"": "src/python"},
+    packages=find_packages(exclude=["tests", "tests.*", "examples", "examples.*", "src", "src.*"]),
     install_requires=[
         "cryptography>=41.0.0",
-        "numpy>=1.24.0",
-        "scipy>=1.11.0",
+        'numpy>=1.24.0,<2.0.0; python_version < "3.9"',
+        'numpy>=1.24.0; python_version >= "3.9"',
+        'scipy>=1.11.0,<1.14.0; python_version < "3.9"',
+        'scipy>=1.11.0; python_version >= "3.9"',
     ],
     extras_require={
         "quantum": ["liboqs-python>=0.8.0"],
