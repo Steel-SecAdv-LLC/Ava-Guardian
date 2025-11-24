@@ -42,7 +42,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libssl-dev
+          sudo apt-get install -y cmake libssl-dev ${{ matrix.cc }} ${{ matrix.cxx }}
 
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
@@ -50,27 +50,35 @@ jobs:
           brew install cmake openssl gcc@12
 
       - name: Configure CMake
-        env:
-          CC: ${{ matrix.cc }}
-          CXX: ${{ matrix.cxx }}
         run: |
           mkdir -p build
           cd build
-          # Set OpenSSL path for macOS
+          # Set compiler and OpenSSL path
           if [ "$RUNNER_OS" = "macOS" ]; then
-            export OPENSSL_ROOT_DIR=$(brew --prefix openssl)
+            OPENSSL_ROOT=$(brew --prefix openssl)
             # For GCC on macOS, use full path
             if [ "${{ matrix.compiler }}" = "gcc" ]; then
-              export CC=$(brew --prefix gcc@12)/bin/gcc-12
-              export CXX=$(brew --prefix gcc@12)/bin/g++-12
+              CC_PATH=$(brew --prefix gcc@12)/bin/gcc-12
+              CXX_PATH=$(brew --prefix gcc@12)/bin/g++-12
+            else
+              CC_PATH=${{ matrix.cc }}
+              CXX_PATH=${{ matrix.cxx }}
             fi
+          else
+            OPENSSL_ROOT=""
+            CC_PATH=${{ matrix.cc }}
+            CXX_PATH=${{ matrix.cxx }}
           fi
+
           cmake .. \
+            -DCMAKE_C_COMPILER=${CC_PATH} \
+            -DCMAKE_CXX_COMPILER=${CXX_PATH} \
             -DCMAKE_BUILD_TYPE=Release \
             -DAVA_BUILD_SHARED=ON \
             -DAVA_BUILD_STATIC=ON \
             -DAVA_BUILD_TESTS=ON \
-            -DAVA_ENABLE_AVX2=OFF
+            -DAVA_ENABLE_AVX2=OFF \
+            ${OPENSSL_ROOT:+-DOPENSSL_ROOT_DIR=${OPENSSL_ROOT}}
 
       - name: Build
         run: cmake --build build --config Release -j4
