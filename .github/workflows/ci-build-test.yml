@@ -213,6 +213,7 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: false
+          load: true
           tags: ava-guardian:ubuntu
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -223,6 +224,7 @@ jobs:
           context: .
           file: docker/Dockerfile.alpine
           push: false
+          load: true
           tags: ava-guardian:alpine
           cache-from: type=gha
           cache-to: type=gha,mode=max
