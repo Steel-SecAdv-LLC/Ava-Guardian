@@ -31,28 +31,41 @@ Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
 
 Ava Guardian provides cryptographic protection for Omni-DNA Helix codes through a defense-in-depth security architecture with six independent layers:
 
-1. **SHA3-256 Content Hashing** - Collision-resistant integrity verification
-2. **HMAC-SHA3-256 Authentication** - Keyed message authentication
-3. **Ed25519 Digital Signatures** - Classical elliptic curve signatures
-4. **Dilithium Quantum Signatures** - Post-quantum lattice-based signatures
-5. **HKDF Key Derivation** - Secure key management and derivation
-6. **RFC 3161 Timestamps** - Trusted third-party timestamping
+1. **SHA3-256 Content Hashing** - Collision-resistant integrity verification (NIST FIPS 202)
+2. **HMAC-SHA3-256 Authentication** - Keyed message authentication (RFC 2104)
+3. **Ed25519 Digital Signatures** - Classical elliptic curve signatures (RFC 8032)
+4. **ML-DSA-65 Quantum Signatures** - Post-quantum lattice-based signatures (NIST FIPS 204)
+5. **HKDF Key Derivation** - Secure key management and derivation (RFC 5869)
+6. **RFC 3161 Timestamps** - Trusted third-party timestamping (RFC 3161)
 
-### Security Grade: A+ (96/100)
+### Security Analysis
 
-| Security Layer | Score | Status |
-|---------------|-------|--------|
-| Integrity Protection | 20/20 | ✓ Perfect |
-| Authentication | 20/20 | ✓ Perfect |
-| Non-Repudiation | 20/20 | ✓ Perfect |
-| Key Management | 18/20 | ✓ Excellent |
-| Quantum Resistance | 18/20 | ✓ Production-ready |
+**Note**: This is a **self-assessment**, not a third-party security audit.
 
-**Total: 96/100 (A+)**
+| Security Layer | Implementation | Standards Compliance |
+|---------------|----------------|---------------------|
+| **Integrity Protection** | SHA3-256 (256-bit) | ✅ NIST FIPS 202 |
+| **Authentication** | HMAC-SHA3-256 | ✅ RFC 2104 |
+| **Classical Signatures** | Ed25519 | ✅ RFC 8032 |
+| **Quantum Signatures** | ML-DSA-65 (Dilithium) | ✅ NIST FIPS 204 |
+| **Key Derivation** | HKDF-SHA3-256 | ✅ RFC 5869 |
+| **Timestamping** | RFC 3161 TSA | ⚠️ Optional |
 
-Deductions:
-- -2 points: HSM integration optional (documented but not enforced)
-- -2 points: RFC 3161 TSA optional (can use self-asserted timestamps)
+### Security Properties
+
+**Strengths**:
+- ✅ Defense-in-depth with 6 independent cryptographic layers
+- ✅ NIST-approved post-quantum cryptography (ML-DSA-65, Kyber-1024)
+- ✅ Constant-time implementations for side-channel resistance
+- ✅ Memory-safe operations (secure wiping, bounds checking)
+- ✅ Standards-compliant algorithms
+
+**Limitations**:
+- ⚠️ **No third-party security audit** (self-assessed cryptographic analysis)
+- ⚠️ HSM integration optional (not enforced by default)
+- ⚠️ RFC 3161 TSA optional (self-asserted timestamps allowed)
+- ⚠️ PQC algorithms are recent standards (limited real-world deployment history)
+- ⚠️ Constant-time implementation needs independent verification
 
 ---
 
@@ -1243,31 +1256,43 @@ For 256-bit keys:
 
 ## Conclusion
 
-Ava Guardian ♱ (AG♱) provides robust cryptographic protection for Omni-DNA Helix codes through a carefully designed defense-in-depth architecture. The system achieves an overall security grade of **A+ (96/100)**, with strong mathematical foundations and compliance with current cryptographic standards.
+Ava Guardian ♱ provides cryptographic protection for Omni-DNA Helix codes through a defense-in-depth architecture with strong mathematical foundations and standards compliance.
 
 ### Key Strengths
 
-1. **Multi-layered Security:** Six independent cryptographic layers
-2. **Quantum Resistance:** Dilithium3 provides 192-bit post-quantum security
-3. **Standards Compliance:** Full compliance with NIST, RFC, and ISO standards
-4. **Mathematical Rigor:** All security claims backed by formal proofs
-5. **Production Performance:** <1ms package creation, <1ms verification
+1. **Multi-layered Security**: Six independent cryptographic layers
+2. **Quantum Resistance**: ML-DSA-65 (Dilithium) provides NIST-approved post-quantum security
+3. **Standards Compliance**: Uses NIST FIPS and IETF RFC approved algorithms
+4. **Mathematical Rigor**: Security properties based on well-studied cryptographic assumptions
+5. **Constant-time Design**: Side-channel resistant implementations
 
-### Recommendations
+### Limitations & Transparency
 
-1. **Deploy Dilithium:** Install liboqs-python for production quantum resistance
-2. **Use HSM:** Store master secret in FIPS 140-2 Level 3+ HSM
-3. **Enable RFC 3161:** Use trusted TSA for legal-strength timestamps
-4. **Key Rotation:** Implement quarterly key rotation schedule
-5. **Monitoring:** Audit all key operations and signature verifications
+1. ⚠️ **No Third-Party Audit**: This analysis is self-assessed, not independently audited
+2. ⚠️ **New PQC Standards**: ML-DSA-65 and Kyber-1024 are recent NIST standards with limited deployment history
+3. ⚠️ **Optional HSM**: High-security key storage not enforced by default
+4. ⚠️ **Implementation Verification**: Constant-time properties need independent verification
+5. ⚠️ **Performance Trade-offs**: Quantum resistance comes with computational overhead
+
+### Recommendations for Production Deployment
+
+1. **Third-Party Audit**: Obtain professional security audit before production use
+2. **Deploy ML-DSA-65**: Install liboqs or equivalent for quantum resistance
+3. **Use HSM**: Store master secrets in FIPS 140-2 Level 3+ Hardware Security Module
+4. **Enable RFC 3161**: Use trusted TSA for legal-strength timestamps
+5. **Key Rotation**: Implement automated quarterly key rotation
+6. **Monitoring**: Audit all key operations and signature verifications
+7. **Penetration Testing**: Conduct regular security testing
 
 ### Future Work
 
-1. **Multi-signature:** Implement threshold signatures (k-of-n)
-2. **Revocation:** Add CRL/OCSP for compromised key revocation
-3. **Hardware Integration:** Native HSM support (YubiKey, AWS CloudHSM)
-4. **Performance:** Optimize Dilithium using AVX2/AVX-512 instructions
-5. **Standards Tracking:** Monitor NIST PQC Round 4 for next-generation algorithms
+1. **Security Audit**: Obtain third-party cryptographic audit
+2. **Constant-Time Verification**: Use tools like ctgrind, dudect for timing leak detection
+3. **Multi-signature**: Implement threshold signatures (k-of-n)
+4. **Revocation**: Add CRL/OCSP for compromised key revocation
+5. **Hardware Integration**: Native HSM support (YubiKey, AWS CloudHSM)
+6. **Performance**: Optimize ML-DSA-65 using AVX2/AVX-512 instructions
+7. **Standards Tracking**: Monitor NIST PQC Round 4 for next-generation algorithms
 
 ---
 

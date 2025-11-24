@@ -6,26 +6,25 @@
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org)
 [![C](https://img.shields.io/badge/C-C11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
 [![Cython](https://img.shields.io/badge/Cython-3.0+-yellow.svg)](https://cython.org)
-[![Security](https://img.shields.io/badge/security-A%2B%20(96%2F100)-brightgreen.svg)](SECURITY_ANALYSIS.md)
-[![Quantum Ready](https://img.shields.io/badge/quantum-50%2B%20years-purple.svg)](SECURITY_ANALYSIS.md)
+[![PQC](https://img.shields.io/badge/PQC-ML--DSA--65%20%7C%20Kyber--1024-purple.svg)](CRYPTOGRAPHY.md)
 [![3R Monitoring](https://img.shields.io/badge/3R-Runtime%20Security-orange.svg)](MONITORING.md)
-[![Performance](https://img.shields.io/badge/speedup-10--50x-green.svg)](BENCHMARKS.md)
+[![Architecture](https://img.shields.io/badge/architecture-C%20%2B%20Python%20%2B%20Cython-blue.svg)](ARCHITECTURE.md)
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║                    AVA GUARDIAN ♱ 1.0                            ║
 ║         Production Multi-Language PQC Security System            ║
 ║                                                                  ║
-║  🔐 Defense-in-Depth         🛡️ Quantum-Resistant              ║
-║  ⚡ 10-50x Performance       🔬 3R Runtime Monitoring            ║
+║  🔐 6-Layer Defense          🛡️ Quantum-Resistant              ║
+║  ⚡ Cython-Optimized         🔬 3R Runtime Monitoring            ║
 ║  🏢 Enterprise Ready         🌍 Cross-Platform                  ║
 ║                                                                  ║
-║  C Core (Constant-Time)  |  Cython (10-50x faster)              ║
+║  C Core (Constant-Time)  |  Cython Optimization Layer          ║
 ║  HD Key Derivation       |  Algorithm-Agnostic API              ║
 ║  Key Rotation            |  18+ Equation Variants               ║
-║  Docker + CI/CD          |  Cross-Platform Ready                ║
+║  Docker + CI/CD          |  Side-Channel Resistant              ║
 ║                                                                  ║
-║               Security Grade: A+ (96/100)                       ║
+║           Built with Mathematical Rigor & Transparency          ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -54,7 +53,7 @@ Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 
 🚀 **Multi-Language Architecture** - Optimized for both security and performance:
 - **C Core**: Constant-time cryptographic primitives for maximum security
-- **Cython Layer**: 10-50x performance optimization over pure Python
+- **Cython Layer**: Optimized mathematical operations (benchmarked at 27-37x vs pure Python)
 - **Python API**: High-level, user-friendly interface for rapid development
 
 🏢 **Enterprise Features** - Production-ready from day one:
@@ -71,12 +70,13 @@ Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 
 ### Key Achievements
 
-- ✅ **Security Grade**: A+ (96/100)
-- ✅ **Performance**: 10-50x speedup achieved
-- ✅ **Quantum Resistance**: 50+ years protection
+- ✅ **Defense-in-Depth**: 6 independent cryptographic layers
+- ✅ **Performance**: Cython optimization (27-37x vs pure Python baseline)
+- ✅ **Quantum Resistance**: NIST-approved PQC algorithms (ML-DSA-65, Kyber-1024)
 - ✅ **Mathematical Rigor**: 5 proven frameworks with machine precision
 - ✅ **Cross-Platform**: Linux, macOS, Windows, ARM64
 - ✅ **Production Infrastructure**: Docker, CI/CD, comprehensive testing
+- ✅ **3R Innovation**: Unique runtime security monitoring (<2% overhead)
 
 ---
 
@@ -84,7 +84,7 @@ Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 
 ### Multi-Language Architecture ✅
 - **C Core**: Constant-time cryptographic primitives for side-channel resistance
-- **Cython Engine**: Achieved 10-50x performance optimization
+- **Cython Engine**: Mathematical operations optimized (27-37x vs pure Python)
 - **Python API**: Clean, high-level interface for all features
 
 ### Enterprise Features ✅
@@ -108,7 +108,10 @@ Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 | NTT (degree 256) | 45.2ms | 1.2ms | **37.7x** |
 | Helix evolution | 3.4ms | 0.18ms | **18.9x** |
 
-**Target achieved: 10-50x speedup!** ✅
+**Cython optimization: 18-37x speedup vs pure Python baseline** ✅
+
+*Note: These are mathematical operations. Full system benchmarks with integrated PQC algorithms pending.*
+*See [BENCHMARKS_V1.md](BENCHMARKS_V1.md) for complete performance analysis.*
 
 ---
 
@@ -185,7 +188,7 @@ docker run --rm ava-guardian:alpine
    │                                                        │
 ┌──▼────────────────────────────┐   ┌─────────────────────▼───┐
 │   CYTHON OPTIMIZATION LAYER   │   │   PURE PYTHON FALLBACK  │
-│   • 10-50x speedup            │   │   (portability)         │
+│   • Optimized math operations │   │   (portability)         │
 │   • All 18+ equation variants │   │                         │
 │   • NTT O(n log n)            │   │                         │
 └──┬────────────────────────────┘   └─────────────────────────┘
@@ -356,7 +359,7 @@ for algorithm in [AlgorithmType.ED25519, AlgorithmType.ML_DSA_65, AlgorithmType.
 
 **Backend Selection** (automatic fallback):
 1. C library (fastest, constant-time)
-2. Cython extension (10-50x faster)
+2. Cython extension (optimized mathematical operations)
 3. Pure Python (maximum portability)
 
 </details>
@@ -429,13 +432,13 @@ GitHub Actions automatically tests:
 
 ### Security Analysis
 
-- **Security Grade**: A+ (96/100)
-- **Quantum Resistance**: 50+ years
-- **Side-Channel Protection**: Constant-time operations
-- **Memory Safety**: Secure wiping, bounds checking
-- **3R Monitoring**: Runtime security analysis
+- **Defense-in-Depth**: 6 independent cryptographic layers
+- **Quantum Resistance**: NIST-approved ML-DSA-65 (FIPS 204) and Kyber-1024 (FIPS 203)
+- **Side-Channel Protection**: Constant-time operations, data-independent control flow
+- **Memory Safety**: Secure wiping, bounds checking, magic number validation
+- **3R Monitoring**: Runtime security analysis (<2% overhead)
 
-See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for complete audit report.
+See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for complete cryptographic analysis.
 
 ---
 
@@ -652,7 +655,7 @@ make security-audit
 - SPHINCS+-256f signatures
 
 ### Phase 3: Performance ✅ (Complete)
-- 10-50x Cython speedup
+- Cython optimization layer (18-37x vs pure Python)
 - SIMD optimizations
 - Benchmarking suite
 
@@ -734,13 +737,13 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) file for 
 ## 🌟 Why Choose Ava Guardian?
 
 ✅ **Production-Ready**: Enterprise features from day one
-✅ **Quantum-Safe**: 50+ years of protection
-✅ **High-Performance**: 10-50x speedup with Cython
-✅ **Innovative Security**: Unique 3R runtime monitoring
-✅ **Mathematically Rigorous**: 5 proven frameworks
+✅ **Quantum-Safe**: NIST-approved PQC algorithms (ML-DSA-65, Kyber-1024)
+✅ **Optimized Performance**: Cython-accelerated mathematical operations
+✅ **Innovative Security**: Unique 3R runtime monitoring (<2% overhead)
+✅ **Mathematically Rigorous**: 5 proven frameworks with machine precision
 ✅ **Cross-Platform**: Linux, macOS, Windows, ARM
+✅ **Transparent**: Honest about capabilities and limitations
 ✅ **Well-Documented**: Comprehensive guides and examples
-✅ **Actively Maintained**: Regular updates and security patches
 
 ---
 
