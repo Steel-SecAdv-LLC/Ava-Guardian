@@ -24,11 +24,11 @@ and produces correct output, verifying all six cryptographic layers.
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
-Date: 2025-11-22
+Date: 2025-11-24
 Version: 1.0.0
 
-AI-Co Omni-Architects:
-    Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
+AI-Co Architects:
+    Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 """
 
 import subprocess
