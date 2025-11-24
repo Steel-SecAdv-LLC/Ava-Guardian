@@ -27,6 +27,7 @@ from enum import Enum, auto
 
 class KeyStatus(Enum):
     """Key lifecycle status"""
+
     ACTIVE = auto()
     ROTATING = auto()
     DEPRECATED = auto()
@@ -52,6 +53,7 @@ class KeyMetadata:
         purpose: Key purpose (signing, encryption, etc.)
         metadata: Additional custom metadata
     """
+
     key_id: str
     created_at: datetime
     expires_at: Optional[datetime]
@@ -98,11 +100,7 @@ class HDKeyDerivation:
         else:
             # Derive seed from phrase (simplified BIP39)
             self.master_seed = hashlib.pbkdf2_hmac(
-                'sha512',
-                seed_phrase.encode('utf-8'),
-                b'mnemonic',
-                2048,
-                64
+                "sha512", seed_phrase.encode("utf-8"), b"mnemonic", 2048, 64
             )
 
         # Generate master key
@@ -118,7 +116,9 @@ class HDKeyDerivation:
 
         return master_key, chain_code
 
-    def _ckd_private(self, parent_key: bytes, parent_chain: bytes, index: int) -> Tuple[bytes, bytes]:
+    def _ckd_private(
+        self, parent_key: bytes, parent_chain: bytes, index: int
+    ) -> Tuple[bytes, bytes]:
         """
         Child Key Derivation (Private)
 
@@ -132,10 +132,10 @@ class HDKeyDerivation:
         """
         if index >= self.HARDENED_OFFSET:
             # Hardened derivation
-            data = b'\x00' + parent_key + index.to_bytes(4, 'big')
+            data = b"\x00" + parent_key + index.to_bytes(4, "big")
         else:
             # Non-hardened derivation (requires public key, simplified here)
-            data = parent_key + index.to_bytes(4, 'big')
+            data = parent_key + index.to_bytes(4, "big")
 
         h = hmac.new(parent_chain, data, hashlib.sha512)
         hmac_result = h.digest()
@@ -163,11 +163,11 @@ class HDKeyDerivation:
             >>> hd = HDKeyDerivation()
             >>> key, chain = hd.derive_path("m/44'/0'/0'/0/0")
         """
-        if not path.startswith('m'):
+        if not path.startswith("m"):
             raise ValueError("Path must start with 'm'")
 
         # Parse path
-        parts = path.split('/')[1:]  # Skip 'm'
+        parts = path.split("/")[1:]  # Skip 'm'
         key = self.master_key
         chain = self.master_chain_code
 
@@ -229,7 +229,7 @@ class KeyRotationManager:
         parent_id: Optional[str] = None,
         derivation_path: Optional[str] = None,
         expires_in: Optional[timedelta] = None,
-        max_usage: Optional[int] = None
+        max_usage: Optional[int] = None,
     ) -> KeyMetadata:
         """
         Register a new key
@@ -259,7 +259,7 @@ class KeyRotationManager:
             usage_count=0,
             max_usage=max_usage,
             purpose=purpose,
-            metadata={}
+            metadata={},
         )
 
         self.keys[key_id] = metadata
@@ -369,28 +369,28 @@ class KeyRotationManager:
             Metadata dictionary
         """
         export_data = {
-            'active_key_id': self.active_key_id,
-            'rotation_period_days': self.rotation_period.days,
-            'keys': {}
+            "active_key_id": self.active_key_id,
+            "rotation_period_days": self.rotation_period.days,
+            "keys": {},
         }
 
         for key_id, metadata in self.keys.items():
-            export_data['keys'][key_id] = {
-                'key_id': metadata.key_id,
-                'created_at': metadata.created_at.isoformat(),
-                'expires_at': metadata.expires_at.isoformat() if metadata.expires_at else None,
-                'status': metadata.status.name,
-                'version': metadata.version,
-                'parent_id': metadata.parent_id,
-                'derivation_path': metadata.derivation_path,
-                'usage_count': metadata.usage_count,
-                'max_usage': metadata.max_usage,
-                'purpose': metadata.purpose,
-                'metadata': metadata.metadata
+            export_data["keys"][key_id] = {
+                "key_id": metadata.key_id,
+                "created_at": metadata.created_at.isoformat(),
+                "expires_at": metadata.expires_at.isoformat() if metadata.expires_at else None,
+                "status": metadata.status.name,
+                "version": metadata.version,
+                "parent_id": metadata.parent_id,
+                "derivation_path": metadata.derivation_path,
+                "usage_count": metadata.usage_count,
+                "max_usage": metadata.max_usage,
+                "purpose": metadata.purpose,
+                "metadata": metadata.metadata,
             }
 
         if filepath:
-            with open(filepath, 'w') as f:
+            with open(filepath, "w") as f:
                 json.dump(export_data, f, indent=2)
 
         return export_data
@@ -418,11 +418,7 @@ class SecureKeyStorage:
         if master_password:
             # Derive encryption key from password
             self.encryption_key = hashlib.pbkdf2_hmac(
-                'sha256',
-                master_password.encode('utf-8'),
-                b'ava_guardian_salt',
-                100000,
-                32
+                "sha256", master_password.encode("utf-8"), b"ava_guardian_salt", 100000, 32
             )
         else:
             # Generate random encryption key (should be HSM-backed in production)
@@ -444,21 +440,23 @@ class SecureKeyStorage:
         iv = secrets.token_bytes(16)
 
         # Encrypt key data
-        cipher = Cipher(algorithms.AES(self.encryption_key), modes.CFB(iv), backend=default_backend())
+        cipher = Cipher(
+            algorithms.AES(self.encryption_key), modes.CFB(iv), backend=default_backend()
+        )
         encryptor = cipher.encryptor()
         encrypted_data = encryptor.update(key_data) + encryptor.finalize()
 
         # Store with IV and metadata
         storage_data = {
-            'key_id': key_id,
-            'encrypted_data': encrypted_data.hex(),
-            'iv': iv.hex(),
-            'metadata': metadata or {},
-            'stored_at': datetime.now().isoformat()
+            "key_id": key_id,
+            "encrypted_data": encrypted_data.hex(),
+            "iv": iv.hex(),
+            "metadata": metadata or {},
+            "stored_at": datetime.now().isoformat(),
         }
 
         key_file = self.storage_path / f"{key_id}.json"
-        with open(key_file, 'w') as f:
+        with open(key_file, "w") as f:
             json.dump(storage_data, f, indent=2)
 
     def retrieve_key(self, key_id: str) -> Optional[bytes]:
@@ -478,14 +476,16 @@ class SecureKeyStorage:
         if not key_file.exists():
             return None
 
-        with open(key_file, 'r') as f:
+        with open(key_file, "r") as f:
             storage_data = json.load(f)
 
         # Decrypt key data
-        encrypted_data = bytes.fromhex(storage_data['encrypted_data'])
-        iv = bytes.fromhex(storage_data['iv'])
+        encrypted_data = bytes.fromhex(storage_data["encrypted_data"])
+        iv = bytes.fromhex(storage_data["iv"])
 
-        cipher = Cipher(algorithms.AES(self.encryption_key), modes.CFB(iv), backend=default_backend())
+        cipher = Cipher(
+            algorithms.AES(self.encryption_key), modes.CFB(iv), backend=default_backend()
+        )
         decryptor = cipher.decryptor()
         key_data = decryptor.update(encrypted_data) + decryptor.finalize()
 
@@ -504,7 +504,7 @@ class SecureKeyStorage:
         key_file = self.storage_path / f"{key_id}.json"
         if key_file.exists():
             # Overwrite file before deleting
-            with open(key_file, 'wb') as f:
+            with open(key_file, "wb") as f:
                 f.write(secrets.token_bytes(1024))
             key_file.unlink()
             return True
@@ -552,7 +552,7 @@ if __name__ == "__main__":
 
     # Store a key
     test_key = secrets.token_bytes(32)
-    storage.store_key("master-key-001", test_key, metadata={'purpose': 'signing'})
+    storage.store_key("master-key-001", test_key, metadata={"purpose": "signing"})
     print("✓ Key stored securely")
 
     # Retrieve key

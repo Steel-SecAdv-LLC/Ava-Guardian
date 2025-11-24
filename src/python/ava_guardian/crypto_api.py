@@ -28,20 +28,22 @@ from abc import ABC, abstractmethod
 
 class AlgorithmType(Enum):
     """Supported cryptographic algorithms"""
-    ML_DSA_65 = auto()      # CRYSTALS-Dilithium (signatures)
-    KYBER_1024 = auto()     # CRYSTALS-Kyber (KEM)
-    SPHINCS_256F = auto()   # SPHINCS+ (signatures)
-    ED25519 = auto()        # Classical Ed25519 (signatures)
-    HYBRID_SIG = auto()     # Hybrid: Ed25519 + ML-DSA-65
-    HYBRID_KEM = auto()     # Hybrid: X25519 + Kyber-1024
+
+    ML_DSA_65 = auto()  # CRYSTALS-Dilithium (signatures)
+    KYBER_1024 = auto()  # CRYSTALS-Kyber (KEM)
+    SPHINCS_256F = auto()  # SPHINCS+ (signatures)
+    ED25519 = auto()  # Classical Ed25519 (signatures)
+    HYBRID_SIG = auto()  # Hybrid: Ed25519 + ML-DSA-65
+    HYBRID_KEM = auto()  # Hybrid: X25519 + Kyber-1024
 
 
 class CryptoBackend(Enum):
     """Available implementation backends"""
-    C_LIBRARY = auto()       # libava_guardian.so (fastest)
-    CYTHON = auto()          # Cython optimized (fast)
-    PURE_PYTHON = auto()     # Pure Python (fallback)
-    LIBOQS = auto()          # liboqs reference implementation
+
+    C_LIBRARY = auto()  # libava_guardian.so (fastest)
+    CYTHON = auto()  # Cython optimized (fast)
+    PURE_PYTHON = auto()  # Pure Python (fallback)
+    LIBOQS = auto()  # liboqs reference implementation
 
 
 @dataclass
@@ -55,6 +57,7 @@ class KeyPair:
         algorithm: Algorithm used to generate keys
         metadata: Additional key information
     """
+
     public_key: bytes
     secret_key: bytes
     algorithm: AlgorithmType
@@ -62,10 +65,11 @@ class KeyPair:
 
     def __del__(self):
         """Secure cleanup of secret key"""
-        if hasattr(self, 'secret_key') and self.secret_key:
+        if hasattr(self, "secret_key") and self.secret_key:
             # Overwrite secret key memory
             try:
                 import ctypes
+
                 buffer = (ctypes.c_char * len(self.secret_key)).from_buffer_copy(self.secret_key)
                 ctypes.memset(ctypes.addressof(buffer), 0, len(self.secret_key))
             except:
@@ -83,6 +87,7 @@ class Signature:
         message_hash: Hash of signed message (for verification)
         metadata: Additional signature information
     """
+
     signature: bytes
     algorithm: AlgorithmType
     message_hash: bytes
@@ -100,6 +105,7 @@ class EncapsulatedSecret:
         algorithm: Algorithm used
         metadata: Additional information
     """
+
     ciphertext: bytes
     shared_secret: bytes
     algorithm: AlgorithmType
@@ -107,10 +113,13 @@ class EncapsulatedSecret:
 
     def __del__(self):
         """Secure cleanup of shared secret"""
-        if hasattr(self, 'shared_secret') and self.shared_secret:
+        if hasattr(self, "shared_secret") and self.shared_secret:
             try:
                 import ctypes
-                buffer = (ctypes.c_char * len(self.shared_secret)).from_buffer_copy(self.shared_secret)
+
+                buffer = (ctypes.c_char * len(self.shared_secret)).from_buffer_copy(
+                    self.shared_secret
+                )
                 ctypes.memset(ctypes.addressof(buffer), 0, len(self.shared_secret))
             except:
                 pass
@@ -167,6 +176,7 @@ class MLDSAProvider(CryptoProvider):
         if self.backend == CryptoBackend.C_LIBRARY:
             try:
                 import ctypes
+
                 self.lib = ctypes.CDLL("build/lib/libava_guardian.so")
                 # Setup function signatures here
             except (OSError, AttributeError):
@@ -186,19 +196,18 @@ class MLDSAProvider(CryptoProvider):
         sk_bytes = private_key.private_bytes(
             encoding=serialization.Encoding.Raw,
             format=serialization.PrivateFormat.Raw,
-            encryption_algorithm=serialization.NoEncryption()
+            encryption_algorithm=serialization.NoEncryption(),
         )
 
         pk_bytes = public_key.public_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PublicFormat.Raw
+            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
         )
 
         return KeyPair(
             public_key=pk_bytes,
             secret_key=sk_bytes,
             algorithm=self.algorithm,
-            metadata={'backend': self.backend.name, 'key_size': len(pk_bytes)}
+            metadata={"backend": self.backend.name, "key_size": len(pk_bytes)},
         )
 
     def sign(self, message: bytes, secret_key: bytes) -> Signature:
@@ -214,7 +223,7 @@ class MLDSAProvider(CryptoProvider):
             signature=sig_bytes,
             algorithm=self.algorithm,
             message_hash=message_hash,
-            metadata={'signature_size': len(sig_bytes)}
+            metadata={"signature_size": len(sig_bytes)},
         )
 
     def verify(self, message: bytes, signature: bytes, public_key: bytes) -> bool:
@@ -245,6 +254,7 @@ class KyberProvider(KEMProvider):
         if self.backend == CryptoBackend.C_LIBRARY:
             try:
                 import ctypes
+
                 self.lib = ctypes.CDLL("build/lib/libava_guardian.so")
             except (OSError, AttributeError):
                 self.backend = CryptoBackend.PURE_PYTHON
@@ -262,19 +272,18 @@ class KyberProvider(KEMProvider):
         sk_bytes = private_key.private_bytes(
             encoding=serialization.Encoding.Raw,
             format=serialization.PrivateFormat.Raw,
-            encryption_algorithm=serialization.NoEncryption()
+            encryption_algorithm=serialization.NoEncryption(),
         )
 
         pk_bytes = public_key.public_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PublicFormat.Raw
+            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
         )
 
         return KeyPair(
             public_key=pk_bytes,
             secret_key=sk_bytes,
             algorithm=self.algorithm,
-            metadata={'backend': self.backend.name}
+            metadata={"backend": self.backend.name},
         )
 
     def encapsulate(self, public_key: bytes) -> EncapsulatedSecret:
@@ -291,15 +300,14 @@ class KyberProvider(KEMProvider):
 
         # Ciphertext is the ephemeral public key
         ciphertext = ephemeral_key.public_key().public_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PublicFormat.Raw
+            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
         )
 
         return EncapsulatedSecret(
             ciphertext=ciphertext,
             shared_secret=shared_secret,
             algorithm=self.algorithm,
-            metadata={'shared_secret_size': len(shared_secret)}
+            metadata={"shared_secret_size": len(shared_secret)},
         )
 
     def decapsulate(self, ciphertext: bytes, secret_key: bytes) -> bytes:
@@ -335,9 +343,9 @@ class HybridSignatureProvider(CryptoProvider):
             secret_key=combined_sk,
             algorithm=self.algorithm,
             metadata={
-                'classical_pk_size': len(classical_keys.public_key),
-                'pqc_pk_size': len(pqc_keys.public_key)
-            }
+                "classical_pk_size": len(classical_keys.public_key),
+                "pqc_pk_size": len(pqc_keys.public_key),
+            },
         )
 
     def sign(self, message: bytes, secret_key: bytes) -> Signature:
@@ -358,9 +366,9 @@ class HybridSignatureProvider(CryptoProvider):
             algorithm=self.algorithm,
             message_hash=hashlib.sha3_256(message).digest(),
             metadata={
-                'classical_sig_size': len(classical_sig.signature),
-                'pqc_sig_size': len(pqc_sig.signature)
-            }
+                "classical_sig_size": len(classical_sig.signature),
+                "pqc_sig_size": len(pqc_sig.signature),
+            },
         )
 
     def verify(self, message: bytes, signature: bytes, public_key: bytes) -> bool:
@@ -395,7 +403,7 @@ class AvaGuardianCrypto:
     def __init__(
         self,
         algorithm: AlgorithmType = AlgorithmType.HYBRID_SIG,
-        backend: CryptoBackend = CryptoBackend.C_LIBRARY
+        backend: CryptoBackend = CryptoBackend.C_LIBRARY,
     ):
         """
         Initialize cryptographic API
@@ -450,7 +458,7 @@ class AvaGuardianCrypto:
         return self.provider.decapsulate(ciphertext, secret_key)
 
     @staticmethod
-    def hash_message(message: bytes, algorithm: str = 'sha3-256') -> bytes:
+    def hash_message(message: bytes, algorithm: str = "sha3-256") -> bytes:
         """
         Hash a message using specified algorithm
 
@@ -461,11 +469,11 @@ class AvaGuardianCrypto:
         Returns:
             Hash digest
         """
-        if algorithm == 'sha3-256':
+        if algorithm == "sha3-256":
             return hashlib.sha3_256(message).digest()
-        elif algorithm == 'sha3-512':
+        elif algorithm == "sha3-512":
             return hashlib.sha3_512(message).digest()
-        elif algorithm == 'shake256':
+        elif algorithm == "shake256":
             return hashlib.shake_256(message).digest(32)
         else:
             raise ValueError(f"Unsupported hash algorithm: {algorithm}")
@@ -483,11 +491,14 @@ class AvaGuardianCrypto:
             True if equal, False otherwise (constant time)
         """
         import secrets
+
         return secrets.compare_digest(a, b)
 
 
 # Convenience functions
-def quick_sign(message: bytes, algorithm: AlgorithmType = AlgorithmType.HYBRID_SIG) -> Tuple[KeyPair, Signature]:
+def quick_sign(
+    message: bytes, algorithm: AlgorithmType = AlgorithmType.HYBRID_SIG
+) -> Tuple[KeyPair, Signature]:
     """
     Quick sign: Generate keys and sign message in one call
 
@@ -504,7 +515,12 @@ def quick_sign(message: bytes, algorithm: AlgorithmType = AlgorithmType.HYBRID_S
     return keypair, signature
 
 
-def quick_verify(message: bytes, signature: bytes, public_key: bytes, algorithm: AlgorithmType = AlgorithmType.HYBRID_SIG) -> bool:
+def quick_verify(
+    message: bytes,
+    signature: bytes,
+    public_key: bytes,
+    algorithm: AlgorithmType = AlgorithmType.HYBRID_SIG,
+) -> bool:
     """
     Quick verify: Verify signature in one call
 
@@ -521,7 +537,9 @@ def quick_verify(message: bytes, signature: bytes, public_key: bytes, algorithm:
     return crypto.verify(message, signature, public_key)
 
 
-def quick_kem(algorithm: AlgorithmType = AlgorithmType.KYBER_1024) -> Tuple[KeyPair, EncapsulatedSecret]:
+def quick_kem(
+    algorithm: AlgorithmType = AlgorithmType.KYBER_1024,
+) -> Tuple[KeyPair, EncapsulatedSecret]:
     """
     Quick KEM: Generate keys and encapsulate secret in one call
 
