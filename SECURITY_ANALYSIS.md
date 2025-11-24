@@ -62,10 +62,14 @@ Ava Guardian ♱ provides cryptographic protection for Omni-DNA Helix codes thro
 
 **Limitations**:
 - ⚠️ **No third-party security audit** (self-assessed cryptographic analysis)
-- ⚠️ HSM integration optional (not enforced by default)
 - ⚠️ RFC 3161 TSA optional (self-asserted timestamps allowed)
 - ⚠️ PQC algorithms are recent standards (limited real-world deployment history)
 - ⚠️ Constant-time implementation needs independent verification
+
+**Production Requirements** (MANDATORY):
+- 🔒 **HSM/TPM REQUIRED**: Master secrets MUST be stored in FIPS 140-2 Level 3+ Hardware Security Module for production deployments
+- 🔒 **No Software-Only Keys**: Software-based key storage is ONLY permitted for development/testing environments
+- 🔒 **Audit Trail**: All HSM operations must be logged and monitored
 
 ---
 
@@ -990,9 +994,9 @@ Interpretation: Even knowing K₂, adversary has ≤ 2^-128 advantage in predict
 |----------|-------|------------|----------|
 | FIPS 202 | SHA-3 Standard | ✓ Full | SHA3-256 implementation |
 | SP 800-108 | Key Derivation | ✓ Full | HKDF-SHA256 |
-| FIPS 204 | PQC Digital Signatures | ✓ Full | Dilithium3 |
-| SP 800-57 | Key Management | ✓ Partial | KMS design (HSM optional) |
-| FIPS 140-2 | Crypto Module Security | ✓ Partial | Depends on deployment |
+| FIPS 204 | PQC Digital Signatures | ✓ Full | ML-DSA-65 (Dilithium) |
+| SP 800-57 | Key Management | ✓ Full | KMS design with HSM requirement |
+| FIPS 140-2 Level 3+ | HSM Security | ✓ **REQUIRED** | **MANDATORY for production** |
 
 **Reference:** National Institute of Standards and Technology (NIST). https://csrc.nist.gov/publications
 
@@ -1270,19 +1274,28 @@ Ava Guardian ♱ provides cryptographic protection for Omni-DNA Helix codes thro
 
 1. ⚠️ **No Third-Party Audit**: This analysis is self-assessed, not independently audited
 2. ⚠️ **New PQC Standards**: ML-DSA-65 and Kyber-1024 are recent NIST standards with limited deployment history
-3. ⚠️ **Optional HSM**: High-security key storage not enforced by default
-4. ⚠️ **Implementation Verification**: Constant-time properties need independent verification
-5. ⚠️ **Performance Trade-offs**: Quantum resistance comes with computational overhead
+3. ⚠️ **Implementation Verification**: Constant-time properties need independent verification
+4. ⚠️ **Performance Trade-offs**: Quantum resistance comes with computational overhead
 
 ### Recommendations for Production Deployment
 
-1. **Third-Party Audit**: Obtain professional security audit before production use
-2. **Deploy ML-DSA-65**: Install liboqs or equivalent for quantum resistance
-3. **Use HSM**: Store master secrets in FIPS 140-2 Level 3+ Hardware Security Module
+1. **MANDATORY - HSM/TPM**: Store ALL master secrets in FIPS 140-2 Level 3+ Hardware Security Module
+   - YubiKey HSM, AWS CloudHSM, Azure Dedicated HSM, or equivalent
+   - PKCS#11 interface for key operations
+   - Physical tamper-resistant enclosure
+   - **Software-only key storage is PROHIBITED in production**
+
+2. **Third-Party Audit**: Obtain professional security audit before production use
+
+3. **Deploy ML-DSA-65**: Install liboqs or equivalent for quantum resistance
+
 4. **Enable RFC 3161**: Use trusted TSA for legal-strength timestamps
+
 5. **Key Rotation**: Implement automated quarterly key rotation
-6. **Monitoring**: Audit all key operations and signature verifications
-7. **Penetration Testing**: Conduct regular security testing
+
+6. **Monitoring**: Audit ALL HSM operations, key operations, and signature verifications
+
+7. **Penetration Testing**: Conduct regular security testing including HSM attack scenarios
 
 ### Future Work
 
