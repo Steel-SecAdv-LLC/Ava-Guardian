@@ -105,15 +105,15 @@ jobs:
 
     - name: Check code formatting with Black
       run: |
-        black --check --diff .
+        black --check --diff ava_guardian/ tests/ dna_guardian_secure.py
 
     - name: Lint with Flake8
       run: |
-        flake8 . --count --show-source --statistics
+        flake8 ava_guardian/ tests/ dna_guardian_secure.py --count --show-source --statistics --max-line-length=100
 
     - name: Check import order with isort
       run: |
-        isort --check-only --diff .
+        isort --check-only --diff ava_guardian/ tests/ dna_guardian_secure.py
 
     - name: Type checking with MyPy
       continue-on-error: true

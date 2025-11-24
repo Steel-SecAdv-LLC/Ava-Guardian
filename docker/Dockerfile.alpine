@@ -40,7 +40,9 @@ RUN adduser -D -u 1000 ava
 COPY --from=builder /build/build/lib/*.so* /usr/local/lib/
 COPY --from=builder /build/dist/*.whl /tmp/
 
+# Install Python package and runtime dependencies (numpy, scipy required by ava_guardian)
 RUN pip3 install --no-cache-dir /tmp/*.whl && \
+    pip3 install --no-cache-dir numpy scipy && \
     rm -rf /tmp/*.whl
 
 USER ava
