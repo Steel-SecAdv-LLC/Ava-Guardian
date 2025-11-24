@@ -41,6 +41,15 @@ except ImportError:
     CYTHON_AVAILABLE = False
     cythonize = None
 
+# Check for NumPy availability (needed for C API headers)
+try:
+    import numpy as np
+
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+    np = None
+
 # Configuration
 VERSION = "1.0.0"
 USE_CYTHON = CYTHON_AVAILABLE and not os.getenv("AVA_NO_CYTHON")
@@ -110,10 +119,16 @@ def get_extension_modules():
 
     # Cython mathematical engine (if Cython available)
     if USE_CYTHON:
+        # Build include dirs for math engine
+        math_include_dirs = ["include"]
+        if NUMPY_AVAILABLE:
+            # Add NumPy C API headers for numpy/arrayobject.h
+            math_include_dirs.append(np.get_include())
+
         math_ext = Extension(
             name="ava_guardian.math_engine",
             sources=["src/cython/math_engine.pyx"],
-            include_dirs=["include"],
+            include_dirs=math_include_dirs,
             extra_compile_args=compiler_flags,
             extra_link_args=linker_flags,
             language="c",

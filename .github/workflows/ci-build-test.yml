@@ -108,15 +108,19 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libssl-dev
+          sudo apt-get install -y build-essential python3-dev cmake libssl-dev
 
       - name: Install system dependencies (macOS)
         if: matrix.os == 'macos-latest'
         run: brew install cmake openssl
 
+      - name: Install Python build dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install Cython>=0.29.30 numpy>=1.21
+
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Build and install package (without C extensions on Windows)
