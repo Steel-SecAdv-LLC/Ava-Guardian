@@ -34,7 +34,7 @@ RUN mkdir -p build && cd build && \
         -DAVA_BUILD_STATIC=OFF \
         -DAVA_BUILD_TESTS=OFF \
         -DAVA_BUILD_EXAMPLES=OFF \
-        -DAVA_ENABLE_AVX2=ON \
+        -DAVA_ENABLE_AVX2=OFF \
         -DAVA_ENABLE_LTO=ON && \
     cmake --build . --config Release -j$(nproc)
 

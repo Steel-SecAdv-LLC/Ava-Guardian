@@ -73,7 +73,8 @@ def get_compiler_flags():
         if DEBUG:
             flags.extend(["-O0", "-g3", "-DDEBUG"])
         else:
-            flags.extend(["-O3", "-DNDEBUG", "-march=native"])
+            # Note: -march=native removed for portability across CI environments
+            flags.extend(["-O3", "-DNDEBUG"])
 
         if COVERAGE:
             flags.extend(["--coverage"])

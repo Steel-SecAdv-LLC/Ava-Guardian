@@ -41,7 +41,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong")
 # Release optimizations
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -DNDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
+# Note: -march=native removed for portability across CI environments
+# Users can add -DCMAKE_C_FLAGS="-march=native" for local optimized builds
 
 # Debug flags
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g3 -DDEBUG")
