@@ -202,10 +202,6 @@ ava_error_t ava_sign(
         return AVA_ERROR_INVALID_PARAM;
     }
 
-    /* Suppress unused parameter warnings for stub implementation */
-    (void)message_len;
-    (void)secret_key_len;
-
     /* Algorithm-specific implementation will go here */
     return AVA_ERROR_NOT_IMPLEMENTED;
 }
@@ -229,11 +225,6 @@ ava_error_t ava_verify(
     if (!message || !signature || !public_key) {
         return AVA_ERROR_INVALID_PARAM;
     }
-
-    /* Suppress unused parameter warnings for stub implementation */
-    (void)message_len;
-    (void)signature_len;
-    (void)public_key_len;
 
     /* Algorithm-specific implementation will go here */
     return AVA_ERROR_NOT_IMPLEMENTED;

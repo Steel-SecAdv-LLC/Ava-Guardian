@@ -21,7 +21,7 @@
     } while(0)
 
 int main(void) {
-    uint8_t a[64], b[64];
+    uint8_t a[64], b[64], c[64];
     int result;
 
     printf("===========================================\n");

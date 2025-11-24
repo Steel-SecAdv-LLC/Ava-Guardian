@@ -165,6 +165,7 @@ static inline int consttime_eq_u32(uint32_t a, uint32_t b) {
  * @return 1 if a < b, 0 otherwise (constant time)
  */
 static inline int consttime_lt_u32(uint32_t a, uint32_t b) {
+    uint32_t diff = a ^ b;
     uint32_t lt = a ^ ((a ^ b) | ((a - b) ^ b));
     return (int)(lt >> 31);
 }
