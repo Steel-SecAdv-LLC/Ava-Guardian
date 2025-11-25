@@ -1,6 +1,6 @@
 # 3R Security Monitoring
 
-Ava Guardian includes optional runtime security monitoring using the **3R Mechanism** - a novel security framework developed by Steel Security Advisors LLC.
+Ava Guardian ♱ includes optional runtime security monitoring using the **3R Mechanism** - a novel security framework developed by Steel Security Advisors LLC.
 
 ## Overview
 

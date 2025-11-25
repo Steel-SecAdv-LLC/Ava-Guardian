@@ -980,9 +980,25 @@ Interpretation: Even knowing K₂, adversary has ≤ 2^-128 advantage in predict
 | Dilithium Forgery (Quantum) | 2^207 ops | 2^190 ops | No | MLWE hardness |
 | HKDF Key Recovery | 2^256 ops | 2^256 ops | No | Pre-image resistance |
 | Timestamp Forgery | 2^100 ops | 2^100 ops | No | TSA security |
-| Combined Attack (All layers) | 2^724 ops | 2^644 ops | No | Defense-in-depth |
 
 *Ed25519 vulnerable to quantum, but Dilithium provides quantum-resistant backup.
+
+### Per-Layer Security Assessment
+
+The system provides defense-in-depth through multiple independent cryptographic layers. Each layer provides its own security guarantees based on established standards:
+
+| Layer | Security Level | Standard Reference | Notes |
+|-------|---------------|-------------------|-------|
+| SHA3-256 | ~128-bit preimage, 256-bit collision | NIST FIPS 202 | Keccak sponge construction |
+| HMAC-SHA3-256 | ~128-bit security | RFC 2104 | Requires key secrecy |
+| Ed25519 | ~128-bit classical | RFC 8032 | Vulnerable to quantum (Shor's algorithm) |
+| ML-DSA-65 (Dilithium) | ~192-bit quantum | NIST FIPS 204 | Post-quantum secure |
+| HKDF-SHA256 | ~256-bit key derivation | RFC 5869 | Domain-separated key derivation |
+| RFC 3161 Timestamps | Audit metadata | RFC 3161 | TSA-dependent; not cryptographically verified by this library |
+
+**Defense-in-Depth Principle:** An attacker must defeat ALL layers to compromise the system. The overall security is bounded by the weakest layer (~128-bit classical security from Ed25519/HMAC, or ~192-bit quantum security from Dilithium when quantum computers become viable).
+
+**Important Note:** Previous documentation referenced aggregate attack costs (2^724 classical, 2^644 quantum) by summing individual layer costs. This is mathematically incorrect for defense-in-depth systems. The correct interpretation is that security is bounded by the weakest layer, not the sum of all layers. The defense-in-depth approach ensures that even if one layer is compromised, other layers provide continued protection.
 
 ---
 
