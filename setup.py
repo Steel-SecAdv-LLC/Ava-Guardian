@@ -236,9 +236,9 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Andrew E. A.",
-    author_email="steel.secadv.llc@outlook.com",
+    author_email="steel.sa.llc@gmail.com",
     maintainer="Steel Security Advisors LLC",
-    maintainer_email="steel.secadv.llc@outlook.com",
+    maintainer_email="steel.sa.llc@gmail.com",
     url="https://github.com/Steel-SecAdv-LLC/Ava-Guardian",
     project_urls={
         "Documentation": "https://github.com/Steel-SecAdv-LLC/Ava-Guardian/blob/main/README.md",

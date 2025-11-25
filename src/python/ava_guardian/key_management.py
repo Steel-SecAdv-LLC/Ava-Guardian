@@ -16,13 +16,13 @@ Enterprise-grade key management with:
 
 import hashlib
 import hmac
-import secrets
 import json
-from typing import List, Optional, Tuple, Dict, Any
-from dataclasses import dataclass, asdict
+import secrets
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from pathlib import Path
 from enum import Enum, auto
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
 
 
 class KeyStatus(Enum):
@@ -433,8 +433,8 @@ class SecureKeyStorage:
             key_data: Key bytes (will be encrypted)
             metadata: Optional metadata
         """
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
         # Generate random IV
         iv = secrets.token_bytes(16)
@@ -469,8 +469,8 @@ class SecureKeyStorage:
         Returns:
             Decrypted key bytes or None if not found
         """
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
         from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
         key_file = self.storage_path / f"{key_id}.json"
         if not key_file.exists():

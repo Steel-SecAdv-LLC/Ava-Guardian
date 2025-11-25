@@ -31,7 +31,7 @@ This test suite complements test_crypto_core_penetration.py by covering:
 
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
-Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
+Contact: steel.sa.llc@gmail.com
 Date: 2025-11-25
 Version: 1.0.0
 

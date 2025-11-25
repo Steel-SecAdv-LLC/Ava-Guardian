@@ -25,7 +25,7 @@ Demonstrates:
 
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
-Contact: steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com
+Contact: steel.sa.llc@gmail.com
 Date: 2025-11-24
 Version: 1.0.0
 Project: Ava Guardian 3R Runtime Monitoring

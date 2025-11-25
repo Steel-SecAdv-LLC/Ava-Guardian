@@ -136,7 +136,7 @@ Licensed under the Apache License, Version 2.0. See LICENSE file for details.
 Contact
 -------
 
-- Email: steel.secadv.llc@outlook.com
+- Email: steel.sa.llc@gmail.com
 - GitHub: https://github.com/Steel-SecAdv-LLC/Ava-Guardian
 - Issues: https://github.com/Steel-SecAdv-LLC/Ava-Guardian/issues
 

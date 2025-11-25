@@ -73,8 +73,8 @@ Example:
 **Quantum Security:**
 <!-- Describe quantum attack resistance -->
 
-**Impact on A+ Security Grade:**
-<!-- Does this maintain, improve, or affect the current 96/100 grade? -->
+**Security Impact:**
+<!-- Does this maintain or improve the current security posture? -->
 
 ## Implementation Details
 

@@ -459,7 +459,7 @@ Extendable-Output Functions (August 2015)
 
 - **GitHub Issues:** Bug reports, feature requests
 - **GitHub Discussions:** General questions, ideas
-- **Email:** steel.secadv.llc@outlook.com (security issues only)
+- **Email:** steel.sa.llc@gmail.com (security issues only)
 
 ### Getting Help
 
@@ -485,7 +485,7 @@ If you have questions about contributing:
 1. Check this CONTRIBUTING.md file
 2. Review existing issues and pull requests
 3. Ask in GitHub Discussions
-4. Contact maintainers at steel.secadv.llc@outlook.com
+4. Contact maintainers at steel.sa.llc@gmail.com
 
 ---
 

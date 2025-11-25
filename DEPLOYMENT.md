@@ -346,11 +346,11 @@ def rate_limit(max_calls_per_minute):
 
 ## Contact and Support
 
-**Security Issues**: steel.secadv.llc@outlook.com  
+**Security Issues**: steel.sa.llc@gmail.com  
 **Documentation**: GitHub Repository  
 
 ---
 
-*Last Updated: 2025*  
+*Last Updated: 2025-11-25*  
 *Version: 1.0.0*  
 *Steel Security Advisors LLC*

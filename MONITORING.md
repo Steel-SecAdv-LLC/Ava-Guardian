@@ -245,4 +245,9 @@ See inline documentation in `ava_guardian_monitor.py` for complete API details.
 Copyright (C) 2025 Steel Security Advisors LLC  
 Licensed under Apache License 2.0
 
-3R Mechanism developed by Andrew E. A. for Ava Guardian project.
+3R Mechanism developed by Andrew E. A. for Ava Guardian ♱ project.
+
+---
+
+**Last Updated:** 2025-11-25  
+**Version:** 1.0.0

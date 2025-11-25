@@ -25,12 +25,14 @@ Helix_2 Terms (Ethical Verification):
 """
 
 import numpy as np
+
 cimport numpy as cnp
-cimport cython
-from libc.math cimport cos, sin, sqrt, log, exp, fabs, tanh
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int64_t
-from libc.stdlib cimport rand, srand, RAND_MAX
+from libc.math cimport cos, exp, fabs, log, sin, sqrt, tanh
+from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
+from libc.stdlib cimport RAND_MAX, rand, srand
 from libc.time cimport time
+
+cimport cython
 
 # Initialize NumPy C API
 cnp.import_array()
