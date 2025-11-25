@@ -1816,31 +1816,29 @@ def _verify_dilithium_with_policy(
     """
     Verify Dilithium signature with policy enforcement.
 
-    The policy enforcement is smart about when to raise errors:
-    - If Dilithium libraries are NOT available in the environment, we gracefully
-      fall back to classical-only mode (return None) regardless of the policy.
-      This allows the system to work in environments without quantum libraries.
-    - If Dilithium libraries ARE available but the package lacks quantum signatures,
-      this indicates a potential downgrade attack, so we raise an error when
-      require_quantum_signatures=True.
+    This function treats require_quantum_signatures as a strict policy flag:
+    - If True: raises QuantumSignatureRequiredError when signatures are missing,
+      unavailable, or invalid. This is a security-conscious approach that does
+      not silently degrade.
+    - If False: gracefully returns None when signatures are missing/unavailable.
+
+    The caller is responsible for choosing the appropriate policy. Use the
+    verify_crypto_package() function which provides smart defaulting based on
+    DILITHIUM_AVAILABLE.
 
     Returns:
         True if valid, False if invalid, None if not present/unsupported.
 
     Raises:
-        QuantumSignatureRequiredError: If policy requires quantum signatures
-            AND Dilithium libraries are available, but the package is missing
-            signatures or verification fails (potential downgrade attack).
+        QuantumSignatureRequiredError: If require_quantum_signatures=True and
+            signatures are missing, unavailable, or invalid.
     """
     if (
         not package.quantum_signatures_enabled
         or not package.dilithium_signature
         or not package.dilithium_pubkey
     ):
-        # Only enforce quantum requirement if Dilithium is actually available
-        # in this environment. If it's not available, gracefully degrade to
-        # classical-only mode (the warning was already printed at import time).
-        if require_quantum_signatures and DILITHIUM_AVAILABLE:
+        if require_quantum_signatures:
             raise QuantumSignatureRequiredError(
                 "Quantum signatures required but package lacks Dilithium signature"
             )
@@ -1854,9 +1852,7 @@ def _verify_dilithium_with_policy(
             bytes.fromhex(package.dilithium_pubkey),
         )
     except QuantumSignatureUnavailableError:
-        # Dilithium libraries became unavailable (shouldn't happen normally)
-        # Only raise if we're in an environment that should have Dilithium
-        if require_quantum_signatures and DILITHIUM_AVAILABLE:
+        if require_quantum_signatures:
             raise QuantumSignatureRequiredError(
                 "Quantum signatures required but Dilithium libraries unavailable"
             )
@@ -1866,7 +1862,7 @@ def _verify_dilithium_with_policy(
         duration_ms = (time.time() - start_time) * 1000
         monitor.monitor_crypto_operation("dilithium_verify", duration_ms)
 
-    if require_quantum_signatures and DILITHIUM_AVAILABLE and result is False:
+    if require_quantum_signatures and result is False:
         raise QuantumSignatureRequiredError(
             "Quantum signatures required but Dilithium signature verification failed"
         )
@@ -1880,7 +1876,7 @@ def verify_crypto_package(
     package: CryptoPackage,
     hmac_key: bytes,
     monitor: Optional["AvaGuardianMonitor"] = None,
-    require_quantum_signatures: bool = True,
+    require_quantum_signatures: Optional[bool] = None,
 ) -> Dict[str, Optional[bool]]:
     """
     Verify all cryptographic protections in package (6 security layers).
@@ -1900,9 +1896,15 @@ def verify_crypto_package(
         package: Crypto package to verify
         hmac_key: HMAC key for verification
         monitor: Optional security monitor for 3R runtime analysis
-        require_quantum_signatures: If True (default), raises QuantumSignatureRequiredError
-            when Dilithium signatures are missing or cannot be verified.
-            Set to False only for legacy compatibility or testing without quantum libraries.
+        require_quantum_signatures: Policy for quantum signature enforcement:
+            - None (default): Smart defaulting based on environment. Uses
+              DILITHIUM_AVAILABLE to determine policy - requires quantum signatures
+              when Dilithium libraries are available, allows classical-only when not.
+            - True: Strict enforcement. Raises QuantumSignatureRequiredError if
+              Dilithium signatures are missing or invalid. Use this when you
+              explicitly require quantum-resistant protection.
+            - False: No enforcement. Gracefully degrades to classical-only mode.
+              Use for legacy compatibility or testing without quantum libraries.
 
     Returns:
         Dictionary of verification results:
@@ -1916,14 +1918,18 @@ def verify_crypto_package(
         }
 
     Raises:
-        QuantumSignatureRequiredError: If require_quantum_signatures=True and
-            Dilithium signature is missing, invalid, or cannot be verified.
+        QuantumSignatureRequiredError: If require_quantum_signatures=True (or
+            defaulted to True via DILITHIUM_AVAILABLE) and Dilithium signature
+            is missing, invalid, or cannot be verified.
 
     Note:
         This function catches all exceptions internally and returns False for
         failed verifications rather than raising exceptions. This provides
         clean failure semantics for security-critical code paths.
     """
+    # Smart defaulting: require quantum signatures only when Dilithium is available
+    if require_quantum_signatures is None:
+        require_quantum_signatures = DILITHIUM_AVAILABLE
     results: Dict[str, Optional[bool]] = {
         "content_hash": False,
         "hmac": False,
