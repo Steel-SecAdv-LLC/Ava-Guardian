@@ -374,52 +374,6 @@ Supported compilers:
 
 Note: C extensions may require additional setup on Windows.
 
-## Enterprise Features (Roadmap)
-
-### Phase 4: Enterprise Integration
-
-1. **Hierarchical Deterministic Key Derivation**
-   - BIP32-style key trees
-   - Deterministic key generation
-   - Hardware wallet integration
-
-2. **Key Rotation**
-   - Zero-downtime key updates
-   - Automatic re-encryption
-   - Key version management
-
-3. **HSM/TPM Integration**
-   - PKCS#11 interface
-   - TPM 2.0 support
-   - Hardware-backed keys
-
-4. **TLS 1.3 + PQC**
-   - Hybrid classical + PQC mode
-   - Drop-in replacement for OpenSSL
-   - Certificate generation
-
-### Phase 5: Production Hardening
-
-1. **Fuzzing Infrastructure**
-   - AFL++ integration
-   - libFuzzer for C code
-   - Continuous fuzzing
-
-2. **Timing Attack Detection**
-   - Automated timing analysis
-   - Constant-time verification
-   - Statistical testing
-
-3. **Comprehensive Documentation**
-   - Doxygen for C API
-   - Sphinx for Python API
-   - Security architecture whitepaper
-
-4. **Deployment**
-   - Docker containers
-   - Kubernetes Helm charts
-   - Package distributions (PyPI, deb, rpm)
-
 ## Security Guarantees
 
 ### Constant-Time Operations

@@ -9,7 +9,7 @@
 Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
 
 **Version:** 1.0.0  
-**Date:** 2025-11-22
+**Date:** 2025-11-25
 
 ---
 
@@ -46,7 +46,7 @@ Ava Guardian ♱ (AG♱): SHA3-256 Security Hash
   ✓ Ed25519 keypair: 32 bytes
   ✓ Dilithium keypair: 1952 bytes
 
-[2/5] Master Omni-DNA Helix Codes:
+[2/5] Master DNA Code Helix:
   1. 👁20A07∞_XΔEΛX_ϵ19A89Ϙ
      Omni-Directional System
      Helix: radius=20.0, pitch=0.7
@@ -850,7 +850,7 @@ class CryptoPackage:
     ed25519_pubkey: str
     dilithium_pubkey: str
     version: str
-    ethical_vector: Dict[str, float]  # NEW: 12 Omni-DNA Ethical Pillars
+    ethical_vector: Dict[str, float]  # NEW: 12 DNA Code Ethical Pillars
     ethical_hash: str                 # NEW: SHA3-256 hash of ethical vector
 ```
 
@@ -1175,5 +1175,5 @@ Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
 ---
 
 **Document Version:** 1.0.0  
-**Last Updated:** 2025-11-22  
+**Last Updated:** 2025-11-25  
 **Copyright (C) 2025 Steel Security Advisors LLC**

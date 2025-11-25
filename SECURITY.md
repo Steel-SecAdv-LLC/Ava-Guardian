@@ -10,8 +10,8 @@ We actively maintain and provide security updates for the following versions:
 
 | Version | Supported          | Status |
 | ------- | ------------------ | ------ |
-| 4.0.x   | :white_check_mark: | Active development and security updates |
-| < 4.0   | :x:                | No longer supported |
+| 1.0.x   | :white_check_mark: | Active development and security updates |
+| < 1.0   | :x:                | No longer supported |
 
 ## Security Features
 
@@ -233,7 +233,7 @@ Non-compliance with these standards should be reported as a high-severity securi
 
 ---
 
-**Last Updated:** 2025-11-22
+**Last Updated:** 2025-11-25
 **Version:** 1.0.0
 
 Thank you for helping keep Ava Guardian ♱ secure!
