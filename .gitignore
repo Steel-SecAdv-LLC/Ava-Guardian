@@ -209,3 +209,6 @@ __marimo__/
 
 # Generated cryptographic keys and packages (demonstration outputs)
 public_keys/
+*.key
+DNA_CRYPTO_PACKAGE.json
+benchmark_results.json
