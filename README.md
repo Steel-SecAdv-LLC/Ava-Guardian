@@ -1,4 +1,4 @@
-# Ava Guardian ♱
+# Ava Guardian ♱ (AG♱)
 
 **Production-Grade Multi-Language Post-Quantum Cryptographic Security System**
 
