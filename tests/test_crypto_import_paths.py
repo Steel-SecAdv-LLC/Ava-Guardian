@@ -32,7 +32,6 @@ AI-Co Architects:
 """
 
 import base64
-import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -249,19 +248,18 @@ class TestDilithiumUnavailablePaths:
         assert kms.quantum_signatures_enabled is False
         assert kms.dilithium_keypair is None
 
-    def test_export_public_keys_when_dilithium_unavailable(self, capsys):
+    def test_export_public_keys_when_dilithium_unavailable(self, capsys, tmp_path):
         """Test export_public_keys when Dilithium unavailable."""
         kms = dgs.generate_key_management_system("test_author")
         kms.quantum_signatures_enabled = False
         kms.dilithium_keypair = None
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            out_dir = Path(tmpdir) / "keys"
-            dgs.export_public_keys(kms, out_dir)
-            readme = (out_dir / "README.txt").read_text()
-            assert "Dilithium Public Key: NOT AVAILABLE" in readme
-            out = capsys.readouterr().out
-            assert "Dilithium: NOT AVAILABLE" in out
+        out_dir = tmp_path / "keys"
+        dgs.export_public_keys(kms, out_dir)
+        readme = (out_dir / "README.txt").read_text()
+        assert "Dilithium Public Key: NOT AVAILABLE" in readme
+        out = capsys.readouterr().out
+        assert "Dilithium: NOT AVAILABLE" in out
 
     def test_create_crypto_package_gracefully_degrades_when_dilithium_sign_fails(self, monkeypatch):
         """Test package creation gracefully degrades when Dilithium sign fails."""
@@ -323,16 +321,15 @@ class TestDilithiumUnavailablePaths:
 class TestMainFunctionDirect:
     """Tests for main() function via direct call."""
 
-    def test_main_direct_call_covers_demo(self, monkeypatch, capsys):
+    def test_main_direct_call_covers_demo(self, monkeypatch, capsys, tmp_path):
         """Test main() function via direct call for coverage."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            monkeypatch.chdir(tmpdir)
-            dgs.main()
-            out = capsys.readouterr().out
-            assert "Ava Guardian" in out
-            assert "ALL VERIFICATIONS PASSED" in out
-            assert Path("DNA_CRYPTO_PACKAGE.json").exists()
-            assert Path("public_keys").is_dir()
+        monkeypatch.chdir(tmp_path)
+        dgs.main()
+        out = capsys.readouterr().out
+        assert "Ava Guardian" in out
+        assert "ALL VERIFICATIONS PASSED" in out
+        assert (tmp_path / "DNA_CRYPTO_PACKAGE.json").exists()
+        assert (tmp_path / "public_keys").is_dir()
 
 
 # ============================================================================
@@ -357,76 +354,73 @@ class TestDeriveKeysEdgeCasesExtended:
 class TestMainFunctionBranches:
     """Tests for main() function branch coverage."""
 
-    def test_main_with_dilithium_unavailable(self, monkeypatch, capsys):
+    def test_main_with_dilithium_unavailable(self, monkeypatch, capsys, tmp_path):
         """Test main() when Dilithium is unavailable."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            monkeypatch.chdir(tmpdir)
+        monkeypatch.chdir(tmp_path)
 
-            # Mock generate_key_management_system to return KMS without Dilithium
-            original_gen_kms = dgs.generate_key_management_system
+        # Mock generate_key_management_system to return KMS without Dilithium
+        original_gen_kms = dgs.generate_key_management_system
 
-            def mock_gen_kms(author):
-                kms = original_gen_kms(author)
-                kms.quantum_signatures_enabled = False
-                kms.dilithium_keypair = None
-                return kms
+        def mock_gen_kms(author):
+            kms = original_gen_kms(author)
+            kms.quantum_signatures_enabled = False
+            kms.dilithium_keypair = None
+            return kms
 
-            monkeypatch.setattr(dgs, "generate_key_management_system", mock_gen_kms)
+        monkeypatch.setattr(dgs, "generate_key_management_system", mock_gen_kms)
 
-            # Mock create_crypto_package to return package without Dilithium
-            original_create_pkg = dgs.create_crypto_package
+        # Mock create_crypto_package to return package without Dilithium
+        original_create_pkg = dgs.create_crypto_package
 
-            def mock_create_pkg(*args, **kwargs):
-                pkg = original_create_pkg(*args, **kwargs)
-                pkg.quantum_signatures_enabled = False
-                pkg.dilithium_signature = None
-                return pkg
+        def mock_create_pkg(*args, **kwargs):
+            pkg = original_create_pkg(*args, **kwargs)
+            pkg.quantum_signatures_enabled = False
+            pkg.dilithium_signature = None
+            return pkg
 
-            monkeypatch.setattr(dgs, "create_crypto_package", mock_create_pkg)
+        monkeypatch.setattr(dgs, "create_crypto_package", mock_create_pkg)
 
-            dgs.main()
-            out = capsys.readouterr().out
-            assert "Dilithium keypair: NOT AVAILABLE" in out or "quantum signatures disabled" in out
+        dgs.main()
+        out = capsys.readouterr().out
+        assert "Dilithium keypair: NOT AVAILABLE" in out or "quantum signatures disabled" in out
 
-    def test_main_with_verification_none_result(self, monkeypatch, capsys):
+    def test_main_with_verification_none_result(self, monkeypatch, capsys, tmp_path):
         """Test main() when verification returns None for some checks."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            monkeypatch.chdir(tmpdir)
+        monkeypatch.chdir(tmp_path)
 
-            # Mock verify_crypto_package to return None for dilithium
-            original_verify = dgs.verify_crypto_package
+        # Mock verify_crypto_package to return None for dilithium
+        original_verify = dgs.verify_crypto_package
 
-            def mock_verify(*args, **kwargs):
-                results = original_verify(*args, **kwargs)
-                results["dilithium"] = None
-                return results
+        def mock_verify(*args, **kwargs):
+            results = original_verify(*args, **kwargs)
+            results["dilithium"] = None
+            return results
 
-            monkeypatch.setattr(dgs, "verify_crypto_package", mock_verify)
+        monkeypatch.setattr(dgs, "verify_crypto_package", mock_verify)
 
-            dgs.main()
-            out = capsys.readouterr().out
-            assert "NOT PRESENT/UNSUPPORTED" in out or "ALL VERIFICATIONS PASSED" in out
+        dgs.main()
+        out = capsys.readouterr().out
+        assert "NOT PRESENT/UNSUPPORTED" in out or "ALL VERIFICATIONS PASSED" in out
 
-    def test_main_with_verification_failure(self, monkeypatch, capsys):
+    def test_main_with_verification_failure(self, monkeypatch, capsys, tmp_path):
         """Test main() when verification fails."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            monkeypatch.chdir(tmpdir)
+        monkeypatch.chdir(tmp_path)
 
-            # Mock verify_crypto_package to return False for content_hash
-            def mock_verify(*args, **kwargs):
-                return {
-                    "content_hash": False,
-                    "hmac": True,
-                    "ed25519": True,
-                    "dilithium": None,
-                    "timestamp": True,
-                }
+        # Mock verify_crypto_package to return False for content_hash
+        def mock_verify(*args, **kwargs):
+            return {
+                "content_hash": False,
+                "hmac": True,
+                "ed25519": True,
+                "dilithium": None,
+                "timestamp": True,
+            }
 
-            monkeypatch.setattr(dgs, "verify_crypto_package", mock_verify)
+        monkeypatch.setattr(dgs, "verify_crypto_package", mock_verify)
 
-            dgs.main()
-            out = capsys.readouterr().out
-            assert "VERIFICATION FAILED" in out or "INVALID" in out
+        dgs.main()
+        out = capsys.readouterr().out
+        assert "VERIFICATION FAILED" in out or "INVALID" in out
 
 
 # ============================================================================
