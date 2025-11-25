@@ -35,7 +35,7 @@ Contact: steel.sa.llc@gmail.com
 Date: 2025-11-25
 Version: 1.0.0
 
-AI-Co Architects:
+AI Co-Architects:
     Eris | Eden | Veritas | X | Caduceus | Dev
 """
 
@@ -512,8 +512,9 @@ class TestEthicalVectorIntegration:
     def test_derive_keys_with_none_ethical_vector(self):
         """Test key derivation with None ethical vector uses default."""
         master = secrets.token_bytes(32)
-        keys1 = derive_keys(master, "test", ethical_vector=None)
-        keys2 = derive_keys(master, "test", ethical_vector=ETHICAL_VECTOR)
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
+        keys1, _ = derive_keys(master, "test", ethical_vector=None, salt=fixed_salt)
+        keys2, _ = derive_keys(master, "test", ethical_vector=ETHICAL_VECTOR, salt=fixed_salt)
         assert keys1 == keys2
 
 
@@ -877,9 +878,9 @@ class TestCanonicalHashEdgeCases:
     """Additional edge case tests for canonical hash."""
 
     def test_hash_with_empty_helix_params(self):
-        """Test hashing with empty helix params list."""
-        result = canonical_hash_dna("test_codes", [])
-        assert len(result) == 32
+        """Test hashing with empty helix params list raises ValueError."""
+        with pytest.raises(ValueError, match="helix_params cannot be empty"):
+            canonical_hash_dna("test_codes", [])
 
     def test_hash_with_single_helix_param(self):
         """Test hashing with single helix param."""
@@ -906,10 +907,9 @@ class TestPackageCreationEdgeCases:
         return generate_key_management_system("test_author")
 
     def test_package_with_empty_dna_codes(self, kms):
-        """Test package creation with empty DNA codes."""
-        pkg = create_crypto_package("", [], kms, "test")
-        assert pkg.content_hash is not None
-        assert len(pkg.content_hash) == 64
+        """Test package creation with empty DNA codes raises ValueError."""
+        with pytest.raises(ValueError, match="dna_codes cannot be empty"):
+            create_crypto_package("", [], kms, "test")
 
     def test_package_with_unicode_author(self, kms):
         """Test package creation with Unicode author name."""
@@ -929,14 +929,14 @@ class TestDeriveKeysEdgeCases:
     def test_derive_single_key(self):
         """Test deriving single key."""
         master = secrets.token_bytes(32)
-        keys = derive_keys(master, "test", num_keys=1)
+        keys, _ = derive_keys(master, "test", num_keys=1)
         assert len(keys) == 1
         assert len(keys[0]) == 32
 
     def test_derive_many_keys(self):
         """Test deriving many keys."""
         master = secrets.token_bytes(32)
-        keys = derive_keys(master, "test", num_keys=100)
+        keys, _ = derive_keys(master, "test", num_keys=100)
         assert len(keys) == 100
         # All keys should be unique
         assert len(set(k.hex() for k in keys)) == 100
@@ -944,13 +944,13 @@ class TestDeriveKeysEdgeCases:
     def test_derive_keys_with_empty_info(self):
         """Test deriving keys with empty info string."""
         master = secrets.token_bytes(32)
-        keys = derive_keys(master, "", num_keys=3)
+        keys, _ = derive_keys(master, "", num_keys=3)
         assert len(keys) == 3
 
     def test_derive_keys_with_unicode_info(self):
         """Test deriving keys with Unicode info string."""
         master = secrets.token_bytes(32)
-        keys = derive_keys(master, "", num_keys=3)
+        keys, _ = derive_keys(master, "", num_keys=3)
         assert len(keys) == 3
 
 

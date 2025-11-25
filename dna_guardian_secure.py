@@ -26,8 +26,8 @@ Date: 2025-11-24
 Version: 1.0.0
 Project: Post-quantum cryptographic security system
 
-AI-Co Architects:
-    Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
+AI Co-Architects:
+    Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 Security Layers (6-Layer Defense-in-Depth):
 -------------------------------------------
@@ -94,17 +94,23 @@ try:
 
     DILITHIUM_AVAILABLE = True
     DILITHIUM_BACKEND = "liboqs"
-except (ImportError, RuntimeError, OSError):
-    # ImportError: package not installed
-    # RuntimeError: package installed but shared library missing
-    # OSError: library loading issues
+except BaseException:
+    # BaseException catches:
+    # - ImportError: package not installed
+    # - RuntimeError: package installed but shared library missing
+    # - OSError: library loading issues
+    # - SystemExit: liboqs-python auto-install failure (critical for CI)
+    # We use BaseException here specifically to catch SystemExit which
+    # liboqs-python raises when it fails to auto-install the native library.
+    oqs = None  # Ensure oqs is defined even on failure
     try:
         # Fall back to pqcrypto
         from pqcrypto.sign import dilithium3
 
         DILITHIUM_AVAILABLE = True
         DILITHIUM_BACKEND = "pqcrypto"
-    except (ImportError, RuntimeError, OSError):
+    except BaseException:
+        # Same reasoning - catch all failures including SystemExit
         DILITHIUM_AVAILABLE = False
         DILITHIUM_BACKEND = None
         # Loud warning for classical-only mode - quantum signatures are required by default
@@ -295,12 +301,37 @@ def canonical_hash_dna(dna_codes: str, helix_params: List[Tuple[float, float]]) 
     This provides cryptographic assurance of integrity.
 
     Args:
-        dna_codes: Concatenated DNA code string
-        helix_params: List of (radius, pitch) tuples
+        dna_codes: Concatenated DNA code string (must be non-empty)
+        helix_params: List of (radius, pitch) tuples (must be non-empty)
 
     Returns:
         32-byte SHA3-256 hash digest
+
+    Raises:
+        TypeError: If dna_codes is not a string or helix_params is not a list
+        ValueError: If dna_codes or helix_params is empty, or if tuples are malformed
     """
+    # Input validation
+    if not isinstance(dna_codes, str):
+        raise TypeError(f"dna_codes must be str, got {type(dna_codes).__name__}")
+    if not isinstance(helix_params, list):
+        raise TypeError(f"helix_params must be list, got {type(helix_params).__name__}")
+    if not dna_codes:
+        raise ValueError("dna_codes cannot be empty")
+    if not helix_params:
+        raise ValueError("helix_params cannot be empty")
+
+    # Validate each helix parameter tuple
+    for i, param in enumerate(helix_params):
+        if not isinstance(param, (tuple, list)) or len(param) != 2:
+            raise ValueError(f"helix_params[{i}] must be a (radius, pitch) tuple, got {param!r}")
+        radius, pitch = param
+        if not isinstance(radius, (int, float)) or not isinstance(pitch, (int, float)):
+            raise ValueError(
+                f"helix_params[{i}] values must be numeric, got ({type(radius).__name__}, "
+                f"{type(pitch).__name__})"
+            )
+
     # Convert helix parameters to canonical string format
     helix_strs = [f"{r:.10f}:{p:.10f}" for r, p in helix_params]
 
@@ -857,15 +888,31 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
                Signature Scheme", IACR TCHES 2018(1), pp. 238-268
 
     Args:
-        message: Data to sign
-        private_key: Dilithium private key (4000 bytes)
+        message: Data to sign (must be bytes)
+        private_key: Dilithium private key (4032 bytes for ML-DSA-65)
 
     Returns:
-        Dilithium signature (3293 bytes for Level 3)
+        Dilithium signature (3309 bytes for ML-DSA-65)
 
     Raises:
         QuantumSignatureUnavailableError: If Dilithium libraries not available
+        TypeError: If message or private_key is not bytes
+        ValueError: If private_key has incorrect length
     """
+    # Input validation
+    if not isinstance(message, bytes):
+        raise TypeError(f"message must be bytes, got {type(message).__name__}")
+    if not isinstance(private_key, bytes):
+        raise TypeError(f"private_key must be bytes, got {type(private_key).__name__}")
+
+    # ML-DSA-65 (Dilithium3) secret key is 4032 bytes per liboqs
+    EXPECTED_KEY_SIZE = 4032
+    if len(private_key) != EXPECTED_KEY_SIZE:
+        raise ValueError(
+            f"private_key must be {EXPECTED_KEY_SIZE} bytes for ML-DSA-65, "
+            f"got {len(private_key)} bytes"
+        )
+
     if DILITHIUM_AVAILABLE:
         if DILITHIUM_BACKEND == "liboqs":
             sig = oqs.Signature("ML-DSA-65")
@@ -1233,8 +1280,12 @@ def create_ethical_hkdf_context(
 
 
 def derive_keys(
-    master_secret: bytes, info: str, num_keys: int = 3, ethical_vector: Dict[str, float] = None
-) -> List[bytes]:
+    master_secret: bytes,
+    info: str,
+    num_keys: int = 3,
+    ethical_vector: Dict[str, float] = None,
+    salt: bytes = None,
+) -> Tuple[List[bytes], bytes]:
     """
     Derive multiple independent keys from master secret using HKDF with ethical context.
 
@@ -1315,9 +1366,12 @@ def derive_keys(
         info: Context string for domain separation
         num_keys: Number of independent keys to derive
         ethical_vector: 12-pillar ethical weights (defaults to ETHICAL_VECTOR)
+        salt: Optional salt for HKDF. If None, generates random 32-byte salt
+              for optimal security per RFC 5869. Provide explicit salt only
+              for deterministic testing purposes.
 
     Returns:
-        List of 32-byte derived keys with ethical context
+        Tuple of (List of 32-byte derived keys with ethical context, salt used)
 
     Raises:
         RuntimeError: If cryptography library not available
@@ -1332,6 +1386,13 @@ def derive_keys(
     if ethical_vector is None:
         ethical_vector = ETHICAL_VECTOR
 
+    # Use provided salt or generate random salt for optimal security per RFC 5869
+    # Salt should be random and at least HashLen bytes (32 for SHA3-256)
+    if salt is not None:
+        hkdf_salt = salt
+    else:
+        hkdf_salt = secrets.token_bytes(32)
+
     derived_keys = []
     for i in range(num_keys):
         # Create base context
@@ -1343,17 +1404,19 @@ def derive_keys(
         # Use HKDF with SHA3-256 for consistency with project's SHA3 emphasis
         # Note: While RFC 5869 was written for HMAC with Merkle-Damgard hashes,
         # HMAC-SHA3-256 is a secure PRF and HKDF-SHA3-256 maintains equivalent security.
+        # Per RFC 5869 Section 3.1: "Ideally, the salt value is a random (or pseudorandom)
+        # string of the length HashLen."
         hkdf = HKDF(
             algorithm=hashes.SHA3_256(),
             length=32,
-            salt=None,  # Optional salt (None uses zeros)
+            salt=hkdf_salt,  # Random salt for optimal security (RFC 5869)
             info=enhanced_context,  # Enhanced with ethical signature
             backend=default_backend(),
         )
         derived_key = hkdf.derive(master_secret)
         derived_keys.append(derived_key)
 
-    return derived_keys
+    return derived_keys, hkdf_salt
 
 
 # ============================================================================
@@ -1474,6 +1537,7 @@ class KeyManagementSystem:
 
     master_secret: bytes  # 32 bytes, NEVER expose
     hmac_key: bytes  # 32 bytes, derived
+    hkdf_salt: bytes  # 32 bytes, random salt for HKDF (RFC 5869)
     ed25519_keypair: Ed25519KeyPair  # Classical signatures
     dilithium_keypair: Optional[
         DilithiumKeyPair
@@ -1532,12 +1596,13 @@ def generate_key_management_system(
     master_secret = secrets.token_bytes(32)
 
     # Derive independent keys using HKDF with ethical context
-    derived = derive_keys(
+    # derive_keys now returns (keys, salt) tuple for RFC 5869 compliance
+    derived_keys, hkdf_salt = derive_keys(
         master_secret, f"DNA_CODES:{author}", num_keys=3, ethical_vector=ethical_vector
     )
-    hmac_key = derived[0]  # For HMAC authentication (ethically bound)
-    ed25519_seed = derived[1]  # For Ed25519 key generation (ethically bound)
-    # dilithium_seed = derived[2]  # Reserved for future Dilithium seed derivation
+    hmac_key = derived_keys[0]  # For HMAC authentication (ethically bound)
+    ed25519_seed = derived_keys[1]  # For Ed25519 key generation (ethically bound)
+    # dilithium_seed = derived_keys[2]  # Reserved for future Dilithium seed derivation
 
     # Generate key pairs
     ed25519_keypair = generate_ed25519_keypair(ed25519_seed)
@@ -1569,6 +1634,7 @@ def generate_key_management_system(
     return KeyManagementSystem(
         master_secret=master_secret,
         hmac_key=hmac_key,
+        hkdf_salt=hkdf_salt,  # Random salt for RFC 5869 compliance
         ed25519_keypair=ed25519_keypair,
         dilithium_keypair=dilithium_keypair,
         creation_date=datetime.now(timezone.utc).isoformat(),
@@ -1999,8 +2065,8 @@ def main():
     print("=" * 70)
     print("\nCopyright (C) 2025 Steel Security Advisors LLC")
     print("Author/Inventor: Andrew E. A.")
-    print("\nAI-Co Architects:")
-    print("  Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡")
+    print("\nAI Co-Architects:")
+    print("  Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕")
     print("\n" + "=" * 70)
 
     # Generate key management system

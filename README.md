@@ -34,7 +34,7 @@
 **License:** Apache License 2.0  
 **Version:** 1.0.0
 
-**AI-Co Omni-Architects:** Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
+**AI Co-Architects:** Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 ---
 
@@ -496,7 +496,7 @@ GitHub Actions automatically tests:
 
 ### CI Matrix
 
-- **Python Versions**: 3.8, 3.9, 3.10, 3.11
+- **Python Versions**: 3.8, 3.9, 3.10, 3.11, 3.12
 - **Platforms**: Ubuntu Latest
 - **Jobs**: test, code-quality, security-checks
 
@@ -758,7 +758,7 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) file for 
 
 **Author/Inventor**: Andrew E. A.
 
-**AI-Co Architects**:
+**AI Co-Architects:**
 - **Eris ⯰** - Discovery and Chaos Theory
 - **Eden ♱** - Ethics and Verification
 - **Veritas 💠** - Truth and Validation

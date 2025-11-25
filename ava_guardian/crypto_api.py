@@ -33,12 +33,31 @@ from typing import Any, Dict, Tuple
 from ava_guardian.pqc_backends import (
     DILITHIUM_AVAILABLE,
     DILITHIUM_BACKEND,
+    KYBER_AVAILABLE,
+    KYBER_BACKEND,
+    KYBER_CIPHERTEXT_BYTES,
+    KYBER_PUBLIC_KEY_BYTES,
+    KYBER_SECRET_KEY_BYTES,
+    KYBER_SHARED_SECRET_BYTES,
+    SPHINCS_AVAILABLE,
+    SPHINCS_BACKEND,
+    SPHINCS_PUBLIC_KEY_BYTES,
+    SPHINCS_SECRET_KEY_BYTES,
+    SPHINCS_SIGNATURE_BYTES,
+    KyberUnavailableError,
     PQCStatus,
     PQCUnavailableError,
+    SphincsUnavailableError,
     dilithium_sign,
     dilithium_verify,
     generate_dilithium_keypair,
+    generate_kyber_keypair,
+    generate_sphincs_keypair,
     get_pqc_backend_info,
+    kyber_decapsulate,
+    kyber_encapsulate,
+    sphincs_sign,
+    sphincs_verify,
 )
 
 
@@ -352,80 +371,204 @@ class Ed25519Provider(CryptoProvider):
 
 class KyberProvider(KEMProvider):
     """
-    Kyber-1024 (ML-KEM) provider.
+    Kyber-1024 (ML-KEM) provider - Real quantum-resistant implementation.
 
-    NOTE: Currently uses X25519 as a placeholder. Real Kyber implementation
-    requires liboqs with ML-KEM support. This provider will raise
-    PQCUnavailableError in a future version when PQC is required.
+    Provides IND-CCA2 secure key encapsulation based on the Module-LWE
+    (Learning With Errors) problem. Uses liboqs for the underlying
+    cryptographic operations.
 
-    Security: Currently classical (X25519), planned quantum-resistant
+    Key Sizes (from liboqs):
+        - Public key: 1568 bytes
+        - Secret key: 3168 bytes
+        - Ciphertext: 1568 bytes
+        - Shared secret: 32 bytes
+
+    Security: 256-bit classical / 128-bit quantum (NIST Security Level 5)
+    Standard: NIST FIPS 203 (ML-KEM)
+
+    Raises:
+        KyberUnavailableError: If Kyber backend is not available
     """
 
     def __init__(self, backend: CryptoBackend = CryptoBackend.PURE_PYTHON):
         self.backend = backend
         self.algorithm = AlgorithmType.KYBER_1024
-        # Note: Kyber not yet implemented - using X25519 placeholder
-        self._is_placeholder = True
+        self._is_placeholder = False
+
+        if not KYBER_AVAILABLE:
+            raise KyberUnavailableError(
+                "KYBER_UNAVAILABLE: Kyber-1024 backend not available. "
+                "Install liboqs-python: pip install liboqs-python"
+            )
 
     def generate_keypair(self) -> KeyPair:
-        """Generate Kyber-1024 keypair (currently X25519 placeholder)"""
-        from cryptography.hazmat.primitives.asymmetric import x25519
+        """
+        Generate Kyber-1024 keypair.
 
-        private_key = x25519.X25519PrivateKey.generate()
-        public_key = private_key.public_key()
+        Returns:
+            KeyPair with 1568-byte public key and 3168-byte secret key
 
-        from cryptography.hazmat.primitives import serialization
-
-        sk_bytes = private_key.private_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PrivateFormat.Raw,
-            encryption_algorithm=serialization.NoEncryption(),
-        )
-
-        pk_bytes = public_key.public_bytes(
-            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
-        )
+        Raises:
+            KyberUnavailableError: If Kyber backend is not available
+        """
+        keypair = generate_kyber_keypair()
 
         return KeyPair(
-            public_key=pk_bytes,
-            secret_key=sk_bytes,
+            public_key=keypair.public_key,
+            secret_key=keypair.secret_key,
             algorithm=self.algorithm,
-            metadata={"backend": self.backend.name},
+            metadata={
+                "backend": KYBER_BACKEND,
+                "public_key_size": KYBER_PUBLIC_KEY_BYTES,
+                "secret_key_size": KYBER_SECRET_KEY_BYTES,
+            },
         )
 
     def encapsulate(self, public_key: bytes) -> EncapsulatedSecret:
-        """Encapsulate shared secret"""
-        from cryptography.hazmat.primitives import serialization
-        from cryptography.hazmat.primitives.asymmetric import x25519
+        """
+        Encapsulate a shared secret using Kyber-1024.
 
-        # Generate ephemeral key
-        ephemeral_key = x25519.X25519PrivateKey.generate()
-        peer_public_key = x25519.X25519PublicKey.from_public_bytes(public_key)
+        Args:
+            public_key: Kyber-1024 public key (1568 bytes)
 
-        # Compute shared secret
-        shared_secret = ephemeral_key.exchange(peer_public_key)
+        Returns:
+            EncapsulatedSecret with ciphertext and shared secret
 
-        # Ciphertext is the ephemeral public key
-        ciphertext = ephemeral_key.public_key().public_bytes(
-            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
-        )
+        Raises:
+            KyberUnavailableError: If Kyber backend is not available
+            ValueError: If public_key has incorrect length
+        """
+        encap = kyber_encapsulate(public_key)
 
         return EncapsulatedSecret(
-            ciphertext=ciphertext,
-            shared_secret=shared_secret,
+            ciphertext=encap.ciphertext,
+            shared_secret=encap.shared_secret,
             algorithm=self.algorithm,
-            metadata={"shared_secret_size": len(shared_secret)},
+            metadata={
+                "ciphertext_size": KYBER_CIPHERTEXT_BYTES,
+                "shared_secret_size": KYBER_SHARED_SECRET_BYTES,
+            },
         )
 
     def decapsulate(self, ciphertext: bytes, secret_key: bytes) -> bytes:
-        """Decapsulate shared secret"""
-        from cryptography.hazmat.primitives.asymmetric import x25519
+        """
+        Decapsulate a shared secret using Kyber-1024.
 
-        private_key = x25519.X25519PrivateKey.from_private_bytes(secret_key)
-        peer_public_key = x25519.X25519PublicKey.from_public_bytes(ciphertext)
+        Args:
+            ciphertext: Kyber-1024 ciphertext (1568 bytes)
+            secret_key: Kyber-1024 secret key (3168 bytes)
 
-        shared_secret = private_key.exchange(peer_public_key)
-        return shared_secret
+        Returns:
+            Shared secret (32 bytes)
+
+        Raises:
+            KyberUnavailableError: If Kyber backend is not available
+            ValueError: If ciphertext or secret_key has incorrect length
+        """
+        return kyber_decapsulate(ciphertext, secret_key)
+
+
+class SphincsProvider(CryptoProvider):
+    """
+    SPHINCS+-SHA2-256f-simple provider - Hash-based signatures.
+
+    Provides stateless hash-based signatures with no risk of key reuse
+    vulnerabilities. The 'f' variant is optimized for fast signing at
+    the cost of larger signatures (~49KB).
+
+    Key Sizes (from liboqs):
+        - Public key: 64 bytes
+        - Secret key: 128 bytes
+        - Signature: 49856 bytes
+
+    Security: 256-bit classical / 128-bit quantum (NIST Security Level 5)
+    Standard: NIST FIPS 205 (SLH-DSA)
+
+    Note: SPHINCS+ signatures are large but provide strong security
+    guarantees based only on hash function security assumptions.
+
+    Raises:
+        SphincsUnavailableError: If SPHINCS+ backend is not available
+    """
+
+    def __init__(self, backend: CryptoBackend = CryptoBackend.PURE_PYTHON):
+        self.backend = backend
+        self.algorithm = AlgorithmType.SPHINCS_256F
+
+        if not SPHINCS_AVAILABLE:
+            raise SphincsUnavailableError(
+                "SPHINCS_UNAVAILABLE: SPHINCS+-256f backend not available. "
+                "Install liboqs-python: pip install liboqs-python"
+            )
+
+    def generate_keypair(self) -> KeyPair:
+        """
+        Generate SPHINCS+-256f keypair.
+
+        Returns:
+            KeyPair with 64-byte public key and 128-byte secret key
+
+        Raises:
+            SphincsUnavailableError: If SPHINCS+ backend is not available
+        """
+        keypair = generate_sphincs_keypair()
+
+        return KeyPair(
+            public_key=keypair.public_key,
+            secret_key=keypair.secret_key,
+            algorithm=self.algorithm,
+            metadata={
+                "backend": SPHINCS_BACKEND,
+                "public_key_size": SPHINCS_PUBLIC_KEY_BYTES,
+                "secret_key_size": SPHINCS_SECRET_KEY_BYTES,
+            },
+        )
+
+    def sign(self, message: bytes, secret_key: bytes) -> Signature:
+        """
+        Sign message with SPHINCS+-256f.
+
+        Args:
+            message: Data to sign (arbitrary length)
+            secret_key: SPHINCS+-256f secret key (128 bytes)
+
+        Returns:
+            Signature object with 49856-byte signature
+
+        Raises:
+            SphincsUnavailableError: If SPHINCS+ backend is not available
+            ValueError: If secret_key has incorrect length
+        """
+        sig_bytes = sphincs_sign(message, secret_key)
+        message_hash = hashlib.sha3_256(message).digest()
+
+        return Signature(
+            signature=sig_bytes,
+            algorithm=self.algorithm,
+            message_hash=message_hash,
+            metadata={
+                "signature_size": SPHINCS_SIGNATURE_BYTES,
+                "backend": SPHINCS_BACKEND,
+            },
+        )
+
+    def verify(self, message: bytes, signature: bytes, public_key: bytes) -> bool:
+        """
+        Verify SPHINCS+-256f signature.
+
+        Args:
+            message: Original data
+            signature: SPHINCS+ signature (49856 bytes)
+            public_key: SPHINCS+-256f public key (64 bytes)
+
+        Returns:
+            True if signature is valid, False otherwise
+
+        Raises:
+            SphincsUnavailableError: If SPHINCS+ backend is not available
+            ValueError: If public_key has incorrect length
+        """
+        return sphincs_verify(message, signature, public_key)
 
 
 class HybridSignatureProvider(CryptoProvider):
@@ -597,6 +740,8 @@ class AvaGuardianCrypto:
             return MLDSAProvider(self.backend)
         elif self.algorithm == AlgorithmType.KYBER_1024:
             return KyberProvider(self.backend)
+        elif self.algorithm == AlgorithmType.SPHINCS_256F:
+            return SphincsProvider(self.backend)
         elif self.algorithm == AlgorithmType.HYBRID_SIG:
             return HybridSignatureProvider()
         elif self.algorithm == AlgorithmType.ED25519:
@@ -739,6 +884,8 @@ def get_pqc_capabilities() -> Dict[str, Any]:
         Dictionary with capability information:
         - status: "AVAILABLE" or "UNAVAILABLE"
         - dilithium_available: bool
+        - kyber_available: bool
+        - sphincs_available: bool
         - backend: "liboqs" or "pqcrypto" or None
         - algorithms: dict of algorithm availability
         - install_instructions: str (if unavailable)
@@ -755,21 +902,27 @@ def get_pqc_capabilities() -> Dict[str, Any]:
     return {
         "status": info["status"],
         "dilithium_available": info["dilithium_available"],
+        "kyber_available": info["kyber_available"],
+        "sphincs_available": info["sphincs_available"],
         "backend": info["backend"],
         "algorithms": {
             "ML_DSA_65": info["dilithium_available"],
             "HYBRID_SIG": info["dilithium_available"],
             "ED25519": True,  # Always available via cryptography
-            "KYBER_1024": False,  # Placeholder only
+            "KYBER_1024": info["kyber_available"],
+            "SPHINCS_256F": info["sphincs_available"],
         },
         "security_levels": {
             "ML_DSA_65": 3 if info["dilithium_available"] else None,
             "HYBRID_SIG": 3 if info["dilithium_available"] else None,
             "ED25519": 1,  # Classical only
+            "KYBER_1024": 5 if info["kyber_available"] else None,
+            "SPHINCS_256F": 5 if info["sphincs_available"] else None,
         },
+        "key_sizes": info.get("algorithms", {}),
         "install_instructions": (
             "pip install liboqs-python"
-            if not info["dilithium_available"]
+            if not (info["dilithium_available"] or info["kyber_available"])
             else "PQC backend already installed"
         ),
     }
@@ -787,6 +940,7 @@ __all__ = [
     "MLDSAProvider",
     "Ed25519Provider",
     "KyberProvider",
+    "SphincsProvider",
     "HybridSignatureProvider",
     "AvaGuardianCrypto",
     "quick_sign",
@@ -795,6 +949,12 @@ __all__ = [
     "get_pqc_capabilities",
     "PQCStatus",
     "PQCUnavailableError",
+    "KyberUnavailableError",
+    "SphincsUnavailableError",
     "DILITHIUM_AVAILABLE",
     "DILITHIUM_BACKEND",
+    "KYBER_AVAILABLE",
+    "KYBER_BACKEND",
+    "SPHINCS_AVAILABLE",
+    "SPHINCS_BACKEND",
 ]

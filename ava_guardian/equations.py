@@ -32,8 +32,8 @@ Contact: steel.sa.llc@gmail.com
 Date: 2025-11-24
 Version: 1.0.0
 
-AI-Co Architects:
-    Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
+AI Co-Architects:
+    Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 """
 
 from typing import Dict, List, Optional, Tuple
