@@ -1658,6 +1658,69 @@ def create_crypto_package(
     )
 
 
+def _verify_timestamp_value(timestamp_str: str) -> bool:
+    """Verify timestamp is reasonable (not future, not older than 10 years)."""
+    try:
+        ts = datetime.fromisoformat(timestamp_str)
+        now = datetime.now(timezone.utc)
+        return ts <= now and (now - ts).days < 3650
+    except Exception:
+        return False
+
+
+def _verify_dilithium_with_policy(
+    computed_hash: bytes,
+    package: CryptoPackage,
+    monitor: Optional["AvaGuardianMonitor"],
+    require_quantum_signatures: bool,
+) -> Optional[bool]:
+    """
+    Verify Dilithium signature with policy enforcement.
+
+    Returns:
+        True if valid, False if invalid, None if not present/unsupported.
+
+    Raises:
+        QuantumSignatureRequiredError: If policy requires quantum signatures
+            but they are missing, unavailable, or invalid.
+    """
+    if (
+        not package.quantum_signatures_enabled
+        or not package.dilithium_signature
+        or not package.dilithium_pubkey
+    ):
+        if require_quantum_signatures:
+            raise QuantumSignatureRequiredError(
+                "Quantum signatures required but package lacks Dilithium signature"
+            )
+        return None
+
+    start_time = time.time() if monitor else None
+    try:
+        result = dilithium_verify(
+            computed_hash,
+            bytes.fromhex(package.dilithium_signature),
+            bytes.fromhex(package.dilithium_pubkey),
+        )
+    except QuantumSignatureUnavailableError:
+        if require_quantum_signatures:
+            raise QuantumSignatureRequiredError(
+                "Quantum signatures required but Dilithium libraries unavailable"
+            )
+        return None
+
+    if monitor and start_time is not None:
+        duration_ms = (time.time() - start_time) * 1000
+        monitor.monitor_crypto_operation("dilithium_verify", duration_ms)
+
+    if require_quantum_signatures and result is False:
+        raise QuantumSignatureRequiredError(
+            "Quantum signatures required but Dilithium signature verification failed"
+        )
+
+    return result
+
+
 def verify_crypto_package(
     dna_codes: str,
     helix_params: List[Tuple[float, float]],
@@ -1706,7 +1769,7 @@ def verify_crypto_package(
         failed verifications rather than raising exceptions. This provides
         clean failure semantics for security-critical code paths.
     """
-    results = {
+    results: Dict[str, Optional[bool]] = {
         "content_hash": False,
         "hmac": False,
         "ed25519": False,
@@ -1715,80 +1778,32 @@ def verify_crypto_package(
     }
 
     try:
-        # 1. Verify content hash
         computed_hash = canonical_hash_dna(dna_codes, helix_params)
         results["content_hash"] = computed_hash.hex() == package.content_hash
 
-        # 2. Verify HMAC
-        if monitor:
-            start_time = time.time()
+        start_time = time.time() if monitor else None
         results["hmac"] = hmac_verify(computed_hash, bytes.fromhex(package.hmac_tag), hmac_key)
-        if monitor:
-            duration_ms = (time.time() - start_time) * 1000
-            monitor.monitor_crypto_operation("hmac_verify", duration_ms)
+        if monitor and start_time is not None:
+            monitor.monitor_crypto_operation("hmac_verify", (time.time() - start_time) * 1000)
 
-        # 3. Verify Ed25519 signature
-        if monitor:
-            start_time = time.time()
+        start_time = time.time() if monitor else None
         results["ed25519"] = ed25519_verify(
             computed_hash,
             bytes.fromhex(package.ed25519_signature),
             bytes.fromhex(package.ed25519_pubkey),
         )
-        if monitor:
-            duration_ms = (time.time() - start_time) * 1000
-            monitor.monitor_crypto_operation("ed25519_verify", duration_ms)
+        if monitor and start_time is not None:
+            monitor.monitor_crypto_operation("ed25519_verify", (time.time() - start_time) * 1000)
 
-        # 4. Verify Dilithium signature (if present)
-        if (
-            package.quantum_signatures_enabled
-            and package.dilithium_signature
-            and package.dilithium_pubkey
-        ):
-            if monitor:
-                start_time = time.time()
-            try:
-                results["dilithium"] = dilithium_verify(
-                    computed_hash,
-                    bytes.fromhex(package.dilithium_signature),
-                    bytes.fromhex(package.dilithium_pubkey),
-                )
-            except QuantumSignatureUnavailableError:
-                # Cannot verify: Dilithium libraries not available
-                results["dilithium"] = None  # Indicates "UNSUPPORTED"
-                if require_quantum_signatures:
-                    raise QuantumSignatureRequiredError(
-                        "Quantum signatures required but Dilithium libraries unavailable"
-                    )
-            if monitor and results.get("dilithium") is not None:
-                duration_ms = (time.time() - start_time) * 1000
-                monitor.monitor_crypto_operation("dilithium_verify", duration_ms)
-        else:
-            # Package was created without quantum signatures
-            results["dilithium"] = None  # Indicates "NOT_PRESENT"
-            if require_quantum_signatures:
-                raise QuantumSignatureRequiredError(
-                    "Quantum signatures required but package lacks Dilithium signature"
-                )
+        results["dilithium"] = _verify_dilithium_with_policy(
+            computed_hash, package, monitor, require_quantum_signatures
+        )
 
-        # Check if quantum signature verification failed
-        if require_quantum_signatures and results["dilithium"] is False:
-            raise QuantumSignatureRequiredError(
-                "Quantum signatures required but Dilithium signature verification failed"
-            )
-
-        # 5. Verify timestamp is reasonable
-        ts = datetime.fromisoformat(package.timestamp)
-        now = datetime.now(timezone.utc)
-        # Timestamp should not be in future or more than 10 years old
-        results["timestamp"] = ts <= now and (now - ts).days < 3650
+        results["timestamp"] = _verify_timestamp_value(package.timestamp)
 
     except QuantumSignatureRequiredError:
-        # Re-raise policy enforcement exceptions
         raise
     except Exception:
-        # Catch all other exceptions and return clean failure
-        # This prevents information leakage through exception messages
         pass
 
     return results
