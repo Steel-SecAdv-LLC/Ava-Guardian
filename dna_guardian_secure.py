@@ -986,6 +986,14 @@ def get_rfc3161_timestamp(data: bytes, tsa_url: str = None) -> Optional[bytes]:
     if tsa_url is None:
         tsa_url = "https://freetsa.org/tsr"
 
+    # Validate URL scheme for security (only allow http/https for TSA endpoints)
+    import urllib.parse
+
+    parsed_url = urllib.parse.urlparse(tsa_url)
+    if parsed_url.scheme not in ("http", "https"):
+        print(f"Warning: Invalid TSA URL scheme '{parsed_url.scheme}', must be http or https")
+        return None
+
     try:
         # Create timestamp request using OpenSSL
         # Try to use OpenSSL ts command
@@ -1006,7 +1014,7 @@ def get_rfc3161_timestamp(data: bytes, tsa_url: str = None) -> Optional[bytes]:
             tsa_url, data=tsq, headers={"Content-Type": "application/timestamp-query"}
         )
 
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=10) as response:  # nosec B310
             tsr = response.read()
 
         return tsr

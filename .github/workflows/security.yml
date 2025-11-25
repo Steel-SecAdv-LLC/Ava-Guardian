@@ -74,8 +74,8 @@ jobs:
 
     - name: Run Safety check
       run: |
-        safety check --output json > safety-report.json || true
-        safety check --output text || echo "Safety check completed (deprecated command)"
+        safety check --output json > safety-report.json
+        safety check --output text
 
     - name: Run pip-audit
       run: |

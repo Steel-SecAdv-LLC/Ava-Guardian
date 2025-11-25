@@ -548,7 +548,10 @@ if __name__ == "__main__":
     # Secure Storage
     print("\n3. Secure Key Storage")
     print("-" * 70)
-    storage = SecureKeyStorage(Path("/tmp/ava_keys"), master_password="test_password_123")
+    import tempfile
+
+    demo_storage_path = Path(tempfile.gettempdir()) / "ava_keys_demo"
+    storage = SecureKeyStorage(demo_storage_path, master_password="test_password_123")
 
     # Store a key
     test_key = secrets.token_bytes(32)
