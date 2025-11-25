@@ -15,7 +15,7 @@ We actively maintain and provide security updates for the following versions:
 
 ## Security Features
 
-Ava Guardian implements defense-in-depth with six independent security layers:
+Ava Guardian ♱ implements defense-in-depth with six independent security layers:
 
 1. **SHA3-256 Content Hashing** (NIST FIPS 202)
 2. **HMAC-SHA3-256 Authentication** (RFC 2104)
@@ -133,7 +133,7 @@ Security advisories are published:
 
 ## Responsible Disclosure Recognition
 
-We deeply appreciate security researchers who help keep Ava Guardian secure. Reporters who follow responsible disclosure will be:
+We deeply appreciate security researchers who help keep Ava Guardian ♱ secure. Reporters who follow responsible disclosure will be:
 
 - **Credited** in the security advisory (unless anonymity is requested)
 - **Acknowledged** in the CHANGELOG and release notes
@@ -144,7 +144,7 @@ We do not currently offer a bug bounty program but may consider recognition rewa
 
 ## Security Best Practices
 
-Users deploying Ava Guardian in production should:
+Users deploying Ava Guardian ♱ in production should:
 
 ### Key Management
 - **REQUIRED:** Store master secrets in FIPS 140-2 Level 3+ HSMs for production
@@ -236,4 +236,4 @@ Non-compliance with these standards should be reported as a high-severity securi
 **Last Updated:** 2025-11-22
 **Version:** 1.0.0
 
-Thank you for helping keep Ava Guardian secure!
+Thank you for helping keep Ava Guardian ♱ secure!

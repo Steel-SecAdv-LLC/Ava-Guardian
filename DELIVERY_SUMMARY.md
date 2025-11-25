@@ -730,7 +730,7 @@ python3 dna_guardian_secure.py
 - ✓ Length-prefixed encoding is collision-free
 - ✓ Defense-in-depth maintains security
 - ✓ Derived keys are independent
-- ✓ Attack costs quantified (2^128 to 2^724 operations)
+- ✓ Per-layer attack costs quantified (~128-bit classical, ~192-bit quantum)
 
 **Standards Compliant:**
 - ✓ NIST FIPS 202 (SHA-3)

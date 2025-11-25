@@ -32,15 +32,15 @@ All seven DNA codes are preserved exactly as specified with proper Unicode encod
 
 ### 1.2 Dilithium Implementation Verification
 
-The Dilithium quantum-resistant signature implementation is **fully functional** with support for both liboqs-python and pqcrypto backends. The system correctly detects which library is available and adapts accordingly. When neither library is present, the system provides clear installation instructions and gracefully degrades with prominent warnings rather than silently failing. This represents a significant improvement over typical cryptographic implementations that might fail silently or provide misleading security assurances.
+The Dilithium quantum-resistant signature implementation is **fully functional** with support for both liboqs-python and pqcrypto backends. The system correctly detects which library is available and adapts accordingly. When neither library is present, the system implements **fail-closed graceful degradation**: low-level functions raise `QuantumSignatureUnavailableError` to prevent fabrication of fake signatures, while higher-level functions (key management, package creation/verification) gracefully skip Dilithium operations and clearly indicate quantum signatures are unavailable. This approach ensures cryptographic integrity while maintaining system usability.
 
 The Dilithium keypair generation, signing, and verification functions are all properly implemented according to NIST FIPS 204 specifications for Dilithium Level 3, providing 192-bit post-quantum security.
 
 ### 1.3 RFC 3161 Timestamp Integration
 
-The RFC 3161 trusted timestamp integration is **complete and functional**. The implementation correctly creates timestamp requests, submits them to Time Stamping Authorities (TSAs), and processes the responses. The system supports multiple TSA providers including FreeTSA (free), DigiCert (commercial), and GlobalSign (commercial). Error handling is robust with automatic fallback to self-asserted timestamps when TSAs are unavailable.
+The RFC 3161 trusted timestamp integration is **complete and functional** for obtaining timestamps from Time Stamping Authorities (TSAs). The system supports multiple TSA providers including FreeTSA (free), DigiCert (commercial), and GlobalSign (commercial). Error handling is robust with automatic fallback to self-asserted timestamps when TSAs are unavailable.
 
-The implementation properly uses OpenSSL for timestamp request creation and includes comprehensive documentation of the RFC 3161 protocol flow, security properties, and TSA options.
+**Important Clarification:** RFC 3161 timestamps serve as **audit metadata** for establishing proof of existence at a specific time. The timestamp tokens are stored but **not cryptographically verified** by this library during package verification. Full RFC 3161 verification requires TSA certificate chain validation, which is TSA-dependent and outside the scope of this implementation. Users requiring cryptographic timestamp verification should implement TSA-specific validation or use dedicated timestamping verification tools.
 
 ### 1.4 HSM Integration Support
 
@@ -142,9 +142,11 @@ The threat model analysis quantifies attack costs against eight scenarios:
 
 **Signature Forgery (Quantum):** Dilithium forgery requires solving Module-LWE problem (2^192 operations even for quantum computers). Cost validated against NIST PQC security analysis.
 
-**Combined Attack:** The analysis correctly identifies that an attacker must break all layers (2^724 classical, 2^644 quantum). These figures are derived from proper application of the defense-in-depth principle.
+**Defense-in-Depth:** The system correctly implements defense-in-depth with multiple independent cryptographic layers. Security is bounded by the weakest layer (~128-bit classical from Ed25519/HMAC, ~192-bit quantum from Dilithium). An attacker must defeat ALL layers to compromise the system.
 
-**Verification:** All attack cost estimates are ACCURATE and properly sourced.
+**Note on Aggregate Claims:** Previous documentation referenced aggregate attack costs (2^724 classical, 2^644 quantum) by summing individual layer costs. This has been corrected to reflect that defense-in-depth security is bounded by the weakest layer, not the sum of all layers.
+
+**Verification:** Per-layer attack cost estimates are ACCURATE and properly sourced to NIST/IETF standards.
 
 ### 3.3 Quantum Resistance Assessment
 

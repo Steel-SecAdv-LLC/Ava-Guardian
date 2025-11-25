@@ -99,21 +99,21 @@ P(collision via E(m)) ≤ 2⁻²⁵⁶ (SHA3-256 bound)
 #### 4. Omnipotent (Maximum Cryptographic Strength)
 **Definition:** Maximum achievable security level against all known attacks.
 
-**Cryptographic Mapping:**
-- SHA3-256: 2^128 collision resistance
-- Dilithium: 2^192 quantum resistance
-- Combined: 2^644 total attack cost
+**Cryptographic Mapping (Per-Layer Assessment):**
+- SHA3-256: ~128-bit preimage resistance (NIST FIPS 202)
+- HMAC-SHA3-256: ~128-bit security (RFC 2104)
+- Ed25519: ~128-bit classical security (RFC 8032)
+- ML-DSA-65 (Dilithium): ~192-bit quantum security (NIST FIPS 204)
+- HKDF-SHA256: ~256-bit key derivation (RFC 5869)
 
-**Mathematical Proof:**
+**Defense-in-Depth Principle:**
 ```
-Classical security: S_classical = min(2^128, 2^207) = 2^128
-Quantum security: S_quantum = min(2^128, 2^192) = 2^128
-Combined attack requires breaking ALL layers:
-S_total = ∏Sᵢ = 2^(128+128+126+207+128) = 2^717 classical
-         = 2^(128+128+~0+192+128) = 2^576 quantum (Ed25519 broken)
+System security is bounded by the weakest layer:
+- Classical security: ~128-bit (Ed25519/HMAC)
+- Quantum security: ~192-bit (Dilithium)
 
-With Dilithium providing quantum backup:
-Effective quantum security = 2^192
+An attacker must defeat ALL layers to compromise the system.
+Defense-in-depth ensures continued protection even if one layer fails.
 ```
 
 **Citation:** 

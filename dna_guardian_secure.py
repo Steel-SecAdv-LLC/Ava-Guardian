@@ -34,10 +34,13 @@ Security Layers:
 1. SHA3-256 content hashing (NIST FIPS 202)
 2. HMAC-SHA3-256 authentication (RFC 2104)
 3. Ed25519 digital signatures (RFC 8032)
-4. CRYSTALS-Dilithium quantum-resistant signatures (NIST PQC)
+4. CRYSTALS-Dilithium quantum-resistant signatures (NIST PQC) - optional
 5. HKDF key derivation (RFC 5869, NIST SP 800-108)
-6. RFC 3161 trusted timestamps
-7. HSM integration support
+
+Additional Features:
+--------------------
+- RFC 3161 timestamps (audit metadata, not cryptographically verified by this library)
+- HSM integration support
 
 Standards Compliance:
 ---------------------
@@ -107,6 +110,23 @@ except (ImportError, RuntimeError, OSError):
         print("WARNING: Dilithium not available - install liboqs-python or pqcrypto")
         print("  pip install liboqs-python")
         print("  OR: pip install pqcrypto")
+
+
+# ============================================================================
+# EXCEPTIONS
+# ============================================================================
+
+
+class QuantumSignatureUnavailableError(Exception):
+    """
+    Raised when quantum-resistant signature operations are requested but
+    the required libraries (liboqs-python or pqcrypto) are not available.
+
+    This exception ensures fail-closed behavior for quantum signatures,
+    preventing the system from silently degrading to insecure placeholders.
+    """
+
+    pass
 
 
 # ============================================================================
@@ -748,20 +768,14 @@ def generate_dilithium_keypair() -> DilithiumKeyPair:
             public_key, private_key = dilithium3.generate_keypair()
             return DilithiumKeyPair(private_key=private_key, public_key=public_key)
 
-    else:
-        # Fallback: Generate placeholder (INSECURE)
-        print("\n" + "=" * 70)
-        print("WARNING: Using INSECURE placeholder for Dilithium!")
-        print("=" * 70)
-        print("\nTo enable quantum-resistant signatures, install:")
-        print("\n  Option 1 (Recommended): pip install liboqs-python")
-        print("  Option 2 (Alternative): pip install pqcrypto")
-        print("\nWithout Dilithium, signatures are vulnerable to quantum attacks.")
-        print("=" * 70 + "\n")
-
-        return DilithiumKeyPair(
-            private_key=secrets.token_bytes(4000), public_key=secrets.token_bytes(1952)
-        )
+    # Fail-closed: Do not generate fake keys
+    raise QuantumSignatureUnavailableError(
+        "Dilithium quantum-resistant signatures are not available.\n"
+        "To enable quantum-resistant signatures, install one of:\n"
+        "  Option 1 (Recommended): pip install liboqs-python\n"
+        "  Option 2 (Alternative): pip install pqcrypto\n"
+        "Without Dilithium, the system cannot provide quantum resistance."
+    )
 
 
 def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
@@ -774,6 +788,9 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
 
     Returns:
         Dilithium signature (3293 bytes for Level 3)
+
+    Raises:
+        QuantumSignatureUnavailableError: If Dilithium libraries not available
     """
     if DILITHIUM_AVAILABLE:
         if DILITHIUM_BACKEND == "liboqs":
@@ -784,9 +801,10 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
         elif DILITHIUM_BACKEND == "pqcrypto":
             return dilithium3.sign(message, private_key)
 
-    else:
-        # Placeholder: Return fake signature (INSECURE)
-        return secrets.token_bytes(3293)
+    # Fail-closed: Do not return fake signatures
+    raise QuantumSignatureUnavailableError(
+        "Cannot sign with Dilithium: quantum-resistant libraries not available."
+    )
 
 
 def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
@@ -799,7 +817,10 @@ def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> boo
         public_key: Dilithium public key (1952 bytes)
 
     Returns:
-        True if valid (or if using placeholder)
+        True if signature is valid, False otherwise
+
+    Raises:
+        QuantumSignatureUnavailableError: If Dilithium libraries not available
     """
     if DILITHIUM_AVAILABLE:
         if DILITHIUM_BACKEND == "liboqs":
@@ -816,9 +837,10 @@ def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> boo
             except Exception:
                 return False
 
-    else:
-        # Placeholder: Always return True (INSECURE)
-        return True
+    # Fail-closed: Do not return True without verification
+    raise QuantumSignatureUnavailableError(
+        "Cannot verify Dilithium signature: quantum-resistant libraries not available."
+    )
 
 
 # ============================================================================
@@ -1242,11 +1264,14 @@ class KeyManagementSystem:
     master_secret: bytes  # 32 bytes, NEVER expose
     hmac_key: bytes  # 32 bytes, derived
     ed25519_keypair: Ed25519KeyPair  # Classical signatures
-    dilithium_keypair: DilithiumKeyPair  # Quantum-resistant signatures
+    dilithium_keypair: Optional[
+        DilithiumKeyPair
+    ]  # Quantum-resistant signatures (None if unavailable)
     creation_date: str  # ISO 8601 timestamp
     rotation_schedule: str  # e.g., "quarterly"
     version: str  # KMS version
     ethical_vector: Dict[str, float]  # 12 Ethical Pillars
+    quantum_signatures_enabled: bool = True  # False if Dilithium unavailable
 
 
 def generate_key_management_system(
@@ -1305,7 +1330,30 @@ def generate_key_management_system(
 
     # Generate key pairs
     ed25519_keypair = generate_ed25519_keypair(ed25519_seed)
-    dilithium_keypair = generate_dilithium_keypair()  # Uses liboqs or placeholder
+
+    # Generate Dilithium keypair if available, otherwise gracefully degrade
+    dilithium_keypair = None
+    quantum_signatures_enabled = False
+    if DILITHIUM_AVAILABLE:
+        try:
+            dilithium_keypair = generate_dilithium_keypair()
+            quantum_signatures_enabled = True
+        except QuantumSignatureUnavailableError:
+            print("\n" + "=" * 70)
+            print("WARNING: Quantum-resistant signatures disabled")
+            print("=" * 70)
+            print("System will use Ed25519 classical signatures only.")
+            print("To enable quantum resistance, install liboqs-python or pqcrypto.")
+            print("=" * 70 + "\n")
+    else:
+        print("\n" + "=" * 70)
+        print("WARNING: Quantum-resistant signatures disabled")
+        print("=" * 70)
+        print("System will use Ed25519 classical signatures only.")
+        print("To enable quantum resistance, install:")
+        print("  Option 1 (Recommended): pip install liboqs-python")
+        print("  Option 2 (Alternative): pip install pqcrypto")
+        print("=" * 70 + "\n")
 
     return KeyManagementSystem(
         master_secret=master_secret,
@@ -1316,6 +1364,7 @@ def generate_key_management_system(
         rotation_schedule="quarterly",
         version="1.0.0",
         ethical_vector=ethical_vector,
+        quantum_signatures_enabled=quantum_signatures_enabled,
     )
 
 
@@ -1336,10 +1385,12 @@ def export_public_keys(kms: KeyManagementSystem, output_dir: Path) -> None:
     with open(ed25519_path, "wb") as f:
         f.write(kms.ed25519_keypair.public_key)
 
-    # Export Dilithium public key
-    dilithium_path = output_dir / "dilithium_public.key"
-    with open(dilithium_path, "wb") as f:
-        f.write(kms.dilithium_keypair.public_key)
+    # Export Dilithium public key (if available)
+    dilithium_path = None
+    if kms.quantum_signatures_enabled and kms.dilithium_keypair:
+        dilithium_path = output_dir / "dilithium_public.key"
+        with open(dilithium_path, "wb") as f:
+            f.write(kms.dilithium_keypair.public_key)
 
     # Create README
     readme_path = output_dir / "README.txt"
@@ -1347,21 +1398,32 @@ def export_public_keys(kms: KeyManagementSystem, output_dir: Path) -> None:
         f.write("Ava Guardian ♱ (AG♱) - Public Keys\n")
         f.write("=" * 50 + "\n\n")
         f.write(f"Generated: {kms.creation_date}\n")
-        f.write(f"Version: {kms.version}\n\n")
+        f.write(f"Version: {kms.version}\n")
+        f.write(
+            f"Quantum Signatures: {'Enabled' if kms.quantum_signatures_enabled else 'Disabled'}\n\n"
+        )
         f.write("Ed25519 Public Key:\n")
         f.write(f"  File: {ed25519_path.name}\n")
         f.write("  Size: 32 bytes\n")
         f.write(f"  Hex: {kms.ed25519_keypair.public_key.hex()}\n\n")
-        f.write("Dilithium Public Key:\n")
-        f.write(f"  File: {dilithium_path.name}\n")
-        f.write(f"  Size: {len(kms.dilithium_keypair.public_key)} bytes\n")
-        f.write(f"  Hex (first 32): {kms.dilithium_keypair.public_key.hex()[:64]}...\n\n")
+        if kms.quantum_signatures_enabled and kms.dilithium_keypair and dilithium_path:
+            f.write("Dilithium Public Key:\n")
+            f.write(f"  File: {dilithium_path.name}\n")
+            f.write(f"  Size: {len(kms.dilithium_keypair.public_key)} bytes\n")
+            f.write(f"  Hex (first 32): {kms.dilithium_keypair.public_key.hex()[:64]}...\n\n")
+        else:
+            f.write("Dilithium Public Key: NOT AVAILABLE\n")
+            f.write("  Quantum-resistant signatures are disabled.\n")
+            f.write("  Install liboqs-python or pqcrypto to enable.\n\n")
         f.write("These public keys can be safely distributed.\n")
         f.write("Use them to verify signatures on DNA code packages.\n")
 
-    print(f"✓ Public keys exported to: {output_dir}")
-    print(f"  Ed25519: {len(kms.ed25519_keypair.public_key)} bytes")
-    print(f"  Dilithium: {len(kms.dilithium_keypair.public_key)} bytes")
+    print(f"  ✓ Public keys exported to: {output_dir}")
+    print(f"    Ed25519: {len(kms.ed25519_keypair.public_key)} bytes")
+    if kms.quantum_signatures_enabled and kms.dilithium_keypair:
+        print(f"    Dilithium: {len(kms.dilithium_keypair.public_key)} bytes")
+    else:
+        print("    Dilithium: NOT AVAILABLE (quantum signatures disabled)")
 
 
 # ============================================================================
@@ -1404,15 +1466,16 @@ class CryptoPackage:
     content_hash: str  # SHA3-256 hex
     hmac_tag: str  # HMAC-SHA3-256 hex
     ed25519_signature: str  # Ed25519 signature hex
-    dilithium_signature: str  # Dilithium signature hex
+    dilithium_signature: Optional[str]  # Dilithium signature hex (None if unavailable)
     timestamp: str  # ISO 8601
     timestamp_token: Optional[str]  # RFC 3161 token (base64)
     author: str  # Creator name
     ed25519_pubkey: str  # Ed25519 public key hex
-    dilithium_pubkey: str  # Dilithium public key hex
+    dilithium_pubkey: Optional[str]  # Dilithium public key hex (None if unavailable)
     version: str  # Package version
     ethical_vector: Dict[str, float]  # 12 Ethical Pillars
     ethical_hash: str  # SHA3-256 hash of ethical vector (hex)
+    quantum_signatures_enabled: bool = True  # False if Dilithium unavailable
 
 
 def create_crypto_package(
@@ -1472,13 +1535,22 @@ def create_crypto_package(
         duration_ms = (time.time() - start_time) * 1000
         monitor.monitor_crypto_operation("ed25519_sign", duration_ms)
 
-    # 4. Sign with Dilithium
-    if monitor:
-        start_time = time.time()
-    dilithium_sig = dilithium_sign(content_hash, kms.dilithium_keypair.private_key)
-    if monitor:
-        duration_ms = (time.time() - start_time) * 1000
-        monitor.monitor_crypto_operation("dilithium_sign", duration_ms)
+    # 4. Sign with Dilithium (if available)
+    dilithium_sig = None
+    dilithium_pubkey = None
+    quantum_signatures_enabled = False
+    if kms.quantum_signatures_enabled and kms.dilithium_keypair is not None:
+        if monitor:
+            start_time = time.time()
+        try:
+            dilithium_sig = dilithium_sign(content_hash, kms.dilithium_keypair.private_key)
+            dilithium_pubkey = kms.dilithium_keypair.public_key.hex()
+            quantum_signatures_enabled = True
+        except QuantumSignatureUnavailableError:
+            pass  # Gracefully degrade to Ed25519-only
+        if monitor and dilithium_sig is not None:
+            duration_ms = (time.time() - start_time) * 1000
+            monitor.monitor_crypto_operation("dilithium_sign", duration_ms)
 
     # 5. Generate timestamp
     timestamp = datetime.now(timezone.utc).isoformat()
@@ -1511,15 +1583,16 @@ def create_crypto_package(
         content_hash=content_hash.hex(),
         hmac_tag=hmac_tag.hex(),
         ed25519_signature=ed25519_sig.hex(),
-        dilithium_signature=dilithium_sig.hex(),
+        dilithium_signature=dilithium_sig.hex() if dilithium_sig else None,
         timestamp=timestamp,
         timestamp_token=timestamp_token,
         author=author,
         ed25519_pubkey=kms.ed25519_keypair.public_key.hex(),
-        dilithium_pubkey=kms.dilithium_keypair.public_key.hex(),
+        dilithium_pubkey=dilithium_pubkey,
         version="1.0.0",
         ethical_vector=ethical_vector,
         ethical_hash=ethical_hash,
+        quantum_signatures_enabled=quantum_signatures_enabled,
     )
 
 
@@ -1529,7 +1602,7 @@ def verify_crypto_package(
     package: CryptoPackage,
     hmac_key: bytes,
     monitor: Optional["AvaGuardianMonitor"] = None,
-) -> Dict[str, bool]:
+) -> Dict[str, Optional[bool]]:
     """
     Verify all cryptographic protections in package.
 
@@ -1538,7 +1611,7 @@ def verify_crypto_package(
     1. Recompute content hash and compare
     2. Verify HMAC tag
     3. Verify Ed25519 signature
-    4. Verify Dilithium signature
+    4. Verify Dilithium signature (if present and libraries available)
     5. Verify timestamp is reasonable
 
     Args:
@@ -1554,7 +1627,7 @@ def verify_crypto_package(
             "content_hash": bool,
             "hmac": bool,
             "ed25519": bool,
-            "dilithium": bool,
+            "dilithium": bool or None (None = not present or unsupported),
             "timestamp": bool
         }
     """
@@ -1584,17 +1657,29 @@ def verify_crypto_package(
         duration_ms = (time.time() - start_time) * 1000
         monitor.monitor_crypto_operation("ed25519_verify", duration_ms)
 
-    # 4. Verify Dilithium signature
-    if monitor:
-        start_time = time.time()
-    results["dilithium"] = dilithium_verify(
-        computed_hash,
-        bytes.fromhex(package.dilithium_signature),
-        bytes.fromhex(package.dilithium_pubkey),
-    )
-    if monitor:
-        duration_ms = (time.time() - start_time) * 1000
-        monitor.monitor_crypto_operation("dilithium_verify", duration_ms)
+    # 4. Verify Dilithium signature (if present)
+    if (
+        package.quantum_signatures_enabled
+        and package.dilithium_signature
+        and package.dilithium_pubkey
+    ):
+        if monitor:
+            start_time = time.time()
+        try:
+            results["dilithium"] = dilithium_verify(
+                computed_hash,
+                bytes.fromhex(package.dilithium_signature),
+                bytes.fromhex(package.dilithium_pubkey),
+            )
+        except QuantumSignatureUnavailableError:
+            # Cannot verify: Dilithium libraries not available
+            results["dilithium"] = None  # Indicates "UNSUPPORTED"
+        if monitor and results.get("dilithium") is not None:
+            duration_ms = (time.time() - start_time) * 1000
+            monitor.monitor_crypto_operation("dilithium_verify", duration_ms)
+    else:
+        # Package was created without quantum signatures
+        results["dilithium"] = None  # Indicates "NOT_PRESENT"
 
     # 5. Verify timestamp is reasonable
     try:
@@ -1632,7 +1717,10 @@ def main():
     print("  ✓ Master secret: 256 bits")
     print("  ✓ HMAC key: 256 bits")
     print(f"  ✓ Ed25519 keypair: {len(kms.ed25519_keypair.public_key)} bytes")
-    print(f"  ✓ Dilithium keypair: {len(kms.dilithium_keypair.public_key)} bytes")
+    if kms.quantum_signatures_enabled and kms.dilithium_keypair:
+        print(f"  ✓ Dilithium keypair: {len(kms.dilithium_keypair.public_key)} bytes")
+    else:
+        print("  ⚠ Dilithium keypair: NOT AVAILABLE (quantum signatures disabled)")
 
     # Display DNA codes
     print("\n[2/5] Master DNA Helix Codes:")
@@ -1655,17 +1743,29 @@ def main():
     print(f"  ✓ HMAC tag: {crypto_pkg.hmac_tag[:32]}...")
     print("  ✓ Signing package...")
     print(f"  ✓ Ed25519 signature: {crypto_pkg.ed25519_signature[:32]}...")
-    print(f"  ✓ Dilithium signature: {crypto_pkg.dilithium_signature[:32]}...")
+    if crypto_pkg.quantum_signatures_enabled and crypto_pkg.dilithium_signature:
+        print(f"  ✓ Dilithium signature: {crypto_pkg.dilithium_signature[:32]}...")
+    else:
+        print("  ⚠ Dilithium signature: NOT AVAILABLE (quantum signatures disabled)")
     print(f"  ✓ Timestamp: {crypto_pkg.timestamp}")
 
     # Verify package
     print("\n[4/5] Verifying cryptographic package...")
     results = verify_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, crypto_pkg, kms.hmac_key)
 
-    all_valid = all(results.values())
+    # Check all results, treating None (unsupported) as acceptable
+    all_valid = all(v is True or v is None for v in results.values())
     for check, valid in results.items():
-        status = "✓" if valid else "✗"
-        print(f"  {status} {check}: {'VALID' if valid else 'INVALID'}")
+        if valid is True:
+            status = "✓"
+            status_text = "VALID"
+        elif valid is None:
+            status = "⚠"
+            status_text = "NOT PRESENT/UNSUPPORTED"
+        else:
+            status = "✗"
+            status_text = "INVALID"
+        print(f"  {status} {check}: {status_text}")
 
     # Export public keys
     print("\n[5/5] Exporting public keys...")
