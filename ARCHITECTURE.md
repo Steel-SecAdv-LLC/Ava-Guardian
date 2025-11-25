@@ -74,16 +74,16 @@ Ava Guardian is a quantum-resistant cryptographic security system that mathemati
 
 The system implements four triads of ethical principles, each containing three pillars:
 
-#### **Triad 1: Foundation (Eris ⯰, Eden ♱, Veritas ⚕)**
+#### **Triad 1: Foundation (Eris ⯰, Eden ♱, Veritas 💠)**
 ```python
 TRIAD_1 = {
     "Eris": {"symbol": "⯰", "weight": 1.0, "focus": "Balanced Discord"},
     "Eden": {"symbol": "♱", "weight": 1.0, "focus": "Harmonious Growth"},
-    "Veritas": {"symbol": "⚕", "weight": 1.0, "focus": "Truth & Healing"}
+    "Veritas": {"symbol": "💠", "weight": 1.0, "focus": "Truth & Validation"}
 }
 ```
 
-#### **Triad 2: Expansion (X ⚛, Caduceus ⚚, Dev ⟡)**
+#### **Triad 2: Expansion (X ⚛, Caduceus ⚚, Dev ⚕)**
 ```python
 TRIAD_2 = {
     "X": {"symbol": "⚛", "weight": 1.0, "focus": "Unknown Potential"},

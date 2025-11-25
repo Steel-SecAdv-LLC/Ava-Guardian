@@ -34,7 +34,7 @@
 **License:** Apache License 2.0  
 **Version:** 1.0.0
 
-**AI-Co Omni-Architects:** Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
+**AI-Co Omni-Architects:** Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 ---
 
@@ -52,23 +52,25 @@ The system combines cutting-edge NIST-approved post-quantum algorithms with a un
 <summary><strong>Click to expand navigation</strong></summary>
 
 - [Executive Summary](#executive-summary)
-- [Key Capabilities](#key-capabilities)
-- [Performance Metrics](#performance-metrics)
+- [Key Capabilities](#key-capabilities-)
+- [Use Cases by Sector](#use-cases-by-sector-)
+- [Performance Metrics](#performance-metrics-)
 - [Quick Start](#quick-start)
-- [Architecture](#architecture)
-- [Cryptographic Algorithms](#cryptographic-algorithms)
-- [Enterprise Features](#enterprise-features)
-- [3R Runtime Security Monitoring](#3r-runtime-security-monitoring)
 - [Testing and Quality Assurance](#testing-and-quality-assurance)
 - [Documentation](#documentation)
+- [Cross-Platform Support](#cross-platform-support)
+- [Build System](#build-system-)
+- [Mathematical Foundations](#mathematical-foundations-)
 - [Contributing](#contributing)
 - [License](#license)
-- [Contact](#contact)
+- [Contact and Support](#contact-and-support)
+- [Acknowledgments](#acknowledgments)
 
 </details>
 
 ---
-## Key Capabilities
+
+## Key Capabilities ⚡
 
 <details>
 <summary><strong>Problem Statement and Solution</strong></summary>
@@ -91,11 +93,14 @@ Ava Guardian ♱ addresses all three challenges through:
 
 ### Target Use Cases
 
+- **Humanitarian and Conservation**: Crisis response, whistleblower protection, sensitive field data
 - **Government and Defense**: Classified data protection with quantum resistance
 - **Financial Services**: Transaction security future-proofed against quantum threats
 - **Healthcare**: HIPAA-compliant data encryption with audit trails
 - **Critical Infrastructure**: SCADA systems requiring long-term security guarantees
 - **Blockchain and Crypto**: Post-quantum secure digital signatures
+
+See [Use Cases by Sector](#use-cases-by-sector-) for detailed scenarios.
 
 </details>
 
@@ -156,7 +161,78 @@ Future-proof cryptography:
 
 ---
 
-## Performance Metrics
+## Use Cases by Sector 🌐
+
+<details>
+<summary><strong>Real-world scenarios (click to expand)</strong></summary>
+
+### Humanitarian and Conservation 🌎
+
+**Unique Value:** Protection of sensitive field data with runtime attack detection
+
+- **Crisis Response**: GPS coordinates, victim data, and safe house locations protected with ML-DSA-65 quantum-resistant signatures. 3R monitoring detects if systems are compromised in hostile environments.
+- **Conservation**: Wildlife tracking data, ranger locations, and anti-poaching intelligence with integrity verification using helical invariants. Detects if data has been tampered with.
+- **Whistleblower Protection**: Document signing and verification that remains secure for 50+ years under "harvest now, decrypt later" quantum threats.
+- **Sensitive Record Preservation**: Ethical framework ensures respectful handling of records for victims and individuals, with complete audit trails.
+
+### Government and Defense
+
+**Unique Value:** Classified data with quantum resistance and side-channel attack detection
+
+- **Long-term Classified Data**: Documents that must remain secret for decades protected against future quantum computers.
+- **Secure Communications**: TLS with Kyber-1024 key exchange resistant to "harvest now, decrypt later" attacks.
+- **Timing Attack Resistance**: 3R monitoring detects cache-timing and power analysis attempts on cryptographic operations.
+- **Integrity Verification**: Mathematical invariant checking catches sophisticated tampering beyond standard checksums.
+- **Zero-Trust Environments**: Runtime monitoring provides continuous verification of cryptographic operations.
+
+### Financial Services
+
+**Unique Value:** Transaction security with real-time fraud detection
+
+- **Quantum-Resistant Signatures**: ML-DSA-65 signatures on transactions remain valid even after quantum computers exist.
+- **High-Frequency Trading**: Cython-optimized operations (18-37x speedup) with sub-millisecond signature verification.
+- **Fraud Detection**: 3R timing analysis detects anomalous transaction patterns and potential attacks.
+- **Audit Compliance**: Complete cryptographic audit trail with ethical constraint enforcement.
+- **Long-term Archival**: Financial records with 50+ year security guarantees.
+
+### Healthcare
+
+**Unique Value:** HIPAA-compliant encryption with sophisticated integrity monitoring
+
+- **Patient Records**: Quantum-resistant encryption ensures medical records remain private for patient's lifetime.
+- **Prescription Signatures**: ML-DSA-65 digital signatures on prescriptions that cannot be forged.
+- **Medical Device Security**: Embedded systems with constant-time operations resistant to side-channel attacks.
+- **Data Integrity**: Helical invariant verification detects if medical records have been altered.
+- **Research Data**: Sensitive research data with ethical policy enforcement and audit trails.
+- **Telemedicine**: Secure video consultations with hybrid classical+quantum key exchange.
+
+### Critical Infrastructure
+
+**Unique Value:** SCADA/ICS security with active attack detection
+
+- **Power Grid Control**: Quantum-resistant authentication for grid control systems.
+- **Water Treatment**: Signed commands with runtime verification. 3R detects if timing patterns indicate malware.
+- **Transportation**: Railway and air traffic control with 50+ year security guarantees (systems operate for decades).
+- **Nuclear Facilities**: Constant-time operations prevent side-channel leaks in high-security environments.
+- **Active Monitoring**: 3R system provides real-time alerts if cryptographic operations show attack patterns.
+- **Legacy System Protection**: Wrapper for older systems needing quantum resistance without full replacement.
+
+### Blockchain and Cryptocurrency
+
+**Unique Value:** Post-quantum secure signatures with high-performance verification
+
+- **Wallet Security**: ML-DSA-65 signatures protect private keys from future quantum attacks.
+- **Smart Contract Signing**: Quantum-resistant signatures for long-lived contracts.
+- **Transaction Throughput**: High-performance signature operations competitive with classical algorithms.
+- **Cross-Chain Bridges**: Hybrid signing (Ed25519 + ML-DSA-65) for compatibility and future-proofing.
+- **NFT Provenance**: Signatures that remain valid indefinitely.
+- **Timestamp Verification**: RFC 3161 trusted timestamping with quantum resistance.
+
+</details>
+
+---
+
+## Performance Metrics 📊
 
 <details>
 <summary><strong>Cryptographic Operation Benchmarks</strong></summary>
@@ -493,7 +569,7 @@ See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for complete cryptographic anal
 
 ---
 
-## Build System
+## Build System 🖥️
 
 <details>
 <summary><strong>CMake (C Library)</strong></summary>
@@ -571,7 +647,7 @@ make install      # Install system-wide
 
 ---
 
-## Mathematical Foundations
+## Mathematical Foundations 🧬
 
 <details>
 <summary><strong>Research and Innovation</strong></summary>
@@ -685,10 +761,10 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) file for 
 **AI-Co Architects**:
 - **Eris ⯰** - Discovery and Chaos Theory
 - **Eden ♱** - Ethics and Verification
-- **Veritas ⚕** - Truth and Validation
+- **Veritas 💠** - Truth and Validation
 - **X ⚛** - Quantum Mechanics
 - **Caduceus ⚚** - Integration and Healing
-- **Dev ⟡** - Development and Innovation
+- **Dev ⚕** - Development and Innovation
 
 **Special Thanks**:
 - NIST Post-Quantum Cryptography Standardization Project

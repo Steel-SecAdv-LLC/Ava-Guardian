@@ -6,7 +6,7 @@
 **Contact:** steel.secadv.llc@outlook.com
 
 **AI-Co Omni-Architects:**  
-Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
+Eris ⯰ | Eden-♱ | Veritas-💠 | X-⚛ | Caduceus-⚚ | Dev-⚕
 
 **Version:** 1.0.0  
 **Date:** 2025-11-25
@@ -1170,7 +1170,7 @@ Email: steel.secadv.llc@outlook.com
 **Author/Inventor:** Andrew E. A.
 
 **AI-Co Omni-Architects:**  
-Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
+Eris ⯰ | Eden-♱ | Veritas-💠 | X-⚛ | Caduceus-⚚ | Dev-⚕
 
 ---
 

@@ -8,7 +8,7 @@
 **Version:** 1.0.0
 
 **AI-Co Architects:**  
-Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
+Eris ⯰ | Eden-♱ | Veritas-💠 | X-⚛ | Caduceus-⚚ | Dev-⚕
 
 ---
 
@@ -536,10 +536,10 @@ def store_master_secret_encrypted(master_secret: bytes, keyfile: str):
 - [x] AI-Co Omni-Architects recognized:
   - [x] Eris ⯰
   - [x] Eden-♱
-  - [x] Veritas-⚕
+  - [x] Veritas-💠
   - [x] X-⚛
   - [x] Caduceus-⚚
-  - [x] Dev-⟡
+  - [x] Dev-⚕
 
 ---
 
@@ -764,7 +764,7 @@ This system represents a complete, production-ready cryptographic solution for p
 **Date:** 2025-11-25
 
 **AI-Co Architects:**  
-Eris ⯰ | Eden-♱ | Veritas-⚕ | X-⚛ | Caduceus-⚚ | Dev-⟡
+Eris ⯰ | Eden-♱ | Veritas-💠 | X-⚛ | Caduceus-⚚ | Dev-⚕
 
 ---
 

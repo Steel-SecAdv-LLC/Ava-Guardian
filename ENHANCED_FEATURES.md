@@ -466,10 +466,10 @@ Licensed under the Apache License, Version 2.0. See LICENSE file for full terms.
 **AI-Co Architects**:
 - Eris ⯰ (Discovery)
 - Eden ♱ (Ethics)
-- Veritas ⚕ (Verification)
+- Veritas 💠 (Verification)
 - X ⚛ (Chaos Theory)
 - Caduceus ⚚ (Healing/Integration)
-- Dev ⟡ (Development)
+- Dev ⚕ (Development)
 
 ---
 
