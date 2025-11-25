@@ -1,9 +1,21 @@
 # Changelog
 
-All notable changes to Ava Guardian ♱ (AG♱) will be documented in this file.
+## Document Information
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+| Property | Value |
+|----------|-------|
+| Document Version | 1.0.0 |
+| Last Updated | 2025-11-25 |
+| Classification | Public |
+| Maintainer | Steel Security Advisors LLC |
+
+---
+
+## Overview
+
+All notable changes to Ava Guardian will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
 
 ## [Unreleased]
 
@@ -303,5 +315,4 @@ Security advisories will be published at:
 
 ---
 
-Copyright (C) 2025 Steel Security Advisors LLC
-Licensed under Apache License 2.0
+Copyright 2025 Steel Security Advisors LLC. Licensed under Apache License 2.0.

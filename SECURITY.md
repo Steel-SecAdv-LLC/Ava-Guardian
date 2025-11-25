@@ -1,21 +1,36 @@
 # Security Policy
 
+## Document Information
+
+| Property | Value |
+|----------|-------|
+| Document Version | 1.0.0 |
+| Last Updated | 2025-11-25 |
+| Classification | Public |
+| Maintainer | Steel Security Advisors LLC |
+
+---
+
 ## Overview
 
-Ava Guardian ♱ (AG♱) is a production-grade quantum-resistant cryptographic protection system. Security is our highest priority. We take all vulnerabilities seriously and appreciate responsible disclosure from the security research community.
+Ava Guardian is a production-grade quantum-resistant cryptographic protection system released under the Apache License 2.0 as free and open-source software. Security is our highest priority. We take all vulnerabilities seriously and appreciate responsible disclosure from the security research community.
+
+---
 
 ## Supported Versions
 
 We actively maintain and provide security updates for the following versions:
 
-| Version | Supported          | Status |
-| ------- | ------------------ | ------ |
-| 1.0.x   | :white_check_mark: | Active development and security updates |
-| < 1.0   | :x:                | No longer supported |
+| Version | Supported | Status |
+|---------|-----------|--------|
+| 1.0.x | Yes | Active development and security updates |
+| < 1.0 | No | No longer supported |
+
+---
 
 ## Security Features
 
-Ava Guardian ♱ implements defense-in-depth with six independent security layers:
+Ava Guardian implements defense-in-depth with six independent security layers:
 
 1. **SHA3-256 Content Hashing** (NIST FIPS 202)
 2. **HMAC-SHA3-256 Authentication** (RFC 2104)
@@ -233,7 +248,12 @@ Non-compliance with these standards should be reported as a high-severity securi
 
 ---
 
-**Last Updated:** 2025-11-25
-**Version:** 1.0.0
+## Document History
 
-Thank you for helping keep Ava Guardian ♱ secure!
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2025-11-25 | Initial professional release |
+
+---
+
+Copyright 2025 Steel Security Advisors LLC. Licensed under Apache License 2.0.
