@@ -129,6 +129,60 @@ class QuantumSignatureUnavailableError(Exception):
     pass
 
 
+class QuantumSignatureRequiredError(Exception):
+    """
+    Raised when quantum-resistant signatures are required by policy but
+    Dilithium is not available or the package lacks quantum signatures.
+
+    Use this exception to enforce mandatory quantum-resistant protection
+    in high-security deployments.
+    """
+
+    pass
+
+
+# ============================================================================
+# SECURE MEMORY UTILITIES
+# ============================================================================
+
+
+def secure_wipe(data: bytearray) -> None:
+    """
+    Securely wipe sensitive data from memory.
+
+    Security Note:
+    --------------
+    This function attempts to overwrite sensitive data in memory to prevent
+    forensic recovery. However, Python's memory management may create copies
+    of data that cannot be wiped. For highest-security applications, use
+    hardware security modules (HSMs) that provide secure key storage.
+
+    Limitations:
+    ------------
+    - Python may have created copies of the data elsewhere in memory
+    - Garbage collector may not immediately release memory
+    - Swap files may contain copies of sensitive data
+    - For production use, consider HSM integration
+
+    Args:
+        data: Mutable bytearray to wipe (bytes objects are immutable)
+    """
+    if not isinstance(data, bytearray):
+        return  # Cannot wipe immutable bytes
+
+    # Overwrite with zeros
+    for i in range(len(data)):
+        data[i] = 0
+
+    # Overwrite with ones
+    for i in range(len(data)):
+        data[i] = 0xFF
+
+    # Final overwrite with zeros
+    for i in range(len(data)):
+        data[i] = 0
+
+
 # ============================================================================
 # CANONICAL ENCODING WITH LENGTH-PREFIXING
 # ============================================================================
@@ -298,16 +352,16 @@ def hmac_authenticate(message: bytes, key: bytes) -> bytes:
 
     Args:
         message: Data to authenticate (arbitrary length)
-        key: Secret HMAC key (32 bytes recommended)
+        key: Secret HMAC key (32 bytes minimum, 64 bytes recommended)
 
     Returns:
         32-byte HMAC-SHA3-256 authentication tag
 
     Raises:
-        ValueError: If key is too short (< 16 bytes)
+        ValueError: If key is too short (< 32 bytes)
     """
-    if len(key) < 16:
-        raise ValueError("HMAC key must be at least 16 bytes")
+    if len(key) < 32:
+        raise ValueError("HMAC key must be at least 32 bytes for SHA3-256 security")
 
     # Use SHA3-256 for HMAC
     return hmac.new(key, message, hashlib.sha3_256).digest()
@@ -852,6 +906,14 @@ def get_rfc3161_timestamp(data: bytes, tsa_url: str = None) -> Optional[bytes]:
     """
     Get RFC 3161 trusted timestamp for data.
 
+    IMPORTANT LIMITATION:
+    ---------------------
+    This function FETCHES timestamp tokens from a TSA but does NOT verify
+    the TSA's signature. The returned token is informational only and should
+    not be relied upon for cryptographic proof without additional verification.
+    For production use requiring verified timestamps, implement TSA signature
+    verification using OpenSSL or a dedicated TSA verification library.
+
     Protocol (RFC 3161):
     --------------------
     1. Client sends TimeStampReq to TSA containing:
@@ -865,7 +927,7 @@ def get_rfc3161_timestamp(data: bytes, tsa_url: str = None) -> Optional[bytes]:
        - Timestamp value
        - Hash of data
 
-    3. Client verifies:
+    3. Client verifies (NOT IMPLEMENTED - see limitation above):
        - TSA signature
        - Certificate chain
        - Hash matches data
@@ -1117,8 +1179,8 @@ def derive_keys(
     if not CRYPTO_AVAILABLE:
         raise RuntimeError("cryptography library required for HKDF")
 
-    if len(master_secret) < 16:
-        raise ValueError("Master secret must be at least 16 bytes (128 bits entropy)")
+    if len(master_secret) < 32:
+        raise ValueError("Master secret must be at least 32 bytes (256 bits entropy)")
 
     if ethical_vector is None:
         ethical_vector = ETHICAL_VECTOR
@@ -1596,12 +1658,76 @@ def create_crypto_package(
     )
 
 
+def _verify_timestamp_value(timestamp_str: str) -> bool:
+    """Verify timestamp is reasonable (not future, not older than 10 years)."""
+    try:
+        ts = datetime.fromisoformat(timestamp_str)
+        now = datetime.now(timezone.utc)
+        return ts <= now and (now - ts).days < 3650
+    except Exception:
+        return False
+
+
+def _verify_dilithium_with_policy(
+    computed_hash: bytes,
+    package: CryptoPackage,
+    monitor: Optional["AvaGuardianMonitor"],
+    require_quantum_signatures: bool,
+) -> Optional[bool]:
+    """
+    Verify Dilithium signature with policy enforcement.
+
+    Returns:
+        True if valid, False if invalid, None if not present/unsupported.
+
+    Raises:
+        QuantumSignatureRequiredError: If policy requires quantum signatures
+            but they are missing, unavailable, or invalid.
+    """
+    if (
+        not package.quantum_signatures_enabled
+        or not package.dilithium_signature
+        or not package.dilithium_pubkey
+    ):
+        if require_quantum_signatures:
+            raise QuantumSignatureRequiredError(
+                "Quantum signatures required but package lacks Dilithium signature"
+            )
+        return None
+
+    start_time = time.time() if monitor else None
+    try:
+        result = dilithium_verify(
+            computed_hash,
+            bytes.fromhex(package.dilithium_signature),
+            bytes.fromhex(package.dilithium_pubkey),
+        )
+    except QuantumSignatureUnavailableError:
+        if require_quantum_signatures:
+            raise QuantumSignatureRequiredError(
+                "Quantum signatures required but Dilithium libraries unavailable"
+            )
+        return None
+
+    if monitor and start_time is not None:
+        duration_ms = (time.time() - start_time) * 1000
+        monitor.monitor_crypto_operation("dilithium_verify", duration_ms)
+
+    if require_quantum_signatures and result is False:
+        raise QuantumSignatureRequiredError(
+            "Quantum signatures required but Dilithium signature verification failed"
+        )
+
+    return result
+
+
 def verify_crypto_package(
     dna_codes: str,
     helix_params: List[Tuple[float, float]],
     package: CryptoPackage,
     hmac_key: bytes,
     monitor: Optional["AvaGuardianMonitor"] = None,
+    require_quantum_signatures: bool = False,
 ) -> Dict[str, Optional[bool]]:
     """
     Verify all cryptographic protections in package.
@@ -1620,6 +1746,9 @@ def verify_crypto_package(
         package: Crypto package to verify
         hmac_key: HMAC key for verification
         monitor: Optional security monitor for 3R runtime analysis
+        require_quantum_signatures: If True, raises QuantumSignatureRequiredError
+            when Dilithium signatures are missing or cannot be verified.
+            Use this for high-security deployments requiring quantum resistance.
 
     Returns:
         Dictionary of verification results:
@@ -1630,65 +1759,52 @@ def verify_crypto_package(
             "dilithium": bool or None (None = not present or unsupported),
             "timestamp": bool
         }
+
+    Raises:
+        QuantumSignatureRequiredError: If require_quantum_signatures=True and
+            Dilithium signature is missing, invalid, or cannot be verified.
+
+    Note:
+        This function catches all exceptions internally and returns False for
+        failed verifications rather than raising exceptions. This provides
+        clean failure semantics for security-critical code paths.
     """
-    results = {}
+    results: Dict[str, Optional[bool]] = {
+        "content_hash": False,
+        "hmac": False,
+        "ed25519": False,
+        "dilithium": None,
+        "timestamp": False,
+    }
 
-    # 1. Verify content hash
-    computed_hash = canonical_hash_dna(dna_codes, helix_params)
-    results["content_hash"] = computed_hash.hex() == package.content_hash
-
-    # 2. Verify HMAC
-    if monitor:
-        start_time = time.time()
-    results["hmac"] = hmac_verify(computed_hash, bytes.fromhex(package.hmac_tag), hmac_key)
-    if monitor:
-        duration_ms = (time.time() - start_time) * 1000
-        monitor.monitor_crypto_operation("hmac_verify", duration_ms)
-
-    # 3. Verify Ed25519 signature
-    if monitor:
-        start_time = time.time()
-    results["ed25519"] = ed25519_verify(
-        computed_hash,
-        bytes.fromhex(package.ed25519_signature),
-        bytes.fromhex(package.ed25519_pubkey),
-    )
-    if monitor:
-        duration_ms = (time.time() - start_time) * 1000
-        monitor.monitor_crypto_operation("ed25519_verify", duration_ms)
-
-    # 4. Verify Dilithium signature (if present)
-    if (
-        package.quantum_signatures_enabled
-        and package.dilithium_signature
-        and package.dilithium_pubkey
-    ):
-        if monitor:
-            start_time = time.time()
-        try:
-            results["dilithium"] = dilithium_verify(
-                computed_hash,
-                bytes.fromhex(package.dilithium_signature),
-                bytes.fromhex(package.dilithium_pubkey),
-            )
-        except QuantumSignatureUnavailableError:
-            # Cannot verify: Dilithium libraries not available
-            results["dilithium"] = None  # Indicates "UNSUPPORTED"
-        if monitor and results.get("dilithium") is not None:
-            duration_ms = (time.time() - start_time) * 1000
-            monitor.monitor_crypto_operation("dilithium_verify", duration_ms)
-    else:
-        # Package was created without quantum signatures
-        results["dilithium"] = None  # Indicates "NOT_PRESENT"
-
-    # 5. Verify timestamp is reasonable
     try:
-        ts = datetime.fromisoformat(package.timestamp)
-        now = datetime.now(timezone.utc)
-        # Timestamp should not be in future or more than 10 years old
-        results["timestamp"] = ts <= now and (now - ts).days < 3650
+        computed_hash = canonical_hash_dna(dna_codes, helix_params)
+        results["content_hash"] = computed_hash.hex() == package.content_hash
+
+        start_time = time.time() if monitor else None
+        results["hmac"] = hmac_verify(computed_hash, bytes.fromhex(package.hmac_tag), hmac_key)
+        if monitor and start_time is not None:
+            monitor.monitor_crypto_operation("hmac_verify", (time.time() - start_time) * 1000)
+
+        start_time = time.time() if monitor else None
+        results["ed25519"] = ed25519_verify(
+            computed_hash,
+            bytes.fromhex(package.ed25519_signature),
+            bytes.fromhex(package.ed25519_pubkey),
+        )
+        if monitor and start_time is not None:
+            monitor.monitor_crypto_operation("ed25519_verify", (time.time() - start_time) * 1000)
+
+        results["dilithium"] = _verify_dilithium_with_policy(
+            computed_hash, package, monitor, require_quantum_signatures
+        )
+
+        results["timestamp"] = _verify_timestamp_value(package.timestamp)
+
+    except QuantumSignatureRequiredError:
+        raise
     except Exception:
-        results["timestamp"] = False
+        pass
 
     return results
 
