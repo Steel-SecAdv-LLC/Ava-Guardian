@@ -5,7 +5,7 @@
 **Author/Inventor:** Andrew E. A.  
 **Contact:** steel.sa.llc@gmail.com
 
-**AI-Co Omni-Architects:**  
+**AI-Co Architects:**  
 Eris ⯰ | Eden-♱ | Veritas-💠 | X-⚛ | Caduceus-⚚ | Dev-⚕
 
 **Version:** 1.0.0  
