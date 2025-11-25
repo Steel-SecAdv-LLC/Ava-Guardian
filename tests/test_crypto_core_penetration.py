@@ -616,7 +616,11 @@ class TestCryptoPackageVerification:
     def test_verify_tampered_ed25519_signature_fails(self, kms, valid_package):
         """Tampered Ed25519 signature should fail verification."""
         tampered = copy.copy(valid_package)
-        tampered.ed25519_signature = "f" + valid_package.ed25519_signature[1:]
+        # Use bit-flipping to ensure actual tampering (avoids flaky test if sig starts with 'f')
+        original_bytes = bytes.fromhex(valid_package.ed25519_signature)
+        tampered_bytes = bytearray(original_bytes)
+        tampered_bytes[0] ^= 0xFF  # Flip all bits in first byte
+        tampered.ed25519_signature = tampered_bytes.hex()
         results = verify_crypto_package(
             MASTER_DNA_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key
         )
@@ -638,7 +642,11 @@ class TestCryptoPackageVerification:
         if not valid_package.quantum_signatures_enabled:
             pytest.skip("Quantum signatures not enabled")
         tampered = copy.copy(valid_package)
-        tampered.dilithium_signature = "f" + valid_package.dilithium_signature[1:]
+        # Use bit-flipping to ensure actual tampering (avoids flaky test if sig starts with 'f')
+        original_bytes = bytes.fromhex(valid_package.dilithium_signature)
+        tampered_bytes = bytearray(original_bytes)
+        tampered_bytes[len(tampered_bytes) // 2] ^= 0xFF  # Flip bits in middle byte
+        tampered.dilithium_signature = tampered_bytes.hex()
         results = verify_crypto_package(
             MASTER_DNA_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key
         )
