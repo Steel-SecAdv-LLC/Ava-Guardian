@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
     steps:
     - name: Checkout code
@@ -139,15 +139,14 @@ jobs:
         pip install safety bandit
 
     - name: Check dependencies for vulnerabilities with Safety
-      continue-on-error: true
       run: |
         pip install cryptography
-        safety check --json || echo "Safety check completed with warnings"
+        safety check --json
 
     - name: Security linting with Bandit
       run: |
-        bandit -r . -ll -f json -o bandit-report.json || true
-        bandit -r . -ll || echo "Bandit completed with warnings"
+        bandit -r . -ll -f json -o bandit-report.json
+        bandit -r . -ll
 
     - name: Upload Bandit report
       uses: actions/upload-artifact@v4

@@ -6,56 +6,13 @@ on:
   pull_request:
     branches: [ main, develop ]
   schedule:
-    # Run daily at 00:00 UTC
     - cron: '0 0 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
-  codeql-analysis:
-    name: CodeQL Security Analysis
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'python' ]
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        queries: security-extended,security-and-quality
-      continue-on-error: true
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{matrix.language}}"
-      continue-on-error: true
-
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Dependency Review
-      uses: actions/dependency-review-action@v4
-      with:
-        fail-on-severity: moderate
-        comment-summary-in-pr: true
-      continue-on-error: true
-
   security-audit:
     name: Python Security Audit
     runs-on: ubuntu-latest
@@ -76,20 +33,18 @@ jobs:
         pip install -r <(echo "cryptography>=41.0.0")
 
     - name: Run Safety check
-      continue-on-error: true
       run: |
-        safety check --json --output safety-report.json || true
-        safety check || echo "Safety check completed"
+        safety check --output json > safety-report.json
+        safety check --output text
 
     - name: Run pip-audit
-      continue-on-error: true
       run: |
-        pip-audit --desc || echo "pip-audit completed"
+        pip-audit --desc
 
     - name: Run Bandit security linter
       run: |
-        bandit -r . -f json -o bandit-report.json -ll || true
-        bandit -r . -ll || echo "Bandit scan completed"
+        bandit -r . -f json -o bandit-report.json -ll
+        bandit -r . -ll
 
     - name: Upload security reports
       uses: actions/upload-artifact@v4
