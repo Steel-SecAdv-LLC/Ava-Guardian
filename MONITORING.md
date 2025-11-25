@@ -1,40 +1,51 @@
 # 3R Security Monitoring
 
-Ava Guardian ♱ includes optional runtime security monitoring using the **3R Mechanism** - a novel security framework developed by Steel Security Advisors LLC.
+## Document Information
+
+| Property | Value |
+|----------|-------|
+| Document Version | 1.0.0 |
+| Last Updated | 2025-11-25 |
+| Classification | Public |
+| Maintainer | Steel Security Advisors LLC |
+
+---
 
 ## Overview
 
-The 3R Mechanism provides three complementary approaches to runtime security analysis:
+Ava Guardian includes optional runtime security monitoring using the 3R Mechanism, a security framework developed by Steel Security Advisors LLC. The 3R Mechanism provides three complementary approaches to runtime security analysis:
 
-1. **ResonanceEngine**: Timing attack detection via frequency-domain analysis
-2. **RecursionEngine**: Hierarchical pattern analysis across time scales  
-3. **RefactoringEngine**: Code complexity metrics for manual review
+| Component | Function | Purpose |
+|-----------|----------|---------|
+| ResonanceEngine | Timing attack detection | Frequency-domain analysis of operation timings |
+| RecursionEngine | Pattern analysis | Hierarchical anomaly detection across time scales |
+| RefactoringEngine | Code complexity metrics | Static analysis for manual security review |
 
-**Design Philosophy**: Observe, analyze, alert - never auto-modify cryptographic code.
+**Design Philosophy**: The 3R Mechanism follows a strict observe-analyze-alert paradigm. It never automatically modifies cryptographic code, ensuring that all security-critical changes require human review and approval.
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                  3R Security Monitoring                  │
-├─────────────────────────────────────────────────────────┤
-│  ResonanceEngine                                        │
-│  ├─ FFT-based timing analysis                           │
-│  ├─ Statistical anomaly detection                       │
-│  └─ Side-channel vulnerability identification           │
-├─────────────────────────────────────────────────────────┤
-│  RecursionEngine                                        │
-│  ├─ Multi-scale pattern extraction                      │
-│  ├─ Hierarchical feature analysis                       │
-│  └─ Signing frequency anomaly detection                 │
-├─────────────────────────────────────────────────────────┤
-│  RefactoringEngine                                      │
-│  ├─ Cyclomatic complexity calculation                   │
-│  ├─ Code quality metrics                                │
-│  └─ Read-only analysis (never auto-modifies)            │
-└─────────────────────────────────────────────────────────┘
++-----------------------------------------------------------+
+|                  3R Security Monitoring                    |
++-----------------------------------------------------------+
+|  ResonanceEngine                                           |
+|  - FFT-based timing analysis                               |
+|  - Statistical anomaly detection                           |
+|  - Side-channel vulnerability identification               |
++-----------------------------------------------------------+
+|  RecursionEngine                                           |
+|  - Multi-scale pattern extraction                          |
+|  - Hierarchical feature analysis                           |
+|  - Signing frequency anomaly detection                     |
++-----------------------------------------------------------+
+|  RefactoringEngine                                         |
+|  - Cyclomatic complexity calculation                       |
+|  - Code quality metrics                                    |
+|  - Read-only analysis (never auto-modifies)                |
++-----------------------------------------------------------+
 ```
 
 ---
@@ -166,16 +177,16 @@ monitor.patterns.max_depth = 4  # Deeper recursion
 
 ### Production Scenarios
 
-✅ **Enable When**:
+**Enable Monitoring When**:
 - Processing sensitive or high-value DNA codes
 - Compliance requires audit trails
 - Security incident investigation
 - Performance regression testing
 - Post-deployment validation
 
-❌ **Disable When**:
+**Disable Monitoring When**:
 - Maximum performance required
-- Resource-constrained environments  
+- Resource-constrained environments
 - Development/testing with dummy data
 - Batch processing non-sensitive data
 
@@ -240,14 +251,14 @@ See inline documentation in `ava_guardian_monitor.py` for complete API details.
 
 ---
 
-## License
+---
 
-Copyright (C) 2025 Steel Security Advisors LLC  
-Licensed under Apache License 2.0
+## Document History
 
-3R Mechanism developed by Andrew E. A. for Ava Guardian ♱ project.
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2025-11-25 | Initial professional release |
 
 ---
 
-**Last Updated:** 2025-11-25  
-**Version:** 1.0.0
+Copyright 2025 Steel Security Advisors LLC. Licensed under Apache License 2.0.
