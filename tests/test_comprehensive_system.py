@@ -58,6 +58,7 @@ from dna_guardian_secure import (
     QuantumSignatureRequiredError,
     QuantumSignatureUnavailableError,
     _verify_dilithium_with_policy,
+    _verify_rfc3161_token,
     _verify_timestamp_value,
     canonical_hash_dna,
     create_crypto_package,
@@ -70,6 +71,7 @@ from dna_guardian_secure import (
     length_prefixed_encode,
     secure_wipe,
     verify_crypto_package,
+    verify_rfc3161_timestamp,
 )
 
 
@@ -443,6 +445,47 @@ class TestCryptoPackageWithRFC3161:
         assert pkg.content_hash is not None
         assert pkg.hmac_tag is not None
         assert pkg.ed25519_signature is not None
+
+    def test_verify_rfc3161_returns_none_when_no_token(self, kms):
+        """Test RFC 3161 verification returns None when no token present."""
+        pkg = create_crypto_package(
+            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test", use_rfc3161=False
+        )
+        results = verify_crypto_package(
+            MASTER_DNA_CODES,
+            MASTER_HELIX_PARAMS,
+            pkg,
+            kms.hmac_key,
+            require_quantum_signatures=False,
+        )
+        assert results["rfc3161"] is None
+
+    def test_verify_rfc3161_token_helper_returns_none_for_none_token(self):
+        """Test _verify_rfc3161_token returns None for None token."""
+        test_hash = b"test_hash_data"
+        result = _verify_rfc3161_token(test_hash, None)
+        assert result is None
+
+    def test_verify_rfc3161_timestamp_with_invalid_token(self):
+        """Test verify_rfc3161_timestamp returns False for invalid token."""
+        test_data = b"test_data"
+        invalid_token = b"invalid_token_data"
+        result = verify_rfc3161_timestamp(test_data, invalid_token)
+        assert result is False
+
+    def test_verify_results_include_rfc3161_key(self, kms):
+        """Test that verification results include rfc3161 key."""
+        pkg = create_crypto_package(
+            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test", use_rfc3161=False
+        )
+        results = verify_crypto_package(
+            MASTER_DNA_CODES,
+            MASTER_HELIX_PARAMS,
+            pkg,
+            kms.hmac_key,
+            require_quantum_signatures=False,
+        )
+        assert "rfc3161" in results
 
 
 class TestEthicalVectorIntegration:
@@ -985,14 +1028,26 @@ class TestCryptoPackageIntegrity:
     def test_package_different_dna_codes_fails(self, kms):
         """Test that different DNA codes fail verification."""
         pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
-        results = verify_crypto_package("different_codes", MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
+        results = verify_crypto_package(
+            "different_codes",
+            MASTER_HELIX_PARAMS,
+            pkg,
+            kms.hmac_key,
+            require_quantum_signatures=False,
+        )
         assert results["content_hash"] is False
 
     def test_package_different_helix_params_fails(self, kms):
         """Test that different helix params fail verification."""
         pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
         different_params = [(1.0, 1.0)]
-        results = verify_crypto_package(MASTER_DNA_CODES, different_params, pkg, kms.hmac_key)
+        results = verify_crypto_package(
+            MASTER_DNA_CODES,
+            different_params,
+            pkg,
+            kms.hmac_key,
+            require_quantum_signatures=False,
+        )
         assert results["content_hash"] is False
 
 

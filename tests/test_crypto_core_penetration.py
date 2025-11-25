@@ -570,7 +570,11 @@ class TestCryptoPackageVerification:
     def test_verify_tampered_dna_codes_fails(self, kms, valid_package):
         """Tampered DNA codes should fail content hash verification."""
         results = verify_crypto_package(
-            MASTER_DNA_CODES + "TAMPERED", MASTER_HELIX_PARAMS, valid_package, kms.hmac_key
+            MASTER_DNA_CODES + "TAMPERED",
+            MASTER_HELIX_PARAMS,
+            valid_package,
+            kms.hmac_key,
+            require_quantum_signatures=False,
         )
         assert results["content_hash"] is False
 
@@ -578,7 +582,11 @@ class TestCryptoPackageVerification:
         """Tampered helix params should fail content hash verification."""
         tampered_params = [(r + 1.0, p) for r, p in MASTER_HELIX_PARAMS]
         results = verify_crypto_package(
-            MASTER_DNA_CODES, tampered_params, valid_package, kms.hmac_key
+            MASTER_DNA_CODES,
+            tampered_params,
+            valid_package,
+            kms.hmac_key,
+            require_quantum_signatures=False,
         )
         assert results["content_hash"] is False
 
@@ -648,7 +656,11 @@ class TestCryptoPackageVerification:
         tampered_bytes[len(tampered_bytes) // 2] ^= 0xFF  # Flip bits in middle byte
         tampered.dilithium_signature = tampered_bytes.hex()
         results = verify_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key
+            MASTER_DNA_CODES,
+            MASTER_HELIX_PARAMS,
+            tampered,
+            kms.hmac_key,
+            require_quantum_signatures=False,
         )
         assert results["dilithium"] is False
 
