@@ -62,25 +62,25 @@ The following are explicitly not goals of this architecture:
 +------------------------------------------------------------------+
 |                      AVA GUARDIAN SYSTEM                          |
 +------------------------------------------------------------------+
-|                                                                    |
-|  +--------------------+  +--------------------+  +---------------+ |
-|  | Cryptographic      |  | Ethical            |  | Key           | |
-|  | Pipeline           |  | Integration        |  | Management    | |
-|  |                    |  |                    |  |               | |
-|  | - SHA3-256 Hash    |  | - 12 Ethical       |  | - HKDF        | |
-|  | - HMAC-SHA3-256    |  |   Pillars          |  | - Key Rotation| |
-|  | - Ed25519          |  | - Constraint       |  | - HSM Support | |
-|  | - ML-DSA-65        |  |   Validation       |  |               | |
-|  | - RFC 3161 TSA     |  | - Signature Gen    |  |               | |
-|  +--------------------+  +--------------------+  +---------------+ |
-|                                                                    |
-|  +------------------------------------------------------------+   |
-|  |                    Application Interface                    |   |
-|  |                                                              |   |
-|  |  create_crypto_package()  |  verify_crypto_package()        |   |
-|  |  export_public_keys()     |  generate_key_management_system()|  |
-|  +------------------------------------------------------------+   |
-|                                                                    |
+|                                                                   |
+|  +--------------------+  +--------------------+  +---------------+|
+|  | Cryptographic      |  | Ethical            |  | Key           ||
+|  | Pipeline           |  | Integration        |  | Management    ||
+|  |                    |  |                    |  |               ||
+|  | - SHA3-256 Hash    |  | - 12 Ethical       |  | - HKDF        ||
+|  | - HMAC-SHA3-256    |  |   Pillars          |  | - Key Rotation||
+|  | - Ed25519          |  | - Constraint       |  | - HSM Support ||
+|  | - ML-DSA-65        |  |   Validation       |  |               ||
+|  | - RFC 3161 TSA     |  | - Signature Gen    |  |               ||
+|  +--------------------+  +--------------------+  +---------------+|
+|                                                                   |
+|  +--------------------------------------------------------------+ |
+|  |                    Application Interface                     | |
+|  |                                                              | |
+|  |  create_crypto_package()  |  verify_crypto_package()         | |
+|  |  export_public_keys()     |  generate_key_management_system()| |
+|  +--------------------------------------------------------------+ |
+|                                                                   |
 +------------------------------------------------------------------+
 ```
 
