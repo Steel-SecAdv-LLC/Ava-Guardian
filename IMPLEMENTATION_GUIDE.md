@@ -6,7 +6,7 @@
 **Contact:** steel.sa.llc@gmail.com
 
 **AI-Co Architects:**  
-Eris ⯰ | Eden-♱ | Veritas-💠 | X-⚛ | Caduceus-⚚ | Dev-⚕
+Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 **Version:** 1.0.0  
 **Date:** 2025-11-25
