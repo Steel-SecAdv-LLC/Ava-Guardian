@@ -106,10 +106,15 @@ try:
     except Exception:
         _SPHINCS_AVAILABLE = False
 
-except (ImportError, RuntimeError, OSError):
-    # ImportError: package not installed
-    # RuntimeError: package installed but shared library missing
-    # OSError: library loading issues
+except BaseException:
+    # BaseException catches:
+    # - ImportError: package not installed
+    # - RuntimeError: package installed but shared library missing
+    # - OSError: library loading issues
+    # - SystemExit: liboqs-python auto-install failure (critical for CI)
+    # We use BaseException here specifically to catch SystemExit which
+    # liboqs-python raises when it fails to auto-install the native library.
+    _oqs_module = None
     try:
         # Fall back to pqcrypto (pure Python) - signatures only
         from pqcrypto.sign import dilithium3 as _dilithium3_module
@@ -119,7 +124,8 @@ except (ImportError, RuntimeError, OSError):
         # pqcrypto doesn't support Kyber or SPHINCS+
         _KYBER_AVAILABLE = False
         _SPHINCS_AVAILABLE = False
-    except (ImportError, RuntimeError, OSError):
+    except BaseException:
+        # Same reasoning - catch all failures including SystemExit
         _DILITHIUM_AVAILABLE = False
         _DILITHIUM_BACKEND = None
 

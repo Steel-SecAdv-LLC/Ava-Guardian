@@ -94,17 +94,23 @@ try:
 
     DILITHIUM_AVAILABLE = True
     DILITHIUM_BACKEND = "liboqs"
-except (ImportError, RuntimeError, OSError):
-    # ImportError: package not installed
-    # RuntimeError: package installed but shared library missing
-    # OSError: library loading issues
+except BaseException:
+    # BaseException catches:
+    # - ImportError: package not installed
+    # - RuntimeError: package installed but shared library missing
+    # - OSError: library loading issues
+    # - SystemExit: liboqs-python auto-install failure (critical for CI)
+    # We use BaseException here specifically to catch SystemExit which
+    # liboqs-python raises when it fails to auto-install the native library.
+    oqs = None  # Ensure oqs is defined even on failure
     try:
         # Fall back to pqcrypto
         from pqcrypto.sign import dilithium3
 
         DILITHIUM_AVAILABLE = True
         DILITHIUM_BACKEND = "pqcrypto"
-    except (ImportError, RuntimeError, OSError):
+    except BaseException:
+        # Same reasoning - catch all failures including SystemExit
         DILITHIUM_AVAILABLE = False
         DILITHIUM_BACKEND = None
         # Loud warning for classical-only mode - quantum signatures are required by default
