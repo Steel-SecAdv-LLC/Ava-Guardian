@@ -19,6 +19,8 @@ jobs:
   codeql-analysis:
     name: CodeQL Security Analysis
     runs-on: ubuntu-latest
+    # Non-blocking: Requires GitHub Advanced Security (not available for private repos on free plan)
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -42,6 +44,8 @@ jobs:
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
+    # Non-blocking: Requires GitHub Advanced Security (not available for private repos on free plan)
+    continue-on-error: true
     if: github.event_name == 'pull_request'
 
     steps:
