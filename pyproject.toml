@@ -45,6 +45,8 @@ classifiers = [
 requires-python = ">=3.8"
 dependencies = [
     "cryptography>=41.0.0",
+    "numpy>=1.21.0",
+    "scipy>=1.7.0",
 ]
 
 [project.optional-dependencies]
