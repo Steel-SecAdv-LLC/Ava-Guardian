@@ -23,29 +23,29 @@ Ava Guardian 1.0 introduces a multi-language architecture that combines the secu
 
 ```
 +-------------------------------------------------------------+
-|                     APPLICATION LAYER                        |
-|                    (Python / CLI / Web)                      |
+|                     APPLICATION LAYER                       |
+|                    (Python / CLI / Web)                     |
 +------------------------------+------------------------------+
                                |
 +------------------------------v------------------------------+
-|                  PYTHON BINDINGS & API                       |
-|            src/python/  (High-level interface)               |
+|                  PYTHON BINDINGS & API                      |
+|            src/python/  (High-level interface)              |
 +----+--------------------------------------------+------------+
      |                                            |
 +----v----------------------------+   +-----------v-----------+
-|   CYTHON OPTIMIZATION LAYER    |   |  PURE PYTHON FALLBACK |
-|   src/cython/math_engine.pyx   |   |  (for portability)    |
-|   - 10-50x speedup             |   |                       |
-|   - NTT O(n log n)             |   |                       |
-|   - Matrix operations          |   |                       |
+|   CYTHON OPTIMIZATION LAYER     |   |  PURE PYTHON FALLBACK |
+|   src/cython/math_engine.pyx    |   |  (for portability)    |
+|   - 10-50x speedup              |   |                       |
+|   - NTT O(n log n)              |   |                       |
+|   - Matrix operations           |   |                       |
 +----+----------------------------+   +-----------------------+
      |
 +----v--------------------------------------------------------+
-|              C CORE LIBRARY (libava_guardian)                |
-|                  src/c/  include/                             |
-|  - Constant-time cryptographic primitives                    |
+|              C CORE LIBRARY (libava_guardian)               |
+|                  src/c/  include/                           |
+|  - Constant-time cryptographic primitives                   |
 |  - ML-DSA-65, Kyber-1024, SPHINCS+-256f                     |
-|  - Memory-safe context management                            |
+|  - Memory-safe context management                           |
 |  - SIMD optimizations (AVX2)                                |
 +-------------------------------------------------------------+
 ```
