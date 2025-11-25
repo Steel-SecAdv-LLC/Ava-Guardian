@@ -368,4 +368,4 @@ docker run --rm -it ava-guardian:latest bash
 
 For issues and questions:
 - GitHub Issues: https://github.com/Steel-SecAdv-LLC/Ava-Guardian/issues
-- Email: steel.secadv.llc@outlook.com
+- Email: steel.sa.llc@gmail.com

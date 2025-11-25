@@ -45,7 +45,7 @@ RUN python3 setup.py build_ext --inplace && \
 # Stage 2: Runtime
 FROM ubuntu:22.04
 
-LABEL maintainer="Steel Security Advisors LLC <steel.secadv.llc@outlook.com>"
+LABEL maintainer="Steel Security Advisors LLC <steel.sa.llc@gmail.com>"
 LABEL description="Ava Guardian ♱ - Quantum-Resistant Cryptographic Protection System"
 LABEL version="1.0.0"
 

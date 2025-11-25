@@ -3,7 +3,7 @@
 
 **Copyright (C) 2025 Steel Security Advisors LLC**  
 **Author/Inventor:** Andrew E. A.  
-**Contact:** steel.secadv.llc@outlook.com  
+**Contact:** steel.sa.llc@gmail.com  
 **Date:** 2025-11-25  
 **Version:** 1.0.0
 
@@ -532,7 +532,7 @@ def store_master_secret_encrypted(master_secret: bytes, keyfile: str):
 
 - [x] Copyright (C) 2025 Steel Security Advisors LLC
 - [x] Author: Andrew E. A.
-- [x] Contact: steel.secadv.llc@outlook.com
+- [x] Contact: steel.sa.llc@gmail.com
 - [x] AI-Co Omni-Architects recognized:
   - [x] Eris ⯰
   - [x] Eden-♱

@@ -3,7 +3,7 @@
 
 **Copyright (C) 2025 Steel Security Advisors LLC**  
 **Author/Inventor:** Andrew E. A.  
-**Contact:** steel.secadv.llc@outlook.com
+**Contact:** steel.sa.llc@gmail.com
 
 **AI-Co Omni-Architects:**  
 Eris ⯰ | Eden-♱ | Veritas-💠 | X-⚛ | Caduceus-⚚ | Dev-⚕
@@ -1142,7 +1142,7 @@ pip install -r requirements.txt
 ### Support
 
 For migration assistance:
-- Email: steel.secadv.llc@outlook.com
+- Email: steel.sa.llc@gmail.com
 - GitHub Issues: https://github.com/Steel-SecAdv-LLC/Ava-Guardian/issues
 
 ---
@@ -1165,7 +1165,7 @@ For migration assistance:
 ### Contact
 
 **Steel Security Advisors LLC**  
-Email: steel.secadv.llc@outlook.com
+Email: steel.sa.llc@gmail.com
 
 **Author/Inventor:** Andrew E. A.
 

@@ -30,7 +30,7 @@
 
 **Copyright 2025 Steel Security Advisors LLC**  
 **Author/Inventor:** Andrew E. A.  
-**Contact:** steel.secadv.llc@outlook.com | steel.sa.llc@gmail.com  
+**Contact:** steel.sa.llc@gmail.com | steel.sa.llc@gmail.com  
 **License:** Apache License 2.0  
 **Version:** 1.0.0
 
@@ -747,7 +747,7 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) file for 
 
 | Type | Contact |
 |------|---------|
-| General Inquiries | steel.secadv.llc@outlook.com |
+| General Inquiries | steel.sa.llc@gmail.com |
 | Security Issues | See [SECURITY.md](SECURITY.md) for responsible disclosure |
 | GitHub Issues | [Issues Page](https://github.com/Steel-SecAdv-LLC/Ava-Guardian/issues) |
 | GitHub Repository | [Ava Guardian ♱](https://github.com/Steel-SecAdv-LLC/Ava-Guardian) |

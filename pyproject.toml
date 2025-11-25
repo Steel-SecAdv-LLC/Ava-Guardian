@@ -9,10 +9,10 @@ description = "Quantum-resistant cryptographic protection system for helical mat
 readme = "README.md"
 license = {text = "Apache-2.0"}
 authors = [
-    {name = "Andrew E. A.", email = "steel.secadv.llc@outlook.com"}
+    {name = "Andrew E. A.", email = "steel.sa.llc@gmail.com"}
 ]
 maintainers = [
-    {name = "Steel Security Advisors LLC", email = "steel.secadv.llc@outlook.com"}
+    {name = "Steel Security Advisors LLC", email = "steel.sa.llc@gmail.com"}
 ]
 keywords = [
     "cryptography",

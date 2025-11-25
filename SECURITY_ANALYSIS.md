@@ -3,7 +3,7 @@
 
 **Copyright (C) 2025 Steel Security Advisors LLC**  
 **Author/Inventor:** Andrew E. A.  
-**Contact:** steel.secadv.llc@outlook.com
+**Contact:** steel.sa.llc@gmail.com
 
 **AI-Co Omni-Architects:**  
 Eris ⯰ | Eden-♱ | Veritas-💠 | X-⚛ | Caduceus-⚚ | Dev-⚕

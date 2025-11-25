@@ -34,7 +34,7 @@ If you discover a security vulnerability in AG♱, please report it responsibly:
 
 **Instead, please:**
 
-1. **Email:** steel.secadv.llc@outlook.com or stee.sa.llc@gmail.com
+1. **Email:** steel.sa.llc@gmail.com or stee.sa.llc@gmail.com
 2. **Subject:** [SECURITY] Ava Guardian ♱ (AG♱)  Vulnerability Report
 3. **Include:**
    - Detailed description of the vulnerability
@@ -207,7 +207,7 @@ Ava Guardian has undergone internal security analysis documented in `SECURITY_AN
 - Penetration testing of the implementation
 - Code reviews focusing on cryptographic correctness
 
-Please contact us at steel.secadv.llc@outlook.com to coordinate security audit efforts.
+Please contact us at steel.sa.llc@gmail.com to coordinate security audit efforts.
 
 ## Compliance and Standards
 
@@ -226,7 +226,7 @@ Non-compliance with these standards should be reported as a high-severity securi
 
 ## Contact
 
-**Security Team:** steel.secadv.llc@outlook.com
+**Security Team:** steel.sa.llc@gmail.com
 **PGP Key:** Available upon request
 **Response Time:** 24-48 hours for critical issues
 **Organization:** Steel Security Advisors LLC

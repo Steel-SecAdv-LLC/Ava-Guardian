@@ -269,7 +269,7 @@ Ava Guardian ♱ delivers **enterprise-grade cryptographic performance** with:
 
 **Last Updated**: 2025-11-25
 **Maintainer**: Andrew E. A. (Steel Security Advisors LLC)
-**Contact**: steel.secadv.llc@outlook.com
+**Contact**: steel.sa.llc@gmail.com
 
 ---
 

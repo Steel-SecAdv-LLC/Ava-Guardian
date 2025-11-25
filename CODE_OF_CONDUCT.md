@@ -75,7 +75,7 @@ This Code of Conduct specifically applies to:
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the project maintainers responsible for enforcement at
-steel.secadv.llc@outlook.com.
+steel.sa.llc@gmail.com.
 
 All complaints will be reviewed and investigated promptly and fairly.
 
@@ -179,7 +179,7 @@ For answers to common questions about this code of conduct, see the FAQ at
 
 For questions about this Code of Conduct or to report violations:
 
-**Email:** steel.secadv.llc@outlook.com
+**Email:** steel.sa.llc@gmail.com
 **Subject:** [CODE OF CONDUCT] Brief description
 
 All reports will be handled with discretion and confidentiality.
