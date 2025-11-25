@@ -4,19 +4,13 @@
 # Core cryptographic library (required)
 cryptography>=41.0.0
 
-# Quantum-resistant cryptography (optional but recommended for production)
-# Uncomment to enable quantum-resistant signatures:
-# liboqs-python>=0.8.0,<0.15.0  # Pin to avoid version mismatch warnings
+# Quantum-resistant cryptography (recommended for production)
+# Pin to specific version range for compatibility with liboqs C library
+liboqs-python>=0.10.0,<0.11.0
 # Alternative: pqcrypto>=0.1.3,<0.2.0
 
-# IMPORTANT: Version Pinning for Quantum Libraries
-# ------------------------------------------------
-# liboqs-python and the underlying liboqs C library may have version mismatches
-# that produce warnings. Pin versions to ensure compatibility:
-#   - liboqs-python 0.8.x-0.14.x are compatible with liboqs 0.8.x-0.14.x
-#   - If you see "liboqs version differs from liboqs-python version" warnings,
-#     ensure both libraries are from the same minor version series
-# For production, consider building liboqs-python from source with matching liboqs
+# NOTE: liboqs-python 0.10.0 is stable and well-tested with the liboqs C library.
+# If you encounter version mismatch warnings, ensure both libraries are compatible.
 
 # 3R Monitoring dependencies
 # NumPy: 1.24.x is last version supporting Python 3.8
