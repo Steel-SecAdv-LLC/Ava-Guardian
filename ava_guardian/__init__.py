@@ -21,7 +21,7 @@ Post-quantum cryptographic security system with rigorous mathematical foundation
 
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
-Contact: steel.sa.llc@gmail.com | steel.sa.llc@gmail.com
+Contact: steel.sa.llc@gmail.com
 Version: 1.0.0
 
 AI-Co Architects:

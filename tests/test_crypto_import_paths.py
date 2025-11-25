@@ -23,7 +23,7 @@ for 100% test coverage.
 
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
-Contact: steel.sa.llc@gmail.com | steel.sa.llc@gmail.com
+Contact: steel.sa.llc@gmail.com
 Date: 2025-11-25
 Version: 1.0.0
 
