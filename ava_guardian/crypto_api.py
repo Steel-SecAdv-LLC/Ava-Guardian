@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0
 
 """
-Ava Guardian ♱ Algorithm-Agnostic Cryptographic API
+Ava Guardian - Algorithm-Agnostic Cryptographic API
 ====================================================
 
 Unified interface for all post-quantum cryptographic algorithms.
@@ -12,10 +12,15 @@ and hybrid classical+PQC modes.
 
 Design Philosophy:
 - Single API for all algorithms
-- Automatic algorithm selection based on use case
+- Explicit capability detection (no silent classical fallbacks)
 - Hybrid mode support (classical + PQC)
 - Backward compatibility
 - Performance optimized (uses C/Cython when available)
+
+PQC Backend:
+- ML-DSA-65 (CRYSTALS-Dilithium) via liboqs or pqcrypto
+- Raises PQCUnavailableError if PQC backend not installed
+- Use get_pqc_capabilities() to check availability before use
 """
 
 import hashlib
@@ -24,6 +29,17 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any, Dict, Tuple
+
+from ava_guardian.pqc_backends import (
+    DILITHIUM_AVAILABLE,
+    DILITHIUM_BACKEND,
+    PQCStatus,
+    PQCUnavailableError,
+    dilithium_sign,
+    dilithium_verify,
+    generate_dilithium_keypair,
+    get_pqc_backend_info,
+)
 
 
 class AlgorithmType(Enum):
@@ -164,34 +180,128 @@ class KEMProvider(ABC):
 
 
 class MLDSAProvider(CryptoProvider):
-    """ML-DSA-65 (CRYSTALS-Dilithium) provider"""
+    """
+    ML-DSA-65 (CRYSTALS-Dilithium) provider.
 
-    def __init__(self, backend: CryptoBackend = CryptoBackend.C_LIBRARY):
+    Provides real post-quantum signatures via liboqs or pqcrypto backends.
+    Raises PQCUnavailableError if no PQC backend is installed.
+
+    Security: NIST Security Level 3 (192-bit quantum security)
+    Standard: NIST FIPS 204 (ML-DSA)
+    """
+
+    def __init__(self, backend: CryptoBackend = CryptoBackend.LIBOQS):
         self.backend = backend
         self.algorithm = AlgorithmType.ML_DSA_65
-        self._init_backend()
-
-    def _init_backend(self):
-        """Initialize the selected backend"""
-        if self.backend == CryptoBackend.C_LIBRARY:
-            try:
-                import ctypes
-
-                self.lib = ctypes.CDLL("build/lib/libava_guardian.so")
-                # Setup function signatures here
-            except (OSError, AttributeError):
-                # Fallback to Python
-                self.backend = CryptoBackend.PURE_PYTHON
+        self._available = DILITHIUM_AVAILABLE
+        self._backend_name = DILITHIUM_BACKEND or "none"
 
     def generate_keypair(self) -> KeyPair:
-        """Generate ML-DSA-65 keypair"""
-        # For now, use cryptography library
+        """
+        Generate ML-DSA-65 keypair.
+
+        Returns:
+            KeyPair with Dilithium public and secret keys
+
+        Raises:
+            PQCUnavailableError: If no Dilithium backend is available
+        """
+        if not self._available:
+            raise PQCUnavailableError(
+                "PQC_UNAVAILABLE: ML-DSA-65 requires liboqs-python or pqcrypto. "
+                "Install with: pip install liboqs-python"
+            )
+
+        kp = generate_dilithium_keypair()
+        return KeyPair(
+            public_key=kp.public_key,
+            secret_key=kp.private_key,
+            algorithm=self.algorithm,
+            metadata={
+                "backend": self._backend_name,
+                "key_size": len(kp.public_key),
+                "algorithm": "ML-DSA-65",
+                "security_level": 3,
+            },
+        )
+
+    def sign(self, message: bytes, secret_key: bytes) -> Signature:
+        """
+        Sign message with ML-DSA-65.
+
+        Args:
+            message: Data to sign
+            secret_key: Dilithium private key (4000 bytes)
+
+        Returns:
+            Signature object with Dilithium signature
+
+        Raises:
+            PQCUnavailableError: If no Dilithium backend is available
+        """
+        if not self._available:
+            raise PQCUnavailableError(
+                "PQC_UNAVAILABLE: ML-DSA-65 requires liboqs-python or pqcrypto."
+            )
+
+        sig_bytes = dilithium_sign(message, secret_key)
+        message_hash = hashlib.sha3_256(message).digest()
+
+        return Signature(
+            signature=sig_bytes,
+            algorithm=self.algorithm,
+            message_hash=message_hash,
+            metadata={
+                "signature_size": len(sig_bytes),
+                "backend": self._backend_name,
+            },
+        )
+
+    def verify(self, message: bytes, signature: bytes, public_key: bytes) -> bool:
+        """
+        Verify ML-DSA-65 signature.
+
+        Args:
+            message: Original data
+            signature: Dilithium signature
+            public_key: Dilithium public key (1952 bytes)
+
+        Returns:
+            True if signature is valid, False otherwise
+
+        Raises:
+            PQCUnavailableError: If no Dilithium backend is available
+        """
+        if not self._available:
+            raise PQCUnavailableError(
+                "PQC_UNAVAILABLE: ML-DSA-65 requires liboqs-python or pqcrypto."
+            )
+
+        return dilithium_verify(message, signature, public_key)
+
+
+class Ed25519Provider(CryptoProvider):
+    """
+    Ed25519 classical signature provider.
+
+    Provides classical (non-quantum-resistant) signatures.
+    Use MLDSAProvider for post-quantum security.
+
+    Security: 128-bit classical security (NOT quantum-resistant)
+    Standard: RFC 8032
+    """
+
+    def __init__(self, backend: CryptoBackend = CryptoBackend.PURE_PYTHON):
+        self.backend = backend
+        self.algorithm = AlgorithmType.ED25519
+
+    def generate_keypair(self) -> KeyPair:
+        """Generate Ed25519 keypair"""
+        from cryptography.hazmat.primitives import serialization
         from cryptography.hazmat.primitives.asymmetric import ed25519
 
         private_key = ed25519.Ed25519PrivateKey.generate()
         public_key = private_key.public_key()
-
-        from cryptography.hazmat.primitives import serialization
 
         sk_bytes = private_key.private_bytes(
             encoding=serialization.Encoding.Raw,
@@ -207,16 +317,15 @@ class MLDSAProvider(CryptoProvider):
             public_key=pk_bytes,
             secret_key=sk_bytes,
             algorithm=self.algorithm,
-            metadata={"backend": self.backend.name, "key_size": len(pk_bytes)},
+            metadata={"backend": "cryptography", "key_size": len(pk_bytes)},
         )
 
     def sign(self, message: bytes, secret_key: bytes) -> Signature:
-        """Sign message with ML-DSA-65"""
+        """Sign message with Ed25519"""
         from cryptography.hazmat.primitives.asymmetric import ed25519
 
         private_key = ed25519.Ed25519PrivateKey.from_private_bytes(secret_key)
         sig_bytes = private_key.sign(message)
-
         message_hash = hashlib.sha3_256(message).digest()
 
         return Signature(
@@ -227,7 +336,7 @@ class MLDSAProvider(CryptoProvider):
         )
 
     def verify(self, message: bytes, signature: bytes, public_key: bytes) -> bool:
-        """Verify ML-DSA-65 signature"""
+        """Verify Ed25519 signature"""
         from cryptography.exceptions import InvalidSignature
         from cryptography.hazmat.primitives.asymmetric import ed25519
 
@@ -242,26 +351,24 @@ class MLDSAProvider(CryptoProvider):
 
 
 class KyberProvider(KEMProvider):
-    """Kyber-1024 (ML-KEM) provider"""
+    """
+    Kyber-1024 (ML-KEM) provider.
 
-    def __init__(self, backend: CryptoBackend = CryptoBackend.C_LIBRARY):
+    NOTE: Currently uses X25519 as a placeholder. Real Kyber implementation
+    requires liboqs with ML-KEM support. This provider will raise
+    PQCUnavailableError in a future version when PQC is required.
+
+    Security: Currently classical (X25519), planned quantum-resistant
+    """
+
+    def __init__(self, backend: CryptoBackend = CryptoBackend.PURE_PYTHON):
         self.backend = backend
         self.algorithm = AlgorithmType.KYBER_1024
-        self._init_backend()
-
-    def _init_backend(self):
-        """Initialize backend"""
-        if self.backend == CryptoBackend.C_LIBRARY:
-            try:
-                import ctypes
-
-                self.lib = ctypes.CDLL("build/lib/libava_guardian.so")
-            except (OSError, AttributeError):
-                self.backend = CryptoBackend.PURE_PYTHON
+        # Note: Kyber not yet implemented - using X25519 placeholder
+        self._is_placeholder = True
 
     def generate_keypair(self) -> KeyPair:
-        """Generate Kyber-1024 keypair"""
-        # Placeholder: Use X25519 for now
+        """Generate Kyber-1024 keypair (currently X25519 placeholder)"""
         from cryptography.hazmat.primitives.asymmetric import x25519
 
         private_key = x25519.X25519PrivateKey.generate()
@@ -322,19 +429,54 @@ class KyberProvider(KEMProvider):
 
 
 class HybridSignatureProvider(CryptoProvider):
-    """Hybrid signature provider (Ed25519 + ML-DSA-65)"""
+    """
+    Hybrid signature provider (Ed25519 + ML-DSA-65).
+
+    Provides dual-signature scheme combining classical Ed25519 with
+    post-quantum ML-DSA-65 (Dilithium). Both signatures must verify
+    for the combined signature to be valid.
+
+    Security: Secure against both classical and quantum adversaries
+    Transition: Safe during classical-to-quantum migration period
+
+    Raises:
+        PQCUnavailableError: If Dilithium backend is not available
+    """
+
+    # Key sizes for splitting combined keys
+    ED25519_SK_SIZE = 32
+    ED25519_PK_SIZE = 32
+    ED25519_SIG_SIZE = 64
+    DILITHIUM_SK_SIZE = 4000
+    DILITHIUM_PK_SIZE = 1952
+    DILITHIUM_SIG_SIZE = 3293
 
     def __init__(self):
-        self.classical_provider = MLDSAProvider()  # Using Ed25519 for now
+        self.classical_provider = Ed25519Provider()
         self.pqc_provider = MLDSAProvider()
         self.algorithm = AlgorithmType.HYBRID_SIG
+        self._pqc_available = DILITHIUM_AVAILABLE
 
     def generate_keypair(self) -> KeyPair:
-        """Generate hybrid keypair"""
+        """
+        Generate hybrid keypair (Ed25519 + ML-DSA-65).
+
+        Returns:
+            KeyPair with combined public and secret keys
+
+        Raises:
+            PQCUnavailableError: If Dilithium backend is not available
+        """
+        if not self._pqc_available:
+            raise PQCUnavailableError(
+                "PQC_UNAVAILABLE: Hybrid signatures require ML-DSA-65. "
+                "Install liboqs-python: pip install liboqs-python"
+            )
+
         classical_keys = self.classical_provider.generate_keypair()
         pqc_keys = self.pqc_provider.generate_keypair()
 
-        # Combine keys
+        # Combine keys (Ed25519 first, then Dilithium)
         combined_pk = classical_keys.public_key + pqc_keys.public_key
         combined_sk = classical_keys.secret_key + pqc_keys.secret_key
 
@@ -343,22 +485,39 @@ class HybridSignatureProvider(CryptoProvider):
             secret_key=combined_sk,
             algorithm=self.algorithm,
             metadata={
+                "classical_algorithm": "Ed25519",
+                "pqc_algorithm": "ML-DSA-65",
                 "classical_pk_size": len(classical_keys.public_key),
                 "pqc_pk_size": len(pqc_keys.public_key),
             },
         )
 
     def sign(self, message: bytes, secret_key: bytes) -> Signature:
-        """Create hybrid signature"""
+        """
+        Create hybrid signature (Ed25519 + ML-DSA-65).
+
+        Args:
+            message: Data to sign
+            secret_key: Combined secret key (Ed25519 + Dilithium)
+
+        Returns:
+            Signature with combined Ed25519 and Dilithium signatures
+
+        Raises:
+            PQCUnavailableError: If Dilithium backend is not available
+        """
+        if not self._pqc_available:
+            raise PQCUnavailableError("PQC_UNAVAILABLE: Hybrid signatures require ML-DSA-65.")
+
         # Split keys
-        classical_sk = secret_key[:32]
-        pqc_sk = secret_key[32:]
+        classical_sk = secret_key[: self.ED25519_SK_SIZE]
+        pqc_sk = secret_key[self.ED25519_SK_SIZE :]
 
         # Create both signatures
         classical_sig = self.classical_provider.sign(message, classical_sk)
         pqc_sig = self.pqc_provider.sign(message, pqc_sk)
 
-        # Combine signatures
+        # Combine signatures (Ed25519 first, then Dilithium)
         combined_sig = classical_sig.signature + pqc_sig.signature
 
         return Signature(
@@ -372,14 +531,30 @@ class HybridSignatureProvider(CryptoProvider):
         )
 
     def verify(self, message: bytes, signature: bytes, public_key: bytes) -> bool:
-        """Verify hybrid signature (both must verify)"""
-        # Split keys and signatures
-        classical_pk = public_key[:32]
-        pqc_pk = public_key[32:]
-        classical_sig = signature[:64]
-        pqc_sig = signature[64:]
+        """
+        Verify hybrid signature (both must verify).
 
-        # Both must verify
+        Args:
+            message: Original data
+            signature: Combined signature (Ed25519 + Dilithium)
+            public_key: Combined public key (Ed25519 + Dilithium)
+
+        Returns:
+            True if BOTH signatures are valid, False otherwise
+
+        Raises:
+            PQCUnavailableError: If Dilithium backend is not available
+        """
+        if not self._pqc_available:
+            raise PQCUnavailableError("PQC_UNAVAILABLE: Hybrid signatures require ML-DSA-65.")
+
+        # Split keys and signatures
+        classical_pk = public_key[: self.ED25519_PK_SIZE]
+        pqc_pk = public_key[self.ED25519_PK_SIZE :]
+        classical_sig = signature[: self.ED25519_SIG_SIZE]
+        pqc_sig = signature[self.ED25519_SIG_SIZE :]
+
+        # Both must verify for hybrid security
         classical_valid = self.classical_provider.verify(message, classical_sig, classical_pk)
         pqc_valid = self.pqc_provider.verify(message, pqc_sig, pqc_pk)
 
@@ -425,7 +600,7 @@ class AvaGuardianCrypto:
         elif self.algorithm == AlgorithmType.HYBRID_SIG:
             return HybridSignatureProvider()
         elif self.algorithm == AlgorithmType.ED25519:
-            return MLDSAProvider(self.backend)  # Using Ed25519 for now
+            return Ed25519Provider(self.backend)
         else:
             raise ValueError(f"Unsupported algorithm: {self.algorithm}")
 
@@ -551,3 +726,75 @@ def quick_kem(
     keypair = crypto.generate_keypair()
     encapsulated = crypto.encapsulate(keypair.public_key)
     return keypair, encapsulated
+
+
+def get_pqc_capabilities() -> Dict[str, Any]:
+    """
+    Get current PQC backend capabilities.
+
+    Returns detailed information about which post-quantum algorithms
+    are available and which backends are installed.
+
+    Returns:
+        Dictionary with capability information:
+        - status: "AVAILABLE" or "UNAVAILABLE"
+        - dilithium_available: bool
+        - backend: "liboqs" or "pqcrypto" or None
+        - algorithms: dict of algorithm availability
+        - install_instructions: str (if unavailable)
+
+    Example:
+        >>> caps = get_pqc_capabilities()
+        >>> if caps["status"] == "AVAILABLE":
+        ...     crypto = AvaGuardianCrypto(algorithm=AlgorithmType.ML_DSA_65)
+        ... else:
+        ...     print(caps["install_instructions"])
+    """
+    info = get_pqc_backend_info()
+
+    return {
+        "status": info["status"],
+        "dilithium_available": info["dilithium_available"],
+        "backend": info["backend"],
+        "algorithms": {
+            "ML_DSA_65": info["dilithium_available"],
+            "HYBRID_SIG": info["dilithium_available"],
+            "ED25519": True,  # Always available via cryptography
+            "KYBER_1024": False,  # Placeholder only
+        },
+        "security_levels": {
+            "ML_DSA_65": 3 if info["dilithium_available"] else None,
+            "HYBRID_SIG": 3 if info["dilithium_available"] else None,
+            "ED25519": 1,  # Classical only
+        },
+        "install_instructions": (
+            "pip install liboqs-python"
+            if not info["dilithium_available"]
+            else "PQC backend already installed"
+        ),
+    }
+
+
+# Re-export PQC types for convenience
+__all__ = [
+    "AlgorithmType",
+    "CryptoBackend",
+    "KeyPair",
+    "Signature",
+    "EncapsulatedSecret",
+    "CryptoProvider",
+    "KEMProvider",
+    "MLDSAProvider",
+    "Ed25519Provider",
+    "KyberProvider",
+    "HybridSignatureProvider",
+    "AvaGuardianCrypto",
+    "quick_sign",
+    "quick_verify",
+    "quick_kem",
+    "get_pqc_capabilities",
+    "PQCStatus",
+    "PQCUnavailableError",
+    "DILITHIUM_AVAILABLE",
+    "DILITHIUM_BACKEND",
+]
