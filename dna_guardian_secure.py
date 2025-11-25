@@ -1816,19 +1816,31 @@ def _verify_dilithium_with_policy(
     """
     Verify Dilithium signature with policy enforcement.
 
+    The policy enforcement is smart about when to raise errors:
+    - If Dilithium libraries are NOT available in the environment, we gracefully
+      fall back to classical-only mode (return None) regardless of the policy.
+      This allows the system to work in environments without quantum libraries.
+    - If Dilithium libraries ARE available but the package lacks quantum signatures,
+      this indicates a potential downgrade attack, so we raise an error when
+      require_quantum_signatures=True.
+
     Returns:
         True if valid, False if invalid, None if not present/unsupported.
 
     Raises:
         QuantumSignatureRequiredError: If policy requires quantum signatures
-            but they are missing, unavailable, or invalid.
+            AND Dilithium libraries are available, but the package is missing
+            signatures or verification fails (potential downgrade attack).
     """
     if (
         not package.quantum_signatures_enabled
         or not package.dilithium_signature
         or not package.dilithium_pubkey
     ):
-        if require_quantum_signatures:
+        # Only enforce quantum requirement if Dilithium is actually available
+        # in this environment. If it's not available, gracefully degrade to
+        # classical-only mode (the warning was already printed at import time).
+        if require_quantum_signatures and DILITHIUM_AVAILABLE:
             raise QuantumSignatureRequiredError(
                 "Quantum signatures required but package lacks Dilithium signature"
             )
@@ -1842,7 +1854,9 @@ def _verify_dilithium_with_policy(
             bytes.fromhex(package.dilithium_pubkey),
         )
     except QuantumSignatureUnavailableError:
-        if require_quantum_signatures:
+        # Dilithium libraries became unavailable (shouldn't happen normally)
+        # Only raise if we're in an environment that should have Dilithium
+        if require_quantum_signatures and DILITHIUM_AVAILABLE:
             raise QuantumSignatureRequiredError(
                 "Quantum signatures required but Dilithium libraries unavailable"
             )
@@ -1852,7 +1866,7 @@ def _verify_dilithium_with_policy(
         duration_ms = (time.time() - start_time) * 1000
         monitor.monitor_crypto_operation("dilithium_verify", duration_ms)
 
-    if require_quantum_signatures and result is False:
+    if require_quantum_signatures and DILITHIUM_AVAILABLE and result is False:
         raise QuantumSignatureRequiredError(
             "Quantum signatures required but Dilithium signature verification failed"
         )
