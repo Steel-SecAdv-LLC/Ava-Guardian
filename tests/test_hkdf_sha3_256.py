@@ -316,7 +316,7 @@ class TestRFC5869HKDFStructure:
         )
         okm = hkdf.derive(ikm)
 
-        assert okm == expected_okm, f"HKDF-SHA256 RFC 5869 Test Case 1 failed"
+        assert okm == expected_okm, "HKDF-SHA256 RFC 5869 Test Case 1 failed"
 
 
 class TestProjectSpecificVectors:
@@ -349,7 +349,7 @@ class TestProjectSpecificVectors:
 
         # Hardcoded expected value (computed with Python 3.12, cryptography 41.0+)
         expected_hex = "e841c164e5b4f10c9f3985587962af72fd607a951196fc92fb3a5251941784ea"
-        assert tag.hex() == expected_hex, f"HMAC-SHA3-256 project vector #1 failed"
+        assert tag.hex() == expected_hex, "HMAC-SHA3-256 project vector #1 failed"
 
     def test_hmac_sha3_256_project_vector_2(self):
         """
@@ -368,7 +368,7 @@ class TestProjectSpecificVectors:
 
         # Hardcoded expected value (computed with Python 3.12, cryptography 41.0+)
         expected_hex = "bb03b1b55a2f7d8c29c523ffe7f3b5765499a571c4fcaefb00efaed8549f8b4e"
-        assert tag.hex() == expected_hex, f"HMAC-SHA3-256 project vector #2 failed"
+        assert tag.hex() == expected_hex, "HMAC-SHA3-256 project vector #2 failed"
 
     def test_hkdf_sha3_256_project_vector(self):
         """
