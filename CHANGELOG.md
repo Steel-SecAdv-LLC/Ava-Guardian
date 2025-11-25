@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - HKDF Algorithm Unification
+
+**BREAKING CHANGE:** Unified HKDF key derivation to use SHA3-256 instead of SHA-256.
+
+#### Summary
+
+The `derive_keys()` function now uses `HKDF-SHA3-256` instead of `HKDF-SHA256` for key derivation. This aligns the HKDF algorithm with the project's SHA3 emphasis and ensures consistency across all cryptographic primitives.
+
+#### Changes
+
+- **Code (`dna_guardian_secure.py`):**
+  - `derive_keys()`: Changed `algorithm=hashes.SHA256()` to `algorithm=hashes.SHA3_256()`
+  - Updated docstring to reflect SHA3-256 usage
+  - Added explanatory comment about RFC 5869 and HMAC-SHA3-256 as secure PRF
+
+- **Documentation (`SECURITY_ANALYSIS.md`):**
+  - Updated all HKDF references from SHA-256 to SHA3-256
+  - Fixed HKDF security theorem to reference HMAC-SHA3-256
+  - Updated compliance tables to show HKDF-SHA3-256
+  - Corrected all numeric bounds and parameters
+
+- **Tests (`tests/test_hkdf_sha3_256.py`):**
+  - Added 16 comprehensive tests for HKDF-SHA3-256
+  - Golden vector tests for reproducibility verification
+  - Ethical context integration tests
+  - Key independence and determinism tests
+
+- **Configuration (`pytest.ini`):**
+  - Added filter for liboqs version mismatch warning
+
+#### Security Analysis
+
+HMAC-SHA3-256 is a secure PRF, and HKDF-SHA3-256 maintains equivalent security to HKDF-SHA256:
+- PRF security: 2^-128 (unchanged)
+- Key derivation security: 2^-256 (unchanged)
+- Collision resistance: 2^-128 (unchanged)
+
+While RFC 5869 was written for HMAC with Merkle-Damgard hashes, HMAC-SHA3-256 provides the same PRF guarantees required by HKDF.
+
+#### Breaking Change Impact
+
+**⚠️ Keys derived with v1.0.0 will differ from keys derived with this version.**
+
+- Applications using `derive_keys()` must regenerate all derived keys
+- Existing `DNA_CRYPTO_PACKAGE.json` files remain valid (signatures unchanged)
+- Only key derivation is affected, not hashing or signatures
+
+#### Migration Path
+
+1. Regenerate all derived keys using updated `derive_keys()` function
+2. Update any stored derived keys in your application
+3. No changes needed for existing signed packages
+
+---
+
 ### Added - Ethical Integration (Planned for v2.0.0)
 
 **Major Enhancement:** Mathematical integration of 12 DNA Code Ethical Pillars into cryptographic framework.

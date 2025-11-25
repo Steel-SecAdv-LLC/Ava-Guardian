@@ -1260,7 +1260,7 @@ def derive_keys(
         - PRK = Pseudorandom Key (extracted secret)
         - Enhanced_info = Context with 128-bit ethical signature
         - OKM = Output Keying Material (derived keys)
-        - Hash = SHA-256 (SHA-3 not yet standardized for HKDF)
+        - Hash = SHA3-256 (consistent with project's SHA3 emphasis)
 
     Ethical Integration Security:
     -----------------------------
@@ -1340,9 +1340,11 @@ def derive_keys(
         # Enhance with ethical context
         enhanced_context = create_ethical_hkdf_context(base_context, ethical_vector)
 
-        # Use HKDF with SHA-256 (SHA-3 not yet standardized for HKDF)
+        # Use HKDF with SHA3-256 for consistency with project's SHA3 emphasis
+        # Note: While RFC 5869 was written for HMAC with Merkle-Damgard hashes,
+        # HMAC-SHA3-256 is a secure PRF and HKDF-SHA3-256 maintains equivalent security.
         hkdf = HKDF(
-            algorithm=hashes.SHA256(),
+            algorithm=hashes.SHA3_256(),
             length=32,
             salt=None,  # Optional salt (None uses zeros)
             info=enhanced_context,  # Enhanced with ethical signature

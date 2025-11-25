@@ -509,7 +509,7 @@ Where:
 Adv_PRF(HKDF) ≤ Adv_PRF(HMAC) + q²/2^n
 
 Where:
-- n = 256 (output size for SHA-256)
+- n = 256 (output size for SHA3-256)
 - q = number of key derivations
 
 With q = 2^32:
@@ -581,7 +581,7 @@ Where:
 
 #### Security Analysis
 
-**Theorem (Ethical HKDF Security):** If SHA3-256 is collision-resistant and HMAC-SHA256 is a PRF, then HKDF with ethically-bound context remains a secure KDF with the same security level as standard HKDF.
+**Theorem (Ethical HKDF Security):** If SHA3-256 is collision-resistant and HMAC-SHA3-256 is a PRF, then HKDF with ethically-bound context remains a secure KDF with the same security level as standard HKDF.
 
 **Proof:**
 
@@ -801,11 +801,11 @@ This is computationally infeasible.
 Let K₁ = HKDF(master, info₁) and K₂ = HKDF(master, info₂) where info₁ ≠ info₂.
 
 By HKDF security theorem (Krawczyk, 2010):
-Adv_PRF(HKDF) ≤ Adv_PRF(HMAC-SHA256) + ε
+Adv_PRF(HKDF) ≤ Adv_PRF(HMAC-SHA3-256) + ε
 
 Where ε ≤ 2^-192 for practical query counts.
 
-For HMAC-SHA256 as PRF:
+For HMAC-SHA3-256 as PRF:
 Adv_PRF(HMAC) ≤ 2^-128
 
 Therefore:
@@ -926,7 +926,7 @@ Interpretation: Even knowing K₂, adversary has ≤ 2^-128 advantage in predict
 **Attack Method:** Invert HKDF
 
 **Cost Analysis:**
-- HKDF is one-way: Adv_Inversion ≤ Adv_Pre-image(SHA-256)
+- HKDF is one-way: Adv_Inversion ≤ Adv_Pre-image(SHA3-256)
 - Pre-image resistance: 2^256 operations
 - Time: ~10^57 years
 
@@ -993,7 +993,7 @@ The system provides defense-in-depth through multiple independent cryptographic 
 | HMAC-SHA3-256 | ~128-bit security | RFC 2104 | Requires key secrecy |
 | Ed25519 | ~128-bit classical | RFC 8032 | Vulnerable to quantum (Shor's algorithm) |
 | ML-DSA-65 (Dilithium) | ~192-bit quantum | NIST FIPS 204 | Post-quantum secure |
-| HKDF-SHA256 | ~256-bit key derivation | RFC 5869 | Domain-separated key derivation |
+| HKDF-SHA3-256 | ~256-bit key derivation | RFC 5869 | Domain-separated key derivation |
 | RFC 3161 Timestamps | Audit metadata | RFC 3161 | TSA-dependent; not cryptographically verified by this library |
 
 **Defense-in-Depth Principle:** An attacker must defeat ALL layers to compromise the system. The overall security is bounded by the weakest layer (~128-bit classical security from Ed25519/HMAC, or ~192-bit quantum security from Dilithium when quantum computers become viable).
@@ -1009,7 +1009,7 @@ The system provides defense-in-depth through multiple independent cryptographic 
 | Standard | Title | Compliance | Evidence |
 |----------|-------|------------|----------|
 | FIPS 202 | SHA-3 Standard | ✓ Full | SHA3-256 implementation |
-| SP 800-108 | Key Derivation | ✓ Full | HKDF-SHA256 |
+| SP 800-108 | Key Derivation | ✓ Full | HKDF-SHA3-256 |
 | FIPS 204 | PQC Digital Signatures | ✓ Full | ML-DSA-65 (Dilithium) |
 | SP 800-57 | Key Management | ✓ Full | KMS design with HSM requirement |
 | FIPS 140-2 Level 3+ | HSM Security | ✓ **REQUIRED** | **MANDATORY for production** |
@@ -1021,7 +1021,7 @@ The system provides defense-in-depth through multiple independent cryptographic 
 | RFC | Title | Compliance | Evidence |
 |-----|-------|------------|----------|
 | RFC 2104 | HMAC | ✓ Full | HMAC-SHA3-256 |
-| RFC 5869 | HKDF | ✓ Full | HKDF-SHA256 |
+| RFC 5869 | HKDF | ✓ Full | HKDF-SHA3-256 |
 | RFC 8032 | EdDSA | ✓ Full | Ed25519 implementation |
 | RFC 3161 | Time-Stamp Protocol | ✓ Full | TSA integration support |
 
