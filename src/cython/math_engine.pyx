@@ -21,10 +21,12 @@ Targets 10-50x speedup over pure Python through:
 """
 
 import numpy as np
+
 cimport numpy as cnp
+from libc.math cimport cos, exp, fabs, log, sin, sqrt
+from libc.stdint cimport int64_t, uint8_t, uint16_t, uint32_t, uint64_t
+
 cimport cython
-from libc.math cimport cos, sin, sqrt, log, exp, fabs
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int64_t
 
 # Initialize NumPy C API
 cnp.import_array()

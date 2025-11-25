@@ -17,15 +17,26 @@ Comprehensive demonstration of all Ava Guardian capabilities:
 
 import sys
 import time
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src" / "python"))
 
-from crypto_api import AvaGuardianCrypto, AlgorithmType, quick_sign, quick_verify, quick_kem
-from key_management import HDKeyDerivation, KeyRotationManager, SecureKeyStorage
-from double_helix_engine import AvaEquationEngine
+from crypto_api import (  # noqa: E402
+    AlgorithmType,
+    AvaGuardianCrypto,
+    quick_kem,
+    quick_sign,
+    quick_verify,
+)
+from double_helix_engine import AvaEquationEngine  # noqa: E402
+from key_management import (  # noqa: E402
+    HDKeyDerivation,
+    KeyRotationManager,
+    SecureKeyStorage,
+)
 
 
 def demo_crypto_api():
@@ -84,7 +95,7 @@ def demo_kem():
         # Generate keypair and encapsulate
         keypair, encapsulated = quick_kem(algorithm=AlgorithmType.KYBER_1024)
 
-        print(f"\nKyber-1024 KEM:")
+        print("\nKyber-1024 KEM:")
         print("-" * 70)
         print(f"  Public key size:    {len(keypair.public_key)} bytes")
         print(f"  Ciphertext size:    {len(encapsulated.ciphertext)} bytes")
@@ -188,8 +199,8 @@ def demo_secure_storage():
     print("5. SECURE KEY STORAGE")
     print("=" * 70)
 
-    import tempfile
     import secrets
+    import tempfile
 
     # Create temporary storage
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -226,7 +237,7 @@ def demo_secure_storage():
         for key_id in keys_to_store.keys():
             storage.delete_key(key_id)
 
-        print(f"  Cleanup: ✓ All keys securely deleted")
+        print("  Cleanup: ✓ All keys securely deleted")
 
 
 def demo_helix_engine():
@@ -238,11 +249,11 @@ def demo_helix_engine():
     # Create engine
     engine = AvaEquationEngine(state_dim=100, random_seed=42)
 
-    print(f"\nEngine configuration:")
+    print("\nEngine configuration:")
     print("-" * 70)
     print(f"  State dimension: {engine.state_dim}")
     print(f"  φ³-amplified weights: {engine.config.get('alpha', 0) / 4.236:.4f}")
-    print(f"  All 18+ variants enabled")
+    print("  All 18+ variants enabled")
 
     # Run convergence
     print("\n  Running convergence...")
@@ -251,11 +262,11 @@ def demo_helix_engine():
     final_state, history = engine.converge(initial_state, max_steps=50)
     elapsed = time.perf_counter() - start_time
 
-    print(f"  Execution time: {elapsed*1000:.2f}ms")
+    print(f"  Execution time: {elapsed * 1000:.2f}ms")
     print(f"  Iterations: {len(history)}")
     print(f"  Initial Lyapunov: {history[0]:.6f}")
     print(f"  Final Lyapunov: {history[-1]:.6f}")
-    print(f"  Convergence: {(1 - history[-1]/history[0])*100:.2f}%")
+    print(f"  Convergence: {(1 - history[-1] / history[0]) * 100:.2f}%")
 
     # Calculate sigma_quadratic
     from equations import calculate_sigma_quadratic
@@ -301,8 +312,8 @@ def demo_performance():
 
         speedup = time_py / time_cy
 
-        print(f"  Pure Python: {time_py*1000:.2f}ms ({iterations} iterations)")
-        print(f"  Cython:      {time_cy*1000:.2f}ms ({iterations} iterations)")
+        print(f"  Pure Python: {time_py * 1000:.2f}ms ({iterations} iterations)")
+        print(f"  Cython:      {time_cy * 1000:.2f}ms ({iterations} iterations)")
         print(f"  Speedup:     {speedup:.1f}x faster")
 
     except ImportError:
@@ -317,7 +328,7 @@ def demo_performance():
             state = engine.step(state, i)
         elapsed = time.perf_counter() - start
 
-        print(f"  Pure Python: {elapsed*1000:.2f}ms (100 iterations)")
+        print(f"  Pure Python: {elapsed * 1000:.2f}ms (100 iterations)")
 
 
 def main():

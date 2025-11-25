@@ -834,7 +834,17 @@ def generate_dilithium_keypair() -> DilithiumKeyPair:
 
 def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
     """
-    Sign message with CRYSTALS-Dilithium.
+    Sign message with CRYSTALS-Dilithium (ML-DSA-65).
+
+    Cryptographic Foundation:
+    -------------------------
+    CRYSTALS-Dilithium is a lattice-based digital signature scheme selected
+    by NIST for post-quantum cryptography standardization. ML-DSA-65 provides
+    NIST Security Level 3 (128-bit classical, 128-bit quantum security).
+
+    Standard: NIST FIPS 204 (Module-Lattice-Based Digital Signature Standard)
+    Reference: Ducas et al., "CRYSTALS-Dilithium: A Lattice-Based Digital
+               Signature Scheme", IACR TCHES 2018(1), pp. 238-268
 
     Args:
         message: Data to sign
@@ -863,7 +873,16 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
 
 def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
     """
-    Verify CRYSTALS-Dilithium signature.
+    Verify CRYSTALS-Dilithium (ML-DSA-65) signature.
+
+    Cryptographic Foundation:
+    -------------------------
+    Verification uses the Fiat-Shamir with Aborts paradigm over Module-LWE.
+    Security relies on the hardness of the Module Learning With Errors problem.
+
+    Standard: NIST FIPS 204 (Module-Lattice-Based Digital Signature Standard)
+    Reference: Ducas et al., "CRYSTALS-Dilithium: A Lattice-Based Digital
+               Signature Scheme", IACR TCHES 2018(1), pp. 238-268
 
     Args:
         message: Original data

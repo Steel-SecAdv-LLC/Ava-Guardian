@@ -170,7 +170,7 @@ Future-proof cryptography:
 
 **Unique Value:** Protection of sensitive field data with runtime attack detection
 
-- **Crisis Response**: GPS coordinates, victim data, and safe house locations protected with ML-DSA-65 quantum-resistant signatures. 3R monitoring detects if systems are compromised in hostile environments.
+- **Crisis Response**: GPS coordinates, victim data, and safe house locations protected with ML-DSA-65 quantum-resistant signatures. 3R monitoring surfaces timing anomalies that may indicate compromise in hostile environments.
 - **Conservation**: Wildlife tracking data, ranger locations, and anti-poaching intelligence with integrity verification using helical invariants. Detects if data has been tampered with.
 - **Whistleblower Protection**: Document signing and verification that remains secure for 50+ years under "harvest now, decrypt later" quantum threats.
 - **Sensitive Record Preservation**: Ethical framework ensures respectful handling of records for victims and individuals, with complete audit trails.
@@ -187,11 +187,11 @@ Future-proof cryptography:
 
 ### Financial Services
 
-**Unique Value:** Transaction security with real-time fraud detection
+**Unique Value:** Transaction security with real-time anomaly detection
 
 - **Quantum-Resistant Signatures**: ML-DSA-65 signatures on transactions remain valid even after quantum computers exist.
 - **High-Frequency Trading**: Cython-optimized operations (18-37x speedup) with sub-millisecond signature verification.
-- **Fraud Detection**: 3R timing analysis detects anomalous transaction patterns and potential attacks.
+- **Anomaly Detection**: 3R timing analysis surfaces anomalous cryptographic behavior that may indicate potential attacks.
 - **Audit Compliance**: Complete cryptographic audit trail with ethical constraint enforcement.
 - **Long-term Archival**: Financial records with 50+ year security guarantees.
 
@@ -211,7 +211,7 @@ Future-proof cryptography:
 **Unique Value:** SCADA/ICS security with active attack detection
 
 - **Power Grid Control**: Quantum-resistant authentication for grid control systems.
-- **Water Treatment**: Signed commands with runtime verification. 3R detects if timing patterns indicate malware.
+- **Water Treatment**: Signed commands with runtime verification. 3R surfaces timing anomalies that may indicate malware.
 - **Transportation**: Railway and air traffic control with 50+ year security guarantees (systems operate for decades).
 - **Nuclear Facilities**: Constant-time operations prevent side-channel leaks in high-security environments.
 - **Active Monitoring**: 3R system provides real-time alerts if cryptographic operations show attack patterns.

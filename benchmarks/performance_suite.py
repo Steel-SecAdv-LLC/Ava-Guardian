@@ -13,13 +13,14 @@ Benchmarks:
 - Cache efficiency and SIMD utilization
 """
 
-import time
-import sys
-import numpy as np
-from typing import Dict, List, Tuple
 import json
-from dataclasses import dataclass, asdict
+import sys
+import time
+from dataclasses import asdict, dataclass
 from datetime import datetime
+from typing import List
+
+import numpy as np
 
 
 @dataclass
@@ -76,7 +77,7 @@ class PerformanceBenchmark:
         self.results.append(result)
 
         print(f"  Total time: {total_time:.4f}s")
-        print(f"  Avg time:   {avg_time*1e6:.2f}µs")
+        print(f"  Avg time:   {avg_time * 1e6:.2f}µs")
         print(f"  Throughput: {throughput:.2f} {unit}")
 
         return result
@@ -85,9 +86,9 @@ class PerformanceBenchmark:
         self, name: str, impl1_name: str, impl1_func, impl2_name: str, impl2_func, *args
     ):
         """Compare two implementations"""
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"COMPARISON: {name}")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         r1 = self.run_benchmark(f"{name} - {impl1_name}", impl1_func, *args)
         r2 = self.run_benchmark(f"{name} - {impl2_name}", impl2_func, *args)
@@ -118,7 +119,7 @@ class PerformanceBenchmark:
 
 def benchmark_lyapunov_functions():
     """Benchmark Lyapunov function implementations"""
-    from ava_guardian.equations import lyapunov_function
+    from ava_guardian.equations import lyapunov_function  # noqa: F401
 
     state = np.random.randn(1000)
     target = np.ones(1000)
