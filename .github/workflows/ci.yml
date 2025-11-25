@@ -37,7 +37,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        pip install cryptography pytest liboqs-python
+        pip install cryptography pytest numpy liboqs-python
 
     - name: Run pytest test suite
       run: |
