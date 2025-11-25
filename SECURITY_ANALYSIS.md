@@ -581,12 +581,25 @@ Where:
 
 #### Security Analysis
 
-**Theorem (Ethical HKDF Security):** If SHA3-256 is collision-resistant and HMAC-SHA3-256 is a PRF, then HKDF with ethically-bound context remains a secure KDF with the same security level as standard HKDF.
+**Assumptions:**
+
+Before stating our security theorem, we make the following explicit assumptions:
+
+**Assumption A1 (HMAC-SHA3-256 PRF Security):** HMAC-SHA3-256 behaves as a pseudorandom function (PRF) with no attacks better than generic ones. While the original HMAC security proofs (Bellare et al., 1996) were developed for Merkle-Damgård hash functions like SHA-256, HMAC-SHA3-256 is widely believed to be secure based on:
+- SHA3-256's sponge construction provides strong pseudorandomness properties
+- No known attacks on HMAC-SHA3-256 perform better than generic PRF attacks
+- NIST's implicit endorsement through SHA3 standardization (FIPS 202)
+
+**Note:** KMAC (Keccak Message Authentication Code) is the native MAC construction for SHA3 and has formal security proofs for sponge constructions. Our use of HMAC-SHA3-256 is a conservative choice that maintains compatibility with RFC 5869 HKDF structure while leveraging SHA3's security properties.
+
+**Assumption A2 (SHA3-256 Collision Resistance):** SHA3-256 provides collision resistance with security level 2^128 (birthday bound on 256-bit output).
+
+**Theorem (Ethical HKDF Security):** Under Assumptions A1 and A2, HKDF-SHA3-256 with ethically-bound context remains a secure KDF with security level bounded by the minimum of the underlying primitive securities.
 
 **Proof:**
 
 Let:
-- H = SHA3-256 with collision resistance Adv_CR(H) ≤ 2^-128
+- H = SHA3-256 with collision resistance Adv_CR(H) ≤ 2^-128 (upper bound)
 - E = ETHICAL_VECTOR with canonical JSON encoding
 - C₀ = base HKDF context (info parameter)
 - C₁ = C₀ || H(E)[:16] (enhanced context)
@@ -604,24 +617,26 @@ We construct adversary B that uses A to either:
 **Case 1:** If A's advantage comes from the base context C₀:
 - B simply forwards A's queries to HKDF oracle with context C₀
 - B's advantage equals A's advantage: Adv_B = ε
-- But HKDF security theorem (Krawczyk, 2010) bounds this:
-  Adv_B ≤ Adv_PRF(HMAC) + q²/2^n ≤ 2^-128 + 2^-192 ≈ 2^-128
+- Under Assumption A1, HKDF security theorem (Krawczyk, 2010) provides:
+  Adv_B ≤ Adv_PRF(HMAC-SHA3-256) + q²/2^n ≤ 2^-128 + 2^-192 (upper bounds)
 
 **Case 2:** If A's advantage comes from the ethical signature H(E)[:16]:
 - A must distinguish H(E)[:16] from random 128-bit string
 - This requires either:
-  - Finding collision in SHA3-256: Adv_CR(H) ≤ 2^-128
-  - Inverting SHA3-256: Adv_Pre(H) ≤ 2^-256
-- Both are computationally infeasible
+  - Finding collision in SHA3-256: Adv_CR(H) ≤ 2^-128 (upper bound)
+  - Inverting SHA3-256: Adv_Pre(H) ≤ 2^-256 (upper bound)
+- Both are computationally infeasible under current knowledge
 
-**Combined bound:**
+**Combined bound (conservative upper bound):**
 ```
-Adv_PRF(HKDF_Ethical) ≤ Adv_PRF(HKDF) + Adv_CR(SHA3-256)
+Adv_PRF(HKDF_Ethical) ≤ Adv_PRF(HKDF-SHA3-256) + Adv_CR(SHA3-256)
                       ≤ 2^-128 + 2^-128
-                      = 2^-127
+                      ≤ 2^-127
 ```
 
-**Conclusion:** Ethical integration maintains HKDF security at 2^-127 ≈ 2^-128. ∎
+**Important:** These are conservative upper bounds, not tight equalities. The actual security may be significantly better. Formal tightness analysis is beyond the scope of this document.
+
+**Conclusion:** Under Assumptions A1 and A2, ethical integration maintains HKDF security with an upper bound of 2^-127 on adversarial advantage. ∎
 
 #### Additional Security Properties
 
