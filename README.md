@@ -111,7 +111,7 @@ Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 
 ---
 
-## 🚀 Updates in Production: 
+## Updates in Production: 
 
 ### Multi-Language Architecture
 - **C Core**: Constant-time cryptographic primitives for side-channel resistance
@@ -146,7 +146,7 @@ Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 <details>
 <summary><strong>📦 Installation (Click to expand)</strong></summary>
@@ -292,7 +292,7 @@ docker-compose exec ava-guardian python -m pytest
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 <details>
 <summary><strong>🏛️ System Overview (Click to expand)</strong></summary>
@@ -408,7 +408,7 @@ Ava-Guardian/
 
 ---
 
-## 🔐 Cryptographic Algorithms
+## Cryptographic Algorithms
 
 <details>
 <summary><strong>✍️ Digital Signature Algorithms (Click to expand)</strong></summary>
