@@ -165,29 +165,41 @@ class TestGetPqcBackendInfo:
         assert "sphincs_available" in info
 
     def test_contains_key_sizes(self):
-        """Verify info contains key size information in algorithms dict."""
+        """Verify info contains key size information in algorithms dict when available."""
         info = get_pqc_backend_info()
         assert "algorithms" in info
         algorithms = info["algorithms"]
 
-        # Check ML-DSA-65 (Dilithium) key sizes
+        # Check ML-DSA-65 (Dilithium) key sizes - only if available
         assert "ML-DSA-65" in algorithms
         assert "key_sizes" in algorithms["ML-DSA-65"]
-        assert "public_key" in algorithms["ML-DSA-65"]["key_sizes"]
-        assert "secret_key" in algorithms["ML-DSA-65"]["key_sizes"]
-        assert "signature" in algorithms["ML-DSA-65"]["key_sizes"]
+        if DILITHIUM_AVAILABLE:
+            assert algorithms["ML-DSA-65"]["key_sizes"] is not None
+            assert "public_key" in algorithms["ML-DSA-65"]["key_sizes"]
+            assert "secret_key" in algorithms["ML-DSA-65"]["key_sizes"]
+            assert "signature" in algorithms["ML-DSA-65"]["key_sizes"]
+        else:
+            assert algorithms["ML-DSA-65"]["key_sizes"] is None
 
-        # Check Kyber-1024 key sizes
+        # Check Kyber-1024 key sizes - only if available
         assert "Kyber-1024" in algorithms
         assert "key_sizes" in algorithms["Kyber-1024"]
-        assert "public_key" in algorithms["Kyber-1024"]["key_sizes"]
-        assert "secret_key" in algorithms["Kyber-1024"]["key_sizes"]
+        if KYBER_AVAILABLE:
+            assert algorithms["Kyber-1024"]["key_sizes"] is not None
+            assert "public_key" in algorithms["Kyber-1024"]["key_sizes"]
+            assert "secret_key" in algorithms["Kyber-1024"]["key_sizes"]
+        else:
+            assert algorithms["Kyber-1024"]["key_sizes"] is None
 
-        # Check SPHINCS+-256f key sizes
+        # Check SPHINCS+-256f key sizes - only if available
         assert "SPHINCS+-256f" in algorithms
         assert "key_sizes" in algorithms["SPHINCS+-256f"]
-        assert "public_key" in algorithms["SPHINCS+-256f"]["key_sizes"]
-        assert "secret_key" in algorithms["SPHINCS+-256f"]["key_sizes"]
+        if SPHINCS_AVAILABLE:
+            assert algorithms["SPHINCS+-256f"]["key_sizes"] is not None
+            assert "public_key" in algorithms["SPHINCS+-256f"]["key_sizes"]
+            assert "secret_key" in algorithms["SPHINCS+-256f"]["key_sizes"]
+        else:
+            assert algorithms["SPHINCS+-256f"]["key_sizes"] is None
 
 
 @pytest.mark.skipif(not DILITHIUM_AVAILABLE, reason="Dilithium backend not available")
