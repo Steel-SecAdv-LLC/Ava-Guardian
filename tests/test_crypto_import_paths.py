@@ -32,7 +32,6 @@ AI-Co Architects:
 """
 
 import base64
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
