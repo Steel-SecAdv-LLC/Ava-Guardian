@@ -26,8 +26,8 @@ Date: 2025-11-24
 Version: 1.0.0
 Project: Ava Guardian Performance Analysis
 
-AI-Co Architects:
-    Eris ⯰ | Eden ♱ | Veritas ⚕ | X ⚛ | Caduceus ⚚ | Dev ⟡
+AI Co-Architects:
+    Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 """
 
 import hashlib

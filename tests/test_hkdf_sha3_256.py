@@ -31,17 +31,19 @@ class TestHKDFSHA3256:
     """Test suite for HKDF-SHA3-256 key derivation."""
 
     def test_hkdf_sha3_256_deterministic(self):
-        """Test that HKDF-SHA3-256 produces deterministic outputs."""
+        """Test that HKDF-SHA3-256 produces deterministic outputs with same salt."""
         from dna_guardian_secure import derive_keys
 
         master_secret = b"test_master_secret_32_bytes_long"
         info = "test_context"
+        # Use fixed salt for deterministic testing
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
 
-        # Derive keys twice with same inputs
-        keys1 = derive_keys(master_secret, info, num_keys=3)
-        keys2 = derive_keys(master_secret, info, num_keys=3)
+        # Derive keys twice with same inputs and same salt
+        keys1, salt1 = derive_keys(master_secret, info, num_keys=3, salt=fixed_salt)
+        keys2, salt2 = derive_keys(master_secret, info, num_keys=3, salt=fixed_salt)
 
-        # Should produce identical keys
+        # Should produce identical keys with same salt
         assert keys1 == keys2
         assert len(keys1) == 3
         assert all(len(k) == 32 for k in keys1)
@@ -51,9 +53,10 @@ class TestHKDFSHA3256:
         from dna_guardian_secure import derive_keys
 
         master_secret = b"test_master_secret_32_bytes_long"
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
 
-        keys1 = derive_keys(master_secret, "context_a", num_keys=1)
-        keys2 = derive_keys(master_secret, "context_b", num_keys=1)
+        keys1, _ = derive_keys(master_secret, "context_a", num_keys=1, salt=fixed_salt)
+        keys2, _ = derive_keys(master_secret, "context_b", num_keys=1, salt=fixed_salt)
 
         # Different contexts should produce different keys
         assert keys1[0] != keys2[0]
@@ -65,9 +68,10 @@ class TestHKDFSHA3256:
         master1 = b"master_secret_one_32_bytes_long!"
         master2 = b"master_secret_two_32_bytes_long!"
         info = "same_context"
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
 
-        keys1 = derive_keys(master1, info, num_keys=1)
-        keys2 = derive_keys(master2, info, num_keys=1)
+        keys1, _ = derive_keys(master1, info, num_keys=1, salt=fixed_salt)
+        keys2, _ = derive_keys(master2, info, num_keys=1, salt=fixed_salt)
 
         # Different master secrets should produce different keys
         assert keys1[0] != keys2[0]
@@ -78,8 +82,9 @@ class TestHKDFSHA3256:
 
         master_secret = b"test_master_secret_32_bytes_long"
         info = "test_context"
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
 
-        keys = derive_keys(master_secret, info, num_keys=5)
+        keys, _ = derive_keys(master_secret, info, num_keys=5, salt=fixed_salt)
 
         # All keys should be unique
         assert len(set(keys)) == 5
@@ -101,7 +106,7 @@ class TestHKDFSHA3256:
             derive_keys(b"short", "context", num_keys=1)
 
         # Should work with exactly 32 bytes
-        keys = derive_keys(b"x" * 32, "context", num_keys=1)
+        keys, _ = derive_keys(b"x" * 32, "context", num_keys=1)
         assert len(keys) == 1
 
 
@@ -166,9 +171,10 @@ class TestEthicalHKDFContext:
 
         master_secret = b"test_master_secret_32_bytes_long"
         info = "test_context"
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
 
         # Default ethical vector
-        keys1 = derive_keys(master_secret, info, num_keys=1)
+        keys1, _ = derive_keys(master_secret, info, num_keys=1, salt=fixed_salt)
 
         # Modified ethical vector
         modified_vector = {
@@ -185,7 +191,9 @@ class TestEthicalHKDFContext:
             "omniperfect": 1.0,
             "omnivalent": 0.0,
         }
-        keys2 = derive_keys(master_secret, info, num_keys=1, ethical_vector=modified_vector)
+        keys2, _ = derive_keys(
+            master_secret, info, num_keys=1, ethical_vector=modified_vector, salt=fixed_salt
+        )
 
         # Different ethical vectors should produce different keys
         assert keys1[0] != keys2[0]
@@ -453,16 +461,17 @@ class TestKeyManagementSystem:
         assert kms.version is not None
 
     def test_kms_deterministic_with_same_master_secret(self):
-        """Test that KMS derivation is deterministic given same master secret."""
+        """Test that KMS derivation is deterministic given same master secret and salt."""
         from dna_guardian_secure import derive_keys
 
-        # Fixed master secret for testing
+        # Fixed master secret and salt for testing
         master_secret = b"fixed_master_secret_32_bytes_lo!"
         info = "DNA_CODES"
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
 
-        # Derive keys twice
-        keys1 = derive_keys(master_secret, info, num_keys=3)
-        keys2 = derive_keys(master_secret, info, num_keys=3)
+        # Derive keys twice with same salt
+        keys1, _ = derive_keys(master_secret, info, num_keys=3, salt=fixed_salt)
+        keys2, _ = derive_keys(master_secret, info, num_keys=3, salt=fixed_salt)
 
-        # Should be identical
+        # Should be identical with same salt
         assert keys1 == keys2

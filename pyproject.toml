@@ -49,12 +49,12 @@ dependencies = [
 
 [project.optional-dependencies]
 quantum = [
-    # Pin to specific version range for compatibility with liboqs C library
-    # The PyPI package is 'oqs' (not 'liboqs-python')
-    "oqs>=0.10.0,<0.11.0",
+    # liboqs-python for quantum-resistant cryptography
+    # The PyPI package is 'liboqs-python' (provides 'oqs' module)
+    "liboqs-python>=0.10.0",
 ]
 quantum-alt = [
-    "pqcrypto>=0.1.3,<0.2.0",
+    "pqcrypto>=0.1.3",
 ]
 dev = [
     "pytest>=7.0.0",

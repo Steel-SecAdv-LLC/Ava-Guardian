@@ -32,7 +32,7 @@ Contact: steel.sa.llc@gmail.com
 Date: 2025-11-25
 Version: 1.0.0
 
-AI-Co Architects:
+AI Co-Architects:
     Eris | Eden | Veritas | X | Caduceus | Dev
 """
 
@@ -138,9 +138,9 @@ class TestCanonicalHashDNA:
         assert hash1 != hash2
 
     def test_hash_empty_codes(self):
-        """Empty DNA codes should still produce valid hash."""
-        result = canonical_hash_dna("", [])
-        assert len(result) == 32
+        """Empty DNA codes should raise ValueError for input validation."""
+        with pytest.raises(ValueError, match="dna_codes cannot be empty"):
+            canonical_hash_dna("", [])
 
     def test_hash_single_bit_change_avalanche(self):
         """Single character change should produce completely different hash."""
@@ -386,36 +386,40 @@ class TestKeyDerivation:
     """Penetration tests for HKDF key derivation."""
 
     def test_derive_keys_deterministic(self):
-        """Same inputs produce same derived keys."""
+        """Same inputs produce same derived keys with same salt."""
         master = secrets.token_bytes(32)
-        keys1 = derive_keys(master, "test", num_keys=3)
-        keys2 = derive_keys(master, "test", num_keys=3)
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
+        keys1, _ = derive_keys(master, "test", num_keys=3, salt=fixed_salt)
+        keys2, _ = derive_keys(master, "test", num_keys=3, salt=fixed_salt)
         assert keys1 == keys2
 
     def test_derive_keys_different_master_different_keys(self):
         """Different master secrets produce different keys."""
-        keys1 = derive_keys(secrets.token_bytes(32), "test", num_keys=3)
-        keys2 = derive_keys(secrets.token_bytes(32), "test", num_keys=3)
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
+        keys1, _ = derive_keys(secrets.token_bytes(32), "test", num_keys=3, salt=fixed_salt)
+        keys2, _ = derive_keys(secrets.token_bytes(32), "test", num_keys=3, salt=fixed_salt)
         assert keys1 != keys2
 
     def test_derive_keys_different_info_different_keys(self):
         """Different info strings produce different keys."""
         master = secrets.token_bytes(32)
-        keys1 = derive_keys(master, "info1", num_keys=3)
-        keys2 = derive_keys(master, "info2", num_keys=3)
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
+        keys1, _ = derive_keys(master, "info1", num_keys=3, salt=fixed_salt)
+        keys2, _ = derive_keys(master, "info2", num_keys=3, salt=fixed_salt)
         assert keys1 != keys2
 
     def test_derive_keys_independence(self):
         """Derived keys should be independent of each other."""
         master = secrets.token_bytes(32)
-        keys = derive_keys(master, "test", num_keys=5)
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
+        keys, _ = derive_keys(master, "test", num_keys=5, salt=fixed_salt)
         # All keys should be different
         assert len(set(k.hex() for k in keys)) == 5
 
     def test_derive_keys_length(self):
         """Each derived key should be 32 bytes."""
         master = secrets.token_bytes(32)
-        keys = derive_keys(master, "test", num_keys=3)
+        keys, _ = derive_keys(master, "test", num_keys=3)
         for key in keys:
             assert len(key) == 32
 
@@ -426,7 +430,7 @@ class TestKeyDerivation:
 
     def test_derive_keys_32_byte_master_accepted(self):
         """32-byte master secret should be accepted (minimum)."""
-        keys = derive_keys(secrets.token_bytes(32), "test", num_keys=3)
+        keys, _ = derive_keys(secrets.token_bytes(32), "test", num_keys=3)
         assert len(keys) == 3
 
     def test_derive_keys_16_byte_master_rejected(self):
@@ -437,10 +441,11 @@ class TestKeyDerivation:
     def test_ethical_context_integration(self):
         """Ethical vector should affect key derivation."""
         master = secrets.token_bytes(32)
-        keys1 = derive_keys(master, "test", ethical_vector=ETHICAL_VECTOR)
+        fixed_salt = b"fixed_salt_for_testing_32_bytes!"
+        keys1, _ = derive_keys(master, "test", ethical_vector=ETHICAL_VECTOR, salt=fixed_salt)
         modified_vector = ETHICAL_VECTOR.copy()
         modified_vector["omniscient"] = 2.0
-        keys2 = derive_keys(master, "test", ethical_vector=modified_vector)
+        keys2, _ = derive_keys(master, "test", ethical_vector=modified_vector, salt=fixed_salt)
         assert keys1 != keys2
 
 

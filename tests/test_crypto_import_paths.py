@@ -27,7 +27,7 @@ Contact: steel.sa.llc@gmail.com
 Date: 2025-11-25
 Version: 1.0.0
 
-AI-Co Architects:
+AI Co-Architects:
     Eris | Eden | Veritas | X | Caduceus | Dev
 """
 
@@ -104,23 +104,29 @@ class TestFieldSizeValidation:
 # ============================================================================
 
 
+# ML-DSA-65 key sizes per liboqs
+FAKE_PRIVATE_KEY = b"K" * 4032  # 4032 bytes for ML-DSA-65 secret key
+FAKE_PUBLIC_KEY = b"P" * 1952  # 1952 bytes for ML-DSA-65 public key
+FAKE_SIGNATURE = b"S" * 3309  # 3309 bytes for ML-DSA-65 signature
+
+
 class FakeDilithium3:
     """Fake pqcrypto dilithium3 module for testing."""
 
     @staticmethod
     def generate_keypair():
         """Generate fake keypair."""
-        return b"FAKE_PUBLIC_KEY", b"FAKE_PRIVATE_KEY"
+        return FAKE_PUBLIC_KEY, FAKE_PRIVATE_KEY
 
     @staticmethod
     def sign(message, private_key):
         """Sign with fake signature."""
-        return b"FAKE_SIGNATURE"
+        return FAKE_SIGNATURE
 
     @staticmethod
     def verify(message, signature, public_key):
         """Verify signature (no exception = success)."""
-        if signature != b"FAKE_SIGNATURE":
+        if signature != FAKE_SIGNATURE:
             raise Exception("Invalid signature")
 
 
@@ -138,8 +144,8 @@ class TestPqcryptoBackend:
             monkeypatch.setattr(dgs, "dilithium3", FakeDilithium3)
 
         kp = dgs.generate_dilithium_keypair()
-        assert kp.public_key == b"FAKE_PUBLIC_KEY"
-        assert kp.private_key == b"FAKE_PRIVATE_KEY"
+        assert kp.public_key == FAKE_PUBLIC_KEY
+        assert kp.private_key == FAKE_PRIVATE_KEY
 
     def test_dilithium_sign_pqcrypto(self, monkeypatch):
         """Test Dilithium signing with pqcrypto backend."""
@@ -150,8 +156,8 @@ class TestPqcryptoBackend:
         else:
             monkeypatch.setattr(dgs, "dilithium3", FakeDilithium3)
 
-        sig = dgs.dilithium_sign(b"msg", b"FAKE_PRIVATE_KEY")
-        assert sig == b"FAKE_SIGNATURE"
+        sig = dgs.dilithium_sign(b"msg", FAKE_PRIVATE_KEY)
+        assert sig == FAKE_SIGNATURE
 
     def test_dilithium_verify_pqcrypto_success(self, monkeypatch):
         """Test Dilithium verification with pqcrypto backend (success)."""
@@ -162,7 +168,7 @@ class TestPqcryptoBackend:
         else:
             monkeypatch.setattr(dgs, "dilithium3", FakeDilithium3)
 
-        result = dgs.dilithium_verify(b"msg", b"FAKE_SIGNATURE", b"FAKE_PUBLIC_KEY")
+        result = dgs.dilithium_verify(b"msg", FAKE_SIGNATURE, FAKE_PUBLIC_KEY)
         assert result is True
 
     def test_dilithium_verify_pqcrypto_failure(self, monkeypatch):
@@ -174,7 +180,7 @@ class TestPqcryptoBackend:
         else:
             monkeypatch.setattr(dgs, "dilithium3", FakeDilithium3)
 
-        result = dgs.dilithium_verify(b"msg", b"WRONG_SIGNATURE", b"FAKE_PUBLIC_KEY")
+        result = dgs.dilithium_verify(b"msg", b"WRONG_SIGNATURE", FAKE_PUBLIC_KEY)
         assert result is False
 
 

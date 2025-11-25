@@ -74,9 +74,9 @@ typedef enum {
  * KEY SIZES (bytes)
  * ============================================================================ */
 
-/* ML-DSA-65 (Dilithium3) */
+/* ML-DSA-65 (Dilithium3) - Key sizes from liboqs */
 #define AVA_ML_DSA_65_PUBLIC_KEY_BYTES 1952
-#define AVA_ML_DSA_65_SECRET_KEY_BYTES 4016
+#define AVA_ML_DSA_65_SECRET_KEY_BYTES 4032
 #define AVA_ML_DSA_65_SIGNATURE_BYTES 3309
 
 /* Kyber-1024 */
