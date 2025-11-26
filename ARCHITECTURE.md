@@ -170,7 +170,7 @@ Layer 1: Canonical Length-Prefixed Encoding
 | Ed25519 Private Key | 256 bits | Seed for key generation |
 | Ed25519 Public Key | 256 bits | Compressed Edwards point |
 | Ed25519 Signature | 512 bits | (R, s) pair |
-| ML-DSA-65 Private Key | 4,000 bytes | Lattice-based secret key |
+| ML-DSA-65 Private Key | 4,032 bytes | Lattice-based secret key |
 | ML-DSA-65 Public Key | 1,952 bytes | Lattice-based public key |
 | ML-DSA-65 Signature | ~3,293 bytes | Lattice-based signature |
 | SHA3-256 Output | 256 bits | Collision-resistant digest |
