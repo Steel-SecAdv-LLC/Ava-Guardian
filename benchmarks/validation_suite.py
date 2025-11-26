@@ -15,7 +15,7 @@ Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
 Date: 2025-11-26
 Version: 1.0.0
-Project: Ava Guardian Performance Validation
+Project: Ava Guardian ♱ Performance Validation
 """
 
 import hashlib
@@ -261,7 +261,7 @@ class BenchmarkValidator:
         print("CRYPTOGRAPHIC OPERATION BENCHMARKS")
         print("=" * 70)
 
-        test_data = b"Ava Guardian benchmark test data for cryptographic operations" * 10
+        test_data = b"Ava Guardian ♱ benchmark test data for cryptographic operations" * 10
 
         # SHA3-256 hashing
         def sha3_hash():

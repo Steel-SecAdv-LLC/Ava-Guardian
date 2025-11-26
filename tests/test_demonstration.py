@@ -16,7 +16,7 @@
 Ava Guardian ♱ (AG♱): Demonstration Test Suite
 ===============================================
 
-Test suite for validating Ava Guardian demonstration functionality.
+Test suite for validating Ava Guardian ♱ demonstration functionality.
 
 This test module validates that the demonstration function executes successfully
 and produces correct output, verifying all six cryptographic layers.

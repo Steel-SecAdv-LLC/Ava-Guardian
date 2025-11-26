@@ -833,7 +833,7 @@ class TestAvaGuardianMonitor:
 # Integration test markers
 @pytest.mark.integration
 class TestMonitorIntegration:
-    """Integration tests with full Ava Guardian system."""
+    """Integration tests with full Ava Guardian ♱ system."""
 
     def test_end_to_end_monitoring(self):
         """Test complete workflow with monitoring."""
@@ -882,7 +882,7 @@ class TestMonitorIntegration:
         except (ImportError, Exception) as e:
             # Skip if imports fail (missing dependencies) or if there are
             # version mismatches (e.g., liboqs version warnings)
-            pytest.skip(f"Integration test requires full Ava Guardian system: {e}")
+            pytest.skip(f"Integration test requires full Ava Guardian ♱ system: {e}")
 
 
 if __name__ == "__main__":

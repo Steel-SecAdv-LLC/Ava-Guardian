@@ -804,7 +804,7 @@ make security-audit
 <details>
 <summary><strong>Ethical Cryptography</strong> - Mathematically-Bound Ethical Constraints</summary>
 
-Ava Guardian pioneers the integration of ethical principles directly into cryptographic operations through mathematically rigorous constraints. Unlike traditional security systems that treat ethics as policy overlays, AG♱ embeds ethical considerations into the cryptographic foundation itself.
+Ava Guardian ♱ pioneers the integration of ethical principles directly into cryptographic operations through mathematically rigorous constraints. Unlike traditional security systems that treat ethics as policy overlays, AG♱ embeds ethical considerations into the cryptographic foundation itself.
 
 **12 Omni-DNA Ethical Pillars** are mathematically integrated into key derivation:
 

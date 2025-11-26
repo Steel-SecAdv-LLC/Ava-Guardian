@@ -108,14 +108,14 @@ typedef struct ava_signature_t ava_signature_t;
  * ============================================================================ */
 
 /**
- * @brief Initialize Ava Guardian context
+ * @brief Initialize Ava Guardian ♱ context
  * @param algorithm Algorithm to use
  * @return Opaque context pointer, NULL on failure
  */
 ava_context_t* ava_context_init(ava_algorithm_t algorithm);
 
 /**
- * @brief Free Ava Guardian context and scrub memory
+ * @brief Free Ava Guardian ♱ context and scrub memory
  * @param ctx Context to free
  */
 void ava_context_free(ava_context_t* ctx);

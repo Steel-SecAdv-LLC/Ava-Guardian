@@ -6,7 +6,7 @@
 version: '3.8'
 
 services:
-  # Main Ava Guardian service
+  # Main Ava Guardian ♱ service
   ava-guardian:
     build:
       context: ..

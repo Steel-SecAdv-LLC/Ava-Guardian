@@ -214,7 +214,7 @@ def get_protected_data():
     """
     Get cryptographically protected data package.
 
-    Returns a complete Ava Guardian crypto package with:
+    Returns a complete Ava Guardian ♱ crypto package with:
     - Content hash (SHA3-256)
     - HMAC authentication
     - Ed25519 signature
@@ -316,10 +316,10 @@ def handle_error(error):
 def main():
     """Run the Flask development server."""
     print("=" * 60)
-    print("AVA GUARDIAN - FLASK INTEGRATION EXAMPLE")
+    print("AVA GUARDIAN ♱ - FLASK INTEGRATION EXAMPLE")
     print("=" * 60)
     print()
-    print("Starting Flask server with Ava Guardian cryptographic protection...")
+    print("Starting Flask server with Ava Guardian ♱ cryptographic protection...")
     print()
     print("Available endpoints:")
     print("  GET  /api/health          - Health check (signed)")

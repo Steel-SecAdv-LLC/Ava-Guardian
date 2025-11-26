@@ -88,4 +88,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD python3 -c "import ava_guardian; print('OK')" || exit 1
 
 # Default command
-CMD ["python3", "-c", "import ava_guardian; print(f'Ava Guardian v{ava_guardian.__version__} ready')"]
+CMD ["python3", "-c", "import ava_guardian; print(f'Ava Guardian ♱ v{ava_guardian.__version__} ready')"]

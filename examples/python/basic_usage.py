@@ -257,9 +257,9 @@ def example_4_humanitarian_use_case():
 def main():
     """Run all examples."""
     print("=" * 60)
-    print("AVA GUARDIAN - BASIC USAGE EXAMPLES")
+    print("AVA GUARDIAN ♱ - BASIC USAGE EXAMPLES")
     print("=" * 60)
-    print("\nThese examples demonstrate core Ava Guardian capabilities.")
+    print("\nThese examples demonstrate core Ava Guardian ♱ capabilities.")
     print("For full documentation, see: https://github.com/Steel-SecAdv-LLC/Ava-Guardian")
 
     try:
