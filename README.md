@@ -11,21 +11,23 @@
 [![Architecture](https://img.shields.io/badge/architecture-C%20%2B%20Python%20%2B%20Cython-blue.svg)](ARCHITECTURE.md)
 
 ```
-                  +======================================================================+
-                  |                           AVA GUARDIAN ♱                             |
-                  |           Production Multi-Language PQC Security System              |
-                  |                                                                      |
-                  |  6-Layer Defense            Quantum-Resistant                        |
-                  |  Cython-Optimized           3R Runtime Monitoring                    |
-                  |  Security Hardened          Cross-Platform                           |
-                  |                                                                      |
-                  |  C Core (Constant-Time)  |  Cython Optimization Layer                |
-                  |  HD Key Derivation       |  Algorithm-Agnostic API                   |
-                  |  Key Rotation            |  18+ Equation Variants                    |
-                  |  Docker + CI/CD          |  Side-Channel Resistant                   |
-                  |                                                                      |
-                  |            Built for a civilized evolution.                          |
-                  +======================================================================+
++==============================================================================+
+|                              AVA GUARDIAN ♱                                  |
+|              Production Multi-Language PQC Security System                   |
+|                                                                              |
+|   6-Layer Defense      |   Quantum-Resistant    |   Security Hardened        |
+|   Cython-Optimized     |   3R Runtime Monitor   |   Cross-Platform           |
+|   HD Key Derivation    |   Algorithm-Agnostic   |   Side-Channel Resistant   |
+|                                                                              |
+|   C Core               |   Cython Layer         |   Python API               |
+|   ─────────────────    |   ─────────────────    |   ─────────────────        |
+|   Constant-Time Ops    |   18-37x Speedup       |   Algorithm Agnostic       |
+|   Memory Protection    |   NumPy Integration    |   Key Management           |
+|   Timing Attack Safe   |   Math Engine          |   3R Monitoring            |
+|   liboqs Bindings      |   Double-Helix Eqns    |   Docker + CI/CD           |
+|                                                                              |
+|                   Built for a civilized evolution.                           |
++==============================================================================+
 ```
 
 **Copyright 2025 Steel Security Advisors LLC**  
