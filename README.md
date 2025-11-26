@@ -924,6 +924,8 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) file for 
 
 *Built with precision. Secured with mathematics. Protected by innovation.*
 
+<img src="assets/ama_logo.png" alt="AMA" height="24">
+
 *Last updated: 2025-11-26*
 
 </div>
