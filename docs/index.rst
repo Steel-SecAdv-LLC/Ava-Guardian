@@ -28,7 +28,7 @@ Quick Links
 Overview
 --------
 
-Ava Guardian ♱ (AG♱) is a production-grade post-quantum cryptographic (PQC)
+Ava Guardian ♱ (AG♱) is a secure post-quantum cryptographic (PQC)
 system featuring:
 
 - **Multi-Algorithm Support**: ML-DSA-65, Kyber-1024, SPHINCS+-256f
@@ -36,7 +36,7 @@ system featuring:
 - **Constant-Time Operations**: Timing-attack resistant implementations
 - **High Performance**: 10-50x speedup via Cython mathematical engine
 - **Cross-Platform**: Linux, macOS, Windows, ARM support
-- **Enterprise Ready**: HSM/TPM integration, key rotation, TLS support
+- **Security Hardened**: HSM/TPM integration, key rotation, TLS support
 
 Key Features
 ------------

@@ -266,7 +266,7 @@ grep -r "version.*1\.0\.0" README.md pyproject.toml setup.py
 
 **Status**: Ready for merge when all checklist items are verified.
 
-The branch should be production-ready with:
+The branch should be release-ready with:
 - Correct version (1.0.0)
 - Complete documentation
 - High-quality code
