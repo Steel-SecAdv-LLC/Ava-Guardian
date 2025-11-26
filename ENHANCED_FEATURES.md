@@ -1,4 +1,4 @@
-# Ava Guardian Enhanced Features
+# Ava Guardian ♱ Enhanced Features
 
 ## Document Information
 
@@ -13,7 +13,7 @@
 
 ## Overview
 
-Ava Guardian 1.0 introduces a multi-language architecture that combines the security of C, the performance of Cython, and the usability of Python. This document describes the enhanced features available in the current release.
+Ava Guardian ♱ 1.0 introduces a multi-language architecture that combines the security of C, the performance of Cython, and the usability of Python. This document describes the enhanced features available in the current release.
 
 ---
 

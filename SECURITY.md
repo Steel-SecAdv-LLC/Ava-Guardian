@@ -13,7 +13,7 @@
 
 ## Overview
 
-Ava Guardian is a production-grade quantum-resistant cryptographic protection system released under the Apache License 2.0 as free and open-source software. Security is our highest priority. We take all vulnerabilities seriously and appreciate responsible disclosure from the security research community.
+Ava Guardian ♱ is a production-grade quantum-resistant cryptographic protection system released under the Apache License 2.0 as free and open-source software. Security is our highest priority. We take all vulnerabilities seriously and appreciate responsible disclosure from the security research community.
 
 ---
 
@@ -215,7 +215,7 @@ We will deprecate cryptographic algorithms when:
 
 ## Security Audits
 
-Ava Guardian has undergone internal security analysis documented in `SECURITY_ANALYSIS.md`. We welcome:
+Ava Guardian ♱ has undergone internal security analysis documented in `SECURITY_ANALYSIS.md`. We welcome:
 
 - Independent security audits from qualified cryptographers
 - Academic review of our mathematical proofs
@@ -226,7 +226,7 @@ Please contact us at steel.sa.llc@gmail.com to coordinate security audit efforts
 
 ## Compliance and Standards
 
-Ava Guardian is designed to comply with:
+Ava Guardian ♱ is designed to comply with:
 
 - **NIST FIPS 202** - SHA-3 Standard
 - **NIST FIPS 204** - Module-Lattice-Based Digital Signature Standard (Dilithium)
