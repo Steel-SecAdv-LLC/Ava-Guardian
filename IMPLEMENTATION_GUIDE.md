@@ -210,12 +210,12 @@ def store_master_secret_encrypted(
         raise ValueError("Passwords don't match")
     
     # Derive encryption key from password using PBKDF2
-    salt = os.urandom(16)
+    salt = os.urandom(32)  # 256-bit salt
     kdf = PBKDF2(
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,
-        iterations=480000  # OWASP recommendation (2023)
+        iterations=600000  # OWASP recommendation (2024)
     )
     key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
     
@@ -249,7 +249,7 @@ def load_master_secret_encrypted(keyfile: str = "master_secret.enc") -> bytes:
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,
-        iterations=480000
+        iterations=600000  # Must match store iterations
     )
     key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
     
