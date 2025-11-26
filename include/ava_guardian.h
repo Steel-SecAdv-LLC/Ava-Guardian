@@ -126,6 +126,10 @@ void ava_context_free(ava_context_t* ctx);
 
 /**
  * @brief Generate a new keypair (constant-time)
+ *
+ * @note STUB: Reserved for future implementation. Currently returns
+ *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ *
  * @param ctx Initialized context
  * @param public_key Output buffer for public key
  * @param public_key_len Length of public key buffer
@@ -147,6 +151,10 @@ ava_error_t ava_keypair_generate(
 
 /**
  * @brief Sign a message (constant-time)
+ *
+ * @note STUB: Reserved for future implementation. Currently returns
+ *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ *
  * @param ctx Initialized context
  * @param message Message to sign
  * @param message_len Length of message
@@ -168,6 +176,10 @@ ava_error_t ava_sign(
 
 /**
  * @brief Verify a signature (constant-time)
+ *
+ * @note STUB: Reserved for future implementation. Currently returns
+ *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ *
  * @param ctx Initialized context
  * @param message Message to verify
  * @param message_len Length of message
@@ -193,6 +205,10 @@ ava_error_t ava_verify(
 
 /**
  * @brief Encapsulate a shared secret
+ *
+ * @note STUB: Reserved for future implementation. Currently returns
+ *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ *
  * @param ctx Initialized context (must be Kyber-1024)
  * @param public_key Recipient's public key
  * @param public_key_len Length of public key
@@ -214,6 +230,10 @@ ava_error_t ava_kem_encapsulate(
 
 /**
  * @brief Decapsulate a shared secret
+ *
+ * @note STUB: Reserved for future implementation. Currently returns
+ *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ *
  * @param ctx Initialized context (must be Kyber-1024)
  * @param ciphertext Ciphertext to decapsulate
  * @param ciphertext_len Length of ciphertext
@@ -293,6 +313,10 @@ void ava_consttime_copy(int condition, void* dst, const void* src, size_t len);
 
 /**
  * @brief SHA3-256 hash (constant-time)
+ *
+ * @note STUB: Reserved for future implementation. Currently returns
+ *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ *
  * @param input Input data
  * @param input_len Length of input
  * @param output Output buffer (32 bytes)
@@ -306,6 +330,10 @@ ava_error_t ava_sha3_256(
 
 /**
  * @brief HKDF key derivation
+ *
+ * @note STUB: Reserved for future implementation. Currently returns
+ *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ *
  * @param salt Salt value
  * @param salt_len Length of salt
  * @param ikm Input key material
