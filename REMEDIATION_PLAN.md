@@ -305,18 +305,19 @@ The following working components will NOT be modified:
 | | P1-10 | COMPLETE | Created CRYPTOGRAPHY.md |
 | | P1-11 | COMPLETE | Documented RFC 3161 dependency in README.md |
 | | P1-12 | COMPLETE | Annotated C API stubs in ava_guardian.h |
-| | P2-13 | COMPLETE | Already correct - v2.0.0 marked as planned |
+| | P2-13 | COMPLETE | Added PLANNED FOR v2.0.0 section with warning |
 | | P2-14 | COMPLETE | Clarified Cython claims in README.md |
 | | P2-15 | COMPLETE | Added integration status to ENHANCED_FEATURES.md |
-| | P2-16 | COMPLETE | Algorithm naming already consistent |
-| | P2-17 | COMPLETE | Version constraints already aligned |
-| | P2-18 | COMPLETE | Python version matrix already aligned |
-| | P3-19 | COMPLETE | README.txt serves purpose (public keys) - kept |
+| | P2-16 | COMPLETE | Algorithm naming already consistent (ML-DSA-65) |
+| | P2-17 | COMPLETE | Added numpy<2.0.0 upper bound in pyproject.toml |
+| | P2-18 | COMPLETE | CI already tests Python 3.8-3.12 |
+| | P3-19 | COMPLETE | Removed duplicate README.txt |
 | | P3-20 | COMPLETE | Documentation structure appropriate |
 | | P3-21 | COMPLETE | PRE_MERGE_CHECKLIST status appropriate |
 | | P3-22 | COMPLETE | Fixed security workflow syntax |
-| | P3-23 | COMPLETE | Hash algorithm documented in CRYPTOGRAPHY.md |
+| | P3-23 | COMPLETE | Hash algorithm documented in code and CRYPTOGRAPHY.md |
 | | P3-24 | COMPLETE | Added Sphinx note to Makefile docs target |
+| 2025-11-26 05:07 | Phase 2 | COMPLETE | All P2/P3 items addressed |
 
 ---
 
