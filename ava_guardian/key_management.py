@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, cast
 
 
 class SecurityWarning(UserWarning):
@@ -114,11 +114,14 @@ class HDKeyDerivation:
             self.master_seed = secrets.token_bytes(64)
         elif seed is not None:
             self.master_seed = seed
-        else:
+        elif seed_phrase is not None:
             # Derive seed from phrase (simplified BIP39)
             self.master_seed = hashlib.pbkdf2_hmac(
                 "sha512", seed_phrase.encode("utf-8"), b"mnemonic", 2048, 64
             )
+        else:
+            # Should never reach here due to earlier check
+            self.master_seed = secrets.token_bytes(64)
 
         # Generate master key
         self.master_key, self.master_chain_code = self._generate_master_key()
@@ -414,14 +417,15 @@ class KeyRotationManager:
         Returns:
             Metadata dictionary
         """
-        export_data = {
+        export_data: Dict[str, Any] = {
             "active_key_id": self.active_key_id,
             "rotation_period_days": self.rotation_period.days,
             "keys": {},
         }
 
+        keys_dict: Dict[str, Any] = export_data["keys"]
         for key_id, metadata in self.keys.items():
-            export_data["keys"][key_id] = {
+            keys_dict[key_id] = {
                 "key_id": metadata.key_id,
                 "created_at": metadata.created_at.isoformat(),
                 "expires_at": metadata.expires_at.isoformat() if metadata.expires_at else None,
@@ -940,7 +944,7 @@ class HSMKeyStorage:
 
         try:
             handle = self.session.generateKey(self.pkcs11.Mechanism(CKM.AES_KEY_GEN), template)
-            return handle.to_bytes(8, "big")
+            return cast(bytes, handle.to_bytes(8, "big"))
         except self.pkcs11.PyKCS11Error as e:
             raise RuntimeError(f"Failed to generate AES key: {e}")
 
@@ -961,7 +965,7 @@ class HSMKeyStorage:
         try:
             objects = self.session.findObjects(template)
             if objects:
-                return objects[0].to_bytes(8, "big")
+                return cast(bytes, objects[0].to_bytes(8, "big"))
             return None
         except self.pkcs11.PyKCS11Error:
             return None

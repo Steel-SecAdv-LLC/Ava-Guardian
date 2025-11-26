@@ -38,7 +38,7 @@ AI Co-Architects: Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | De
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional, cast
 
 
 class PQCStatus(Enum):
@@ -78,12 +78,12 @@ _SPHINCS_AVAILABLE = False
 _DILITHIUM_BACKEND: Optional[str] = None
 _KYBER_BACKEND: Optional[str] = None
 _SPHINCS_BACKEND: Optional[str] = None
-_oqs_module = None
-_dilithium3_module = None
+_oqs_module: Any = None
+_dilithium3_module: Any = None
 
 try:
     # Try liboqs-python first (recommended - fast C implementation)
-    import oqs as _oqs_module
+    import oqs as _oqs_module  # type: ignore[no-redef]
 
     _DILITHIUM_AVAILABLE = True
     _DILITHIUM_BACKEND = "liboqs"
@@ -117,7 +117,7 @@ except BaseException:
     _oqs_module = None
     try:
         # Fall back to pqcrypto (pure Python) - signatures only
-        from pqcrypto.sign import dilithium3 as _dilithium3_module
+        from pqcrypto.sign import dilithium3 as _dilithium3_module  # type: ignore[no-redef]
 
         _DILITHIUM_AVAILABLE = True
         _DILITHIUM_BACKEND = "pqcrypto"
@@ -323,13 +323,13 @@ def generate_dilithium_keypair() -> DilithiumKeyPair:
             "pip install liboqs-python"
         )
 
-    if DILITHIUM_BACKEND == "liboqs":
+    if DILITHIUM_BACKEND == "liboqs" and _oqs_module is not None:
         sig = _oqs_module.Signature("ML-DSA-65")
         public_key = sig.generate_keypair()
         private_key = sig.export_secret_key()
         return DilithiumKeyPair(private_key=private_key, public_key=public_key)
 
-    elif DILITHIUM_BACKEND == "pqcrypto":
+    elif DILITHIUM_BACKEND == "pqcrypto" and _dilithium3_module is not None:
         public_key, private_key = _dilithium3_module.generate_keypair()
         return DilithiumKeyPair(private_key=private_key, public_key=public_key)
 
@@ -357,13 +357,13 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
             "Install liboqs-python (recommended) or pqcrypto."
         )
 
-    if DILITHIUM_BACKEND == "liboqs":
+    if DILITHIUM_BACKEND == "liboqs" and _oqs_module is not None:
         sig = _oqs_module.Signature("ML-DSA-65")
         sig.secret_key = private_key
-        return sig.sign(message)
+        return cast(bytes, sig.sign(message))
 
-    elif DILITHIUM_BACKEND == "pqcrypto":
-        return _dilithium3_module.sign(message, private_key)
+    elif DILITHIUM_BACKEND == "pqcrypto" and _dilithium3_module is not None:
+        return cast(bytes, _dilithium3_module.sign(message, private_key))
 
     raise PQCUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
 
@@ -389,14 +389,14 @@ def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> boo
             "Install liboqs-python (recommended) or pqcrypto."
         )
 
-    if DILITHIUM_BACKEND == "liboqs":
+    if DILITHIUM_BACKEND == "liboqs" and _oqs_module is not None:
         try:
             sig = _oqs_module.Signature("ML-DSA-65")
-            return sig.verify(message, signature, public_key)
+            return cast(bool, sig.verify(message, signature, public_key))
         except Exception:
             return False
 
-    elif DILITHIUM_BACKEND == "pqcrypto":
+    elif DILITHIUM_BACKEND == "pqcrypto" and _dilithium3_module is not None:
         try:
             _dilithium3_module.verify(message, signature, public_key)
             return True
@@ -437,7 +437,7 @@ def generate_kyber_keypair() -> KyberKeyPair:
             "Install liboqs-python: pip install liboqs-python"
         )
 
-    if KYBER_BACKEND == "liboqs":
+    if KYBER_BACKEND == "liboqs" and _oqs_module is not None:
         kem = _oqs_module.KeyEncapsulation("Kyber1024")
         public_key = kem.generate_keypair()
         secret_key = kem.export_secret_key()
@@ -484,7 +484,7 @@ def kyber_encapsulate(public_key: bytes) -> KyberEncapsulation:
             f"got {len(public_key)}"
         )
 
-    if KYBER_BACKEND == "liboqs":
+    if KYBER_BACKEND == "liboqs" and _oqs_module is not None:
         kem = _oqs_module.KeyEncapsulation("Kyber1024")
         ciphertext, shared_secret = kem.encap_secret(public_key)
         return KyberEncapsulation(ciphertext=ciphertext, shared_secret=shared_secret)
@@ -535,11 +535,11 @@ def kyber_decapsulate(ciphertext: bytes, secret_key: bytes) -> bytes:
             f"got {len(secret_key)}"
         )
 
-    if KYBER_BACKEND == "liboqs":
+    if KYBER_BACKEND == "liboqs" and _oqs_module is not None:
         kem = _oqs_module.KeyEncapsulation("Kyber1024")
         kem.secret_key = secret_key
         shared_secret = kem.decap_secret(ciphertext)
-        return shared_secret
+        return cast(bytes, shared_secret)
 
     raise KyberUnavailableError("KYBER_UNAVAILABLE: Unknown backend state")
 
@@ -576,7 +576,7 @@ def generate_sphincs_keypair() -> SphincsKeyPair:
             "Install liboqs-python: pip install liboqs-python"
         )
 
-    if SPHINCS_BACKEND == "liboqs":
+    if SPHINCS_BACKEND == "liboqs" and _oqs_module is not None:
         sig = _oqs_module.Signature("SPHINCS+-SHA2-256f-simple")
         public_key = sig.generate_keypair()
         secret_key = sig.export_secret_key()
@@ -621,10 +621,10 @@ def sphincs_sign(message: bytes, secret_key: bytes) -> bytes:
             f"got {len(secret_key)}"
         )
 
-    if SPHINCS_BACKEND == "liboqs":
+    if SPHINCS_BACKEND == "liboqs" and _oqs_module is not None:
         sig = _oqs_module.Signature("SPHINCS+-SHA2-256f-simple")
         sig.secret_key = secret_key
-        return sig.sign(message)
+        return cast(bytes, sig.sign(message))
 
     raise SphincsUnavailableError("SPHINCS_UNAVAILABLE: Unknown backend state")
 
@@ -665,10 +665,10 @@ def sphincs_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
             f"got {len(public_key)}"
         )
 
-    if SPHINCS_BACKEND == "liboqs":
+    if SPHINCS_BACKEND == "liboqs" and _oqs_module is not None:
         try:
             sig = _oqs_module.Signature("SPHINCS+-SHA2-256f-simple")
-            return sig.verify(message, signature, public_key)
+            return cast(bool, sig.verify(message, signature, public_key))
         except Exception:
             return False
 

@@ -28,7 +28,7 @@ import secrets
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, cast
 
 from ava_guardian.pqc_backends import (
     DILITHIUM_AVAILABLE,
@@ -751,7 +751,7 @@ class AvaGuardianCrypto:
 
     def generate_keypair(self) -> KeyPair:
         """Generate cryptographic keypair"""
-        return self.provider.generate_keypair()
+        return cast(KeyPair, self.provider.generate_keypair())
 
     def sign(self, message: bytes, secret_key: bytes) -> Signature:
         """Sign a message"""
