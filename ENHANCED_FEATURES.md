@@ -113,6 +113,8 @@ AVX2 support for polynomial operations:
 
 **Key Encapsulation Mechanism**
 
+> **Integration Status:** Backend implemented in `ava_guardian/pqc_backends.py`. Integration into main signing workflow pending.
+
 - Public key: 1568 bytes
 - Secret key: 3168 bytes
 - Ciphertext: 1568 bytes
@@ -123,6 +125,8 @@ AVX2 support for polynomial operations:
 ### SPHINCS+-256f
 
 **Stateless Hash-Based Signatures**
+
+> **Integration Status:** Backend implemented in `ava_guardian/pqc_backends.py`. Integration into main signing workflow pending.
 
 - Public key: 64 bytes
 - Secret key: 128 bytes
