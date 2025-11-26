@@ -70,6 +70,7 @@ endif()
 set(AVA_SOURCES
     src/c/ava_core.c
     src/c/ava_consttime.c
+    src/c/ava_kyber.c
 )
 
 # Find dependencies

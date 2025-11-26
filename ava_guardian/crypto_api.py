@@ -250,7 +250,7 @@ class MLDSAProvider(CryptoProvider):
 
         Args:
             message: Data to sign
-            secret_key: Dilithium private key (4000 bytes)
+            secret_key: Dilithium private key (4032 bytes)
 
         Returns:
             Signature object with Dilithium signature
@@ -590,9 +590,9 @@ class HybridSignatureProvider(CryptoProvider):
     ED25519_SK_SIZE = 32
     ED25519_PK_SIZE = 32
     ED25519_SIG_SIZE = 64
-    DILITHIUM_SK_SIZE = 4000
+    DILITHIUM_SK_SIZE = 4032  # ML-DSA-65 per liboqs
     DILITHIUM_PK_SIZE = 1952
-    DILITHIUM_SIG_SIZE = 3293
+    DILITHIUM_SIG_SIZE = 3309  # ML-DSA-65 per liboqs
 
     def __init__(self):
         self.classical_provider = Ed25519Provider()

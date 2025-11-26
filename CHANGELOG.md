@@ -74,7 +74,13 @@ While RFC 5869 was written for HMAC with Merkle-Damgard hashes, HMAC-SHA3-256 pr
 
 ---
 
-### Added - Ethical Integration (Planned for v2.0.0)
+---
+
+## PLANNED FOR v2.0.0
+
+> **⚠️ WARNING:** The features below are NOT included in v1.0.0. They are planned for future releases.
+
+### Ethical Integration (Planned)
 
 **Major Enhancement:** Mathematical integration of 12 DNA Code Ethical Pillars into cryptographic framework.
 

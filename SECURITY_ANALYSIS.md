@@ -374,7 +374,7 @@ Where:
 | Level | k×ℓ | η | PublicKey | PrivateKey | Signature | Quantum Security |
 |-------|-----|---|-----------|------------|-----------|------------------|
 | Dilithium2 | 4×4 | 2 | 1312 B | 2528 B | 2420 B | 128 bits |
-| Dilithium3 | 6×5 | 4 | 1952 B | 4000 B | 3293 B | 192 bits |
+| Dilithium3 | 6×5 | 4 | 1952 B | 4032 B | 3309 B | 192 bits |
 | Dilithium5 | 8×7 | 2 | 2592 B | 4864 B | 4595 B | 256 bits |
 
 **Recommendation:** Dilithium3 (NIST Security Level 3) for 192-bit quantum security.

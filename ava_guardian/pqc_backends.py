@@ -343,7 +343,7 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
 
     Args:
         message: Data to sign
-        private_key: Dilithium private key (4000 bytes)
+        private_key: Dilithium private key (4032 bytes)
 
     Returns:
         Dilithium signature (3293 bytes)

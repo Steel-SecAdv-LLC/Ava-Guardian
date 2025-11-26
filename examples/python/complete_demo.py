@@ -21,18 +21,18 @@ from pathlib import Path
 
 import numpy as np
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src" / "python"))
+# Add project root to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from crypto_api import (  # noqa: E402
+from ava_guardian.crypto_api import (  # noqa: E402
     AlgorithmType,
     AvaGuardianCrypto,
     quick_kem,
     quick_sign,
     quick_verify,
 )
-from double_helix_engine import AvaEquationEngine  # noqa: E402
-from key_management import (  # noqa: E402
+from ava_guardian.double_helix_engine import AvaEquationEngine  # noqa: E402
+from ava_guardian.key_management import (  # noqa: E402
     HDKeyDerivation,
     KeyRotationManager,
     SecureKeyStorage,
@@ -269,7 +269,7 @@ def demo_helix_engine():
     print(f"  Convergence: {(1 - history[-1] / history[0]) * 100:.2f}%")
 
     # Calculate sigma_quadratic
-    from equations import calculate_sigma_quadratic
+    from ava_guardian.equations import calculate_sigma_quadratic
 
     sigma = calculate_sigma_quadratic(final_state, engine.ethical_matrix)
     print(f"  σ_quadratic: {sigma:.6f} ({'✓ PASS' if sigma >= 0.96 else '✗ FAIL'} ≥ 0.96)")
@@ -283,7 +283,7 @@ def demo_performance():
 
     try:
         # Try to import optimized Cython engine
-        from helix_engine_complete import AvaEngineOptimized
+        from ava_guardian.helix_engine_complete import AvaEngineOptimized
 
         print("\nCython-optimized engine available!")
         print("-" * 70)

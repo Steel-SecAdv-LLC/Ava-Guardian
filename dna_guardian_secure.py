@@ -728,8 +728,8 @@ class DilithiumKeyPair:
 
     Dilithium3: 192-bit quantum security (NIST Security Level 3) [RECOMMENDED]
         - Public key: 1952 bytes
-        - Private key: 4000 bytes
-        - Signature: 3293 bytes
+        - Private key: 4032 bytes (per liboqs ML-DSA-65)
+        - Signature: 3309 bytes (per liboqs ML-DSA-65)
         - Equivalent: AES-192, SHA-384
 
     Dilithium5: 256-bit quantum security (NIST Security Level 5)
@@ -813,7 +813,7 @@ class DilithiumKeyPair:
        binary LWE." ACISP 2014, LNCS 8544, pp. 322-337.
     """
 
-    private_key: bytes  # 4000 bytes for Dilithium3
+    private_key: bytes  # 4032 bytes for ML-DSA-65 (Dilithium3)
     public_key: bytes  # 1952 bytes for Dilithium3
 
 
@@ -1043,7 +1043,11 @@ def get_rfc3161_timestamp(data: bytes, tsa_url: str = None) -> Optional[bytes]:
 
     try:
         # Create timestamp request using OpenSSL
-        # Try to use OpenSSL ts command
+        # NOTE: SHA-256 is used here instead of SHA3-256 for TSA compatibility.
+        # Most RFC 3161 TSA services (FreeTSA, DigiCert, GlobalSign) do not support
+        # SHA3-256. This is a deliberate design choice for interoperability.
+        # The timestamp token itself provides proof-of-existence, and the SHA-256
+        # hash is only used for the TSA request, not for the package integrity.
         cmd_query = ["openssl", "ts", "-query", "-data", "-", "-sha256", "-no_nonce"]
 
         proc = subprocess.run(cmd_query, input=data, capture_output=True, timeout=10)

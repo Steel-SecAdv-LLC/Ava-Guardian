@@ -89,6 +89,7 @@ lint:
 	@echo "✓ Lint passed"
 
 # Generate documentation
+# Requires: sphinx from requirements-dev.txt (pip install -r requirements-dev.txt)
 docs:
 	@echo "Generating documentation..."
 	@cd build && doxygen ../docs/Doxyfile
