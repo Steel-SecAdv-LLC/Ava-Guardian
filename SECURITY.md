@@ -49,7 +49,7 @@ If you discover a security vulnerability in AG♱, please report it responsibly:
 
 **Instead, please:**
 
-1. **Email:** steel.sa.llc@gmail.com or stee.sa.llc@gmail.com
+1. **Email:** steel.sa.llc@gmail.com
 2. **Subject:** [SECURITY] Ava Guardian ♱ (AG♱)  Vulnerability Report
 3. **Include:**
    - Detailed description of the vulnerability
