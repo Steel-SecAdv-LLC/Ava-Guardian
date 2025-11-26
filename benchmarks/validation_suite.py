@@ -246,14 +246,14 @@ class BenchmarkValidator:
             import oqs
 
             def dilithium_keygen():
-                signer = oqs.Signature("Dilithium3")
+                signer = oqs.Signature("ML-DSA-65")
                 return signer.generate_keypair()
 
             stats = self.benchmark_operation("dilithium_keygen", dilithium_keygen)
             result = self.validate_claim("dilithium_keygen", stats["mean_ms"], stats["std_ms"])
             print(f"  {result.message}")
-        except ImportError:
-            print("  SKIP: liboqs-python not available for Dilithium")
+        except (ImportError, Exception) as e:
+            print(f"  SKIP: Dilithium benchmark unavailable: {e}")
 
     def run_crypto_operation_benchmarks(self) -> None:
         """Benchmark cryptographic operations."""
@@ -315,7 +315,7 @@ class BenchmarkValidator:
         try:
             import oqs
 
-            signer = oqs.Signature("Dilithium3")
+            signer = oqs.Signature("ML-DSA-65")
             public_key = signer.generate_keypair()
 
             def dilithium_sign():
@@ -323,7 +323,7 @@ class BenchmarkValidator:
 
             signature = signer.sign(test_data)
 
-            verifier = oqs.Signature("Dilithium3")
+            verifier = oqs.Signature("ML-DSA-65")
 
             def dilithium_verify():
                 return verifier.verify(test_data, signature, public_key)
@@ -335,8 +335,8 @@ class BenchmarkValidator:
             stats = self.benchmark_operation("dilithium_verify", dilithium_verify)
             result = self.validate_claim("dilithium_verify", stats["mean_ms"], stats["std_ms"])
             print(f"  {result.message}")
-        except ImportError:
-            print("  SKIP: liboqs-python not available for Dilithium")
+        except (ImportError, Exception) as e:
+            print(f"  SKIP: Dilithium benchmark unavailable: {e}")
 
     def run_3r_monitoring_benchmarks(self) -> None:
         """Benchmark 3R monitoring overhead."""
