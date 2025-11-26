@@ -1,4 +1,4 @@
-# Contributing to Ava Guardian
+# Contributing to Ava Guardian ♱
 
 ## Document Information
 
@@ -13,7 +13,7 @@
 
 ## Overview
 
-This document provides guidelines for contributing to the Ava Guardian quantum-resistant cryptographic protection system. Ava Guardian is released under the Apache License 2.0 as free and open-source software, accessible for universal use as a knowledge vault and bridge to cryptographic frontiers.
+This document provides guidelines for contributing to the Ava Guardian ♱ quantum-resistant cryptographic protection system. Ava Guardian is released under the Apache License 2.0 as free and open-source software, accessible for universal use as a knowledge vault and bridge to cryptographic frontiers.
 
 ---
 

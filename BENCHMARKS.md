@@ -52,7 +52,7 @@ This document provides **transparent, honest performance metrics** for Ava Guard
 | Operation | Mean (ms) | Ops/sec | Status | Notes |
 |-----------|-----------|---------|--------|-------|
 | **Hashing** |
-| SHA3-256 | ~0.001 | >1M | Measured | NIST FIPS 202 |
+| SHA3-256 | ~0.002 | ~500k | Measured | NIST FIPS 202 |
 | **Authentication** |
 | HMAC-SHA3-256 Auth | ~0.004 | ~250k | Measured | RFC 2104 |
 | HMAC-SHA3-256 Verify | ~0.004 | ~250k | Measured | Constant-time |

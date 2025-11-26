@@ -1,4 +1,4 @@
-# Ava Guardian Production Deployment Guide
+# Ava Guardian ♱ Production Deployment Guide
 
 ## Document Information
 
@@ -13,7 +13,7 @@
 
 ## Overview
 
-This document provides comprehensive procedures for deploying Ava Guardian in production environments. It covers environment preparation, key management, monitoring configuration, and disaster recovery procedures.
+This document provides comprehensive procedures for deploying Ava Guardian ♱ in production environments. It covers environment preparation, key management, monitoring configuration, and disaster recovery procedures.
 
 ---
 
