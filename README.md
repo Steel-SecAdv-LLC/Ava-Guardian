@@ -367,6 +367,27 @@ cmake --build build --config Release
 python setup.py install
 ```
 
+### External Dependencies
+
+**RFC 3161 Timestamps (Optional)**:
+RFC 3161 trusted timestamping requires OpenSSL in PATH. If OpenSSL is not available, the system falls back to self-asserted timestamps with a warning logged.
+
+```bash
+# Verify OpenSSL is available
+openssl version
+
+# Linux (Ubuntu/Debian)
+sudo apt-get install openssl
+
+# macOS
+brew install openssl
+
+# Windows
+# Download from https://slproweb.com/products/Win32OpenSSL.html
+```
+
+The timestamp feature contacts external TSA (Time Stamping Authority) servers. Default: FreeTSA (https://freetsa.org/tsr). Commercial TSAs (DigiCert, GlobalSign) are recommended for production use.
+
 </details>
 
 <details>
