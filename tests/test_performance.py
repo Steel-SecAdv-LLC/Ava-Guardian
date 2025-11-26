@@ -31,7 +31,9 @@ from dna_guardian_secure import (
 # Skip performance tests in CI environments (unreliable timing on shared runners)
 # Can be overridden with AVA_SKIP_PERF_TESTS=0 to force running
 _skip_env = os.environ.get("AVA_SKIP_PERF_TESTS", "").lower()
-_in_ci = os.environ.get("CI", "").lower() in ("1", "true", "yes") or os.environ.get("GITHUB_ACTIONS", "").lower() in ("1", "true", "yes")
+_in_ci = os.environ.get("CI", "").lower() in ("1", "true", "yes") or os.environ.get(
+    "GITHUB_ACTIONS", ""
+).lower() in ("1", "true", "yes")
 SKIP_PERF = _skip_env in ("1", "true", "yes") or (_in_ci and _skip_env not in ("0", "false", "no"))
 
 
