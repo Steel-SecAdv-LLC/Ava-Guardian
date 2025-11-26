@@ -14,15 +14,24 @@ Enterprise-grade key management with:
 - Hardware-backed key support (HSM/TPM ready)
 """
 
+import base64
 import hashlib
 import hmac
 import json
+import os
 import secrets
+import warnings
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
+
+
+class SecurityWarning(UserWarning):
+    """Warning for security-related issues."""
+
+    pass
 
 
 class KeyStatus(Enum):
@@ -439,6 +448,14 @@ class SecureKeyStorage:
 
     Stores keys encrypted with a master password or HSM-backed key.
     Supports both software and hardware-backed storage.
+
+    Security Features:
+        - AES-256-GCM authenticated encryption (integrity + confidentiality)
+        - PBKDF2-HMAC-SHA256 with 600,000 iterations (OWASP 2024)
+        - Per-installation random salt (32 bytes)
+        - Secure file permissions (0600)
+        - KDF versioning for future algorithm upgrades
+        - Backward compatibility with legacy AES-CFB encrypted keys
     """
 
     def __init__(self, storage_path: Path, master_password: Optional[str] = None):
@@ -452,62 +469,212 @@ class SecureKeyStorage:
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
+        # Key derivation parameters (versioned for future upgrades)
+        self.KDF_VERSION = 2
+        self.KDF_ITERATIONS = 600000  # OWASP 2024 recommendation
+
+        # Salt file with secure permissions
+        self.salt_file = self.storage_path / ".salt"
+        self.metadata_file = self.storage_path / ".kdf_metadata.json"
+
         if master_password:
-            # Derive encryption key from password
-            self.encryption_key = hashlib.pbkdf2_hmac(
-                "sha256", master_password.encode("utf-8"), b"ava_guardian_salt", 100000, 32
-            )
+            self._derive_key_from_password(master_password)
         else:
             # Generate random encryption key (should be HSM-backed in production)
             self.encryption_key = secrets.token_bytes(32)
+            self.salt: Optional[bytes] = None  # No salt needed for random key
+
+    def _derive_key_from_password(self, master_password: str) -> None:
+        """Derive encryption key from password with proper salt handling."""
+        # Check for existing salt (migration support)
+        if self.salt_file.exists():
+            with open(self.salt_file, "rb") as f:
+                self.salt = f.read()
+
+            # Load metadata to get iteration count
+            if self.metadata_file.exists():
+                with open(self.metadata_file, "r") as f:
+                    metadata = json.load(f)
+                iterations = metadata.get("iterations", 100000)  # Legacy default
+                version = metadata.get("version", 1)
+            else:
+                # Legacy mode: no metadata means old 100k iterations
+                iterations = 100000
+                version = 1
+        else:
+            # New installation: generate random salt
+            self.salt = secrets.token_bytes(32)
+
+            # Save salt with secure permissions (0600)
+            with open(self.salt_file, "wb") as f:
+                f.write(self.salt)
+            os.chmod(self.salt_file, 0o600)
+
+            # Save KDF metadata
+            metadata = {
+                "version": self.KDF_VERSION,
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "iterations": self.KDF_ITERATIONS,
+                "salt_bytes": 32,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+            with open(self.metadata_file, "w") as f:
+                json.dump(metadata, f, indent=2)
+            os.chmod(self.metadata_file, 0o600)
+            iterations = self.KDF_ITERATIONS
+            version = self.KDF_VERSION
+
+        self.encryption_key = hashlib.pbkdf2_hmac(
+            "sha256",
+            master_password.encode("utf-8"),
+            self.salt,
+            iterations,
+            32,
+        )
+
+        # Warn if using legacy parameters
+        if version < 2:
+            warnings.warn(
+                f"SecureKeyStorage using legacy KDF v{version} with {iterations} iterations. "
+                "Run migrate_kdf() to upgrade to current security standards.",
+                SecurityWarning,
+            )
+
+    def migrate_kdf(self, master_password: str) -> bool:
+        """
+        Migrate to current KDF parameters.
+
+        Re-encrypts all stored keys with new salt and iteration count.
+        Returns True on success.
+        """
+        if not self.salt_file.exists():
+            return False  # Nothing to migrate
+
+        # Read all existing keys with old parameters
+        old_keys: Dict[str, Tuple[bytes, Dict]] = {}
+        for key_file in self.storage_path.glob("*.json"):
+            if key_file.name.startswith("."):
+                continue
+            key_id = key_file.stem
+            key_data = self.retrieve_key(key_id)
+            if key_data:
+                with open(key_file, "r") as f:
+                    metadata = json.load(f).get("metadata", {})
+                old_keys[key_id] = (key_data, metadata)
+
+        # Generate new salt
+        new_salt = secrets.token_bytes(32)
+
+        # Derive new key
+        new_encryption_key = hashlib.pbkdf2_hmac(
+            "sha256",
+            master_password.encode("utf-8"),
+            new_salt,
+            self.KDF_ITERATIONS,
+            32,
+        )
+
+        # Re-encrypt all keys
+        old_key = self.encryption_key
+        self.encryption_key = new_encryption_key
+        self.salt = new_salt
+
+        try:
+            for key_id, (key_data, metadata) in old_keys.items():
+                self.store_key(key_id, key_data, metadata)
+
+            # Update salt file
+            with open(self.salt_file, "wb") as f:
+                f.write(new_salt)
+            os.chmod(self.salt_file, 0o600)
+
+            # Update metadata
+            metadata = {
+                "version": self.KDF_VERSION,
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "iterations": self.KDF_ITERATIONS,
+                "salt_bytes": 32,
+                "migrated_at": datetime.now(timezone.utc).isoformat(),
+            }
+            with open(self.metadata_file, "w") as f:
+                json.dump(metadata, f, indent=2)
+
+            return True
+        except Exception:
+            # Rollback on failure
+            self.encryption_key = old_key
+            raise
+
+    @classmethod
+    def from_existing(cls, storage_path: Path, master_password: str) -> "SecureKeyStorage":
+        """Recover storage instance from existing salt file."""
+        storage = cls.__new__(cls)
+        storage.storage_path = Path(storage_path)
+        storage.KDF_VERSION = 2
+        storage.KDF_ITERATIONS = 600000
+        storage.salt_file = storage.storage_path / ".salt"
+        storage.metadata_file = storage.storage_path / ".kdf_metadata.json"
+
+        if not storage.salt_file.exists():
+            raise FileNotFoundError(f"Salt file not found: {storage.salt_file}")
+
+        storage._derive_key_from_password(master_password)
+        return storage
 
     def store_key(self, key_id: str, key_data: bytes, metadata: Optional[Dict] = None) -> None:
         """
-        Store a key securely
+        Store key with AES-256-GCM authenticated encryption.
 
         Args:
-            key_id: Key identifier
+            key_id: Key identifier (also used as associated data for authentication)
             key_data: Key bytes (will be encrypted)
             metadata: Optional metadata
+
+        Raises:
+            ValueError: If key_id is empty or contains invalid characters
         """
-        from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-        # Generate random IV
-        iv = secrets.token_bytes(16)
+        # Validate key_id
+        if not key_id or not key_id.replace("-", "").replace("_", "").isalnum():
+            raise ValueError("key_id must be non-empty alphanumeric (with - and _ allowed)")
 
-        # Encrypt key data
-        cipher = Cipher(
-            algorithms.AES(self.encryption_key), modes.CFB(iv), backend=default_backend()
-        )
-        encryptor = cipher.encryptor()
-        encrypted_data = encryptor.update(key_data) + encryptor.finalize()
+        nonce = secrets.token_bytes(12)  # 96-bit nonce for GCM (NIST recommended)
+        aesgcm = AESGCM(self.encryption_key)
 
-        # Store with IV and metadata
+        # Encrypt with key_id as associated data (binds ciphertext to key_id)
+        ciphertext = aesgcm.encrypt(nonce, key_data, key_id.encode("utf-8"))
+
         storage_data = {
             "key_id": key_id,
-            "encrypted_data": encrypted_data.hex(),
-            "iv": iv.hex(),
+            "ciphertext": base64.b64encode(ciphertext).decode("ascii"),
+            "nonce": base64.b64encode(nonce).decode("ascii"),
+            "algorithm": "AES-256-GCM",
+            "version": 2,  # Storage format version
             "metadata": metadata or {},
-            "stored_at": datetime.now().isoformat(),
+            "stored_at": datetime.now(timezone.utc).isoformat(),
         }
 
         key_file = self.storage_path / f"{key_id}.json"
         with open(key_file, "w") as f:
             json.dump(storage_data, f, indent=2)
+        os.chmod(key_file, 0o600)
 
     def retrieve_key(self, key_id: str) -> Optional[bytes]:
         """
-        Retrieve and decrypt a stored key
+        Retrieve and decrypt key with authentication verification.
 
         Args:
             key_id: Key identifier
 
         Returns:
             Decrypted key bytes or None if not found
+
+        Raises:
+            cryptography.exceptions.InvalidTag: If authentication fails (tampering detected)
+            ValueError: For unknown encryption algorithms
         """
-        from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
         key_file = self.storage_path / f"{key_id}.json"
         if not key_file.exists():
@@ -516,17 +683,39 @@ class SecureKeyStorage:
         with open(key_file, "r") as f:
             storage_data = json.load(f)
 
-        # Decrypt key data
-        encrypted_data = bytes.fromhex(storage_data["encrypted_data"])
-        iv = bytes.fromhex(storage_data["iv"])
+        algorithm = storage_data.get("algorithm", "AES-256-CFB")  # Legacy default
 
-        cipher = Cipher(
-            algorithms.AES(self.encryption_key), modes.CFB(iv), backend=default_backend()
-        )
-        decryptor = cipher.decryptor()
-        key_data = decryptor.update(encrypted_data) + decryptor.finalize()
+        if algorithm == "AES-256-GCM":
+            ciphertext = base64.b64decode(storage_data["ciphertext"])
+            nonce = base64.b64decode(storage_data["nonce"])
 
-        return key_data
+            aesgcm = AESGCM(self.encryption_key)
+            # Decrypt with authentication (will raise InvalidTag if tampered)
+            plaintext = aesgcm.decrypt(nonce, ciphertext, key_id.encode("utf-8"))
+            return plaintext
+
+        elif algorithm == "AES-256-CFB":
+            # Legacy support - decrypt old format
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+            warnings.warn(
+                f"Key '{key_id}' uses legacy AES-CFB encryption. "
+                "Re-store this key to upgrade to AES-GCM.",
+                SecurityWarning,
+            )
+
+            encrypted_data = bytes.fromhex(storage_data["encrypted_data"])
+            iv = bytes.fromhex(storage_data["iv"])
+
+            cipher = Cipher(
+                algorithms.AES(self.encryption_key), modes.CFB(iv), backend=default_backend()
+            )
+            decryptor = cipher.decryptor()
+            return decryptor.update(encrypted_data) + decryptor.finalize()
+
+        else:
+            raise ValueError(f"Unknown encryption algorithm: {algorithm}")
 
     def delete_key(self, key_id: str) -> bool:
         """
@@ -546,6 +735,327 @@ class SecureKeyStorage:
             key_file.unlink()
             return True
         return False
+
+
+class HSMKeyStorage:
+    """
+    Hardware Security Module key storage via PKCS#11.
+
+    Provides FIPS 140-2 Level 3 compliant key storage for production deployments.
+    Keys generated inside HSM never leave the hardware in plaintext.
+
+    Supported devices:
+        - YubiKey 5 Series (libykcs11.so)
+        - Nitrokey HSM/Pro (libsc-hsm-pkcs11.so)
+        - SoftHSM2 (for development/testing)
+        - AWS CloudHSM (via PKCS#11 library)
+        - Thales Luna (via libCryptoki2.so)
+
+    Example:
+        >>> with HSMKeyStorage("softhsm", pin="1234") as hsm:
+        ...     key_handle = hsm.generate_aes_key("my-key", 256)
+        ...     nonce, ct, tag = hsm.encrypt(key_handle, b"secret data")
+        ...     plaintext = hsm.decrypt(key_handle, nonce, ct, tag)
+    """
+
+    PKCS11_PATHS = {
+        "yubikey": [
+            "/usr/lib/x86_64-linux-gnu/libykcs11.so",
+            "/usr/local/lib/libykcs11.so",
+            "/Library/OpenSC/lib/libykcs11.dylib",  # macOS
+        ],
+        "nitrokey": [
+            "/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so",
+            "/usr/lib/pkcs11/opensc-pkcs11.so",
+        ],
+        "softhsm": [
+            "/usr/lib/softhsm/libsofthsm2.so",
+            "/usr/local/lib/softhsm/libsofthsm2.so",
+            "/opt/homebrew/lib/softhsm/libsofthsm2.so",  # macOS ARM
+        ],
+        "aws-cloudhsm": [
+            "/opt/cloudhsm/lib/libcloudhsm_pkcs11.so",
+        ],
+        "thales-luna": [
+            "/usr/safenet/lunaclient/lib/libCryptoki2.so",
+        ],
+    }
+
+    def __init__(
+        self,
+        hsm_type: str = "softhsm",
+        library_path: Optional[str] = None,
+        token_label: str = "AvaGuardian",
+        pin: Optional[str] = None,
+        slot_index: Optional[int] = None,
+    ):
+        """
+        Initialize HSM connection.
+
+        Args:
+            hsm_type: Type of HSM (yubikey, nitrokey, softhsm, aws-cloudhsm, thales-luna)
+            library_path: Override path to PKCS#11 library
+            token_label: Token label to use (must exist on HSM)
+            pin: User PIN (will prompt if not provided)
+            slot_index: Specific slot index to use (auto-detect if None)
+
+        Raises:
+            ImportError: If PyKCS11 is not installed
+            ValueError: If HSM type is unknown
+            RuntimeError: If token not found or login fails
+        """
+        try:
+            import PyKCS11
+
+            self.pkcs11 = PyKCS11
+        except ImportError:
+            raise ImportError(
+                "HSM support requires PyKCS11. Install with: pip install ava-guardian[hsm]"
+            )
+
+        # Find library path
+        self.library_path = library_path
+        if not self.library_path:
+            paths = self.PKCS11_PATHS.get(hsm_type)
+            if not paths:
+                raise ValueError(
+                    f"Unknown HSM type: {hsm_type}. "
+                    f"Supported: {', '.join(self.PKCS11_PATHS.keys())}"
+                )
+            for path in paths:
+                if os.path.exists(path):
+                    self.library_path = path
+                    break
+            if not self.library_path:
+                raise RuntimeError(
+                    f"PKCS#11 library not found for {hsm_type}. " f"Searched: {paths}"
+                )
+
+        # Load library
+        self.lib = self.pkcs11.PyKCS11Lib()
+        try:
+            self.lib.load(self.library_path)
+        except self.pkcs11.PyKCS11Error as e:
+            raise RuntimeError(f"Failed to load PKCS#11 library: {e}")
+
+        # Find token slot
+        slots = self.lib.getSlotList(tokenPresent=True)
+        if not slots:
+            raise RuntimeError("No HSM tokens found. Is the device connected?")
+
+        self.slot = None
+        if slot_index is not None:
+            if slot_index < len(slots):
+                self.slot = slots[slot_index]
+            else:
+                raise ValueError(f"Slot index {slot_index} out of range (0-{len(slots) - 1})")
+        else:
+            for slot in slots:
+                try:
+                    info = self.lib.getTokenInfo(slot)
+                    if info.label.strip() == token_label:
+                        self.slot = slot
+                        break
+                except self.pkcs11.PyKCS11Error:
+                    continue
+
+        if self.slot is None:
+            available = [self.lib.getTokenInfo(s).label.strip() for s in slots]
+            raise RuntimeError(
+                f"Token '{token_label}' not found. " f"Available tokens: {available}"
+            )
+
+        # Open session
+        try:
+            self.session = self.lib.openSession(
+                self.slot, self.pkcs11.CKF_SERIAL_SESSION | self.pkcs11.CKF_RW_SESSION
+            )
+        except self.pkcs11.PyKCS11Error as e:
+            raise RuntimeError(f"Failed to open HSM session: {e}")
+
+        # Login
+        if pin is None:
+            import getpass
+
+            pin = getpass.getpass(f"Enter PIN for HSM token '{token_label}': ")
+
+        try:
+            self.session.login(pin)
+        except self.pkcs11.PyKCS11Error as e:
+            self.session.closeSession()
+            if "CKR_PIN_INCORRECT" in str(e):
+                raise RuntimeError("Invalid PIN")
+            raise RuntimeError(f"HSM login failed: {e}")
+
+        self._logged_in = True
+
+    def generate_aes_key(
+        self,
+        key_label: str,
+        key_size: int = 256,
+        extractable: bool = False,
+    ) -> bytes:
+        """
+        Generate AES key inside HSM (never leaves hardware if extractable=False).
+
+        Args:
+            key_label: Label for the key (must be unique)
+            key_size: Key size in bits (128, 192, or 256)
+            extractable: Whether key can be exported (False for maximum security)
+
+        Returns:
+            Key handle (8 bytes) for referencing the key
+
+        Raises:
+            ValueError: If key_size is invalid
+            RuntimeError: If key generation fails
+        """
+        if key_size not in (128, 192, 256):
+            raise ValueError(f"Invalid key size: {key_size}. Must be 128, 192, or 256.")
+
+        CKA = self.pkcs11.CKA
+        CKM = self.pkcs11.CKM
+
+        template = [
+            (CKA.CLASS, self.pkcs11.CKO_SECRET_KEY),
+            (CKA.KEY_TYPE, self.pkcs11.CKK_AES),
+            (CKA.VALUE_LEN, key_size // 8),
+            (CKA.LABEL, key_label),
+            (CKA.TOKEN, True),  # Persist on token
+            (CKA.PRIVATE, True),  # Require login
+            (CKA.SENSITIVE, True),  # Never reveal in plaintext
+            (CKA.EXTRACTABLE, extractable),
+            (CKA.ENCRYPT, True),
+            (CKA.DECRYPT, True),
+            (CKA.WRAP, True),  # Can wrap other keys
+            (CKA.UNWRAP, True),  # Can unwrap other keys
+        ]
+
+        try:
+            handle = self.session.generateKey(self.pkcs11.Mechanism(CKM.AES_KEY_GEN), template)
+            return handle.to_bytes(8, "big")
+        except self.pkcs11.PyKCS11Error as e:
+            raise RuntimeError(f"Failed to generate AES key: {e}")
+
+    def find_key(self, key_label: str) -> Optional[bytes]:
+        """
+        Find existing key by label.
+
+        Returns:
+            Key handle (8 bytes) or None if not found
+        """
+        CKA = self.pkcs11.CKA
+
+        template = [
+            (CKA.CLASS, self.pkcs11.CKO_SECRET_KEY),
+            (CKA.LABEL, key_label),
+        ]
+
+        try:
+            objects = self.session.findObjects(template)
+            if objects:
+                return objects[0].to_bytes(8, "big")
+            return None
+        except self.pkcs11.PyKCS11Error:
+            return None
+
+    def encrypt(self, key_handle: bytes, plaintext: bytes) -> Tuple[bytes, bytes, bytes]:
+        """
+        Encrypt using HSM-stored key with AES-GCM.
+
+        Args:
+            key_handle: Handle from generate_aes_key or find_key
+            plaintext: Data to encrypt
+
+        Returns:
+            Tuple of (nonce, ciphertext, tag)
+        """
+        nonce = secrets.token_bytes(12)
+        handle = int.from_bytes(key_handle, "big")
+
+        try:
+            mechanism = self.pkcs11.AES_GCM_Mechanism(nonce=nonce, tagBits=128)
+            ciphertext_with_tag = bytes(self.session.encrypt(handle, plaintext, mechanism))
+
+            # GCM appends the tag to ciphertext
+            ciphertext = ciphertext_with_tag[:-16]
+            tag = ciphertext_with_tag[-16:]
+
+            return nonce, ciphertext, tag
+        except self.pkcs11.PyKCS11Error as e:
+            raise RuntimeError(f"HSM encryption failed: {e}")
+
+    def decrypt(
+        self,
+        key_handle: bytes,
+        nonce: bytes,
+        ciphertext: bytes,
+        tag: bytes,
+    ) -> bytes:
+        """
+        Decrypt using HSM-stored key with AES-GCM.
+
+        Args:
+            key_handle: Handle from generate_aes_key or find_key
+            nonce: Nonce from encryption
+            ciphertext: Encrypted data
+            tag: Authentication tag
+
+        Returns:
+            Decrypted plaintext
+
+        Raises:
+            RuntimeError: If decryption or authentication fails
+        """
+        handle = int.from_bytes(key_handle, "big")
+
+        try:
+            mechanism = self.pkcs11.AES_GCM_Mechanism(nonce=nonce, tagBits=128)
+            plaintext = bytes(self.session.decrypt(handle, ciphertext + tag, mechanism))
+            return plaintext
+        except self.pkcs11.PyKCS11Error as e:
+            if "CKR_ENCRYPTED_DATA_INVALID" in str(e):
+                raise RuntimeError("Decryption failed: authentication tag mismatch (data tampered)")
+            raise RuntimeError(f"HSM decryption failed: {e}")
+
+    def delete_key(self, key_handle: bytes) -> bool:
+        """
+        Delete key from HSM.
+
+        Returns:
+            True if deleted, False if not found
+        """
+        handle = int.from_bytes(key_handle, "big")
+
+        try:
+            self.session.destroyObject(handle)
+            return True
+        except self.pkcs11.PyKCS11Error:
+            return False
+
+    def close(self) -> None:
+        """Close HSM session and logout."""
+        if hasattr(self, "_logged_in") and self._logged_in:
+            try:
+                self.session.logout()
+            except Exception:
+                pass
+            self._logged_in = False
+
+        if hasattr(self, "session"):
+            try:
+                self.session.closeSession()
+            except Exception:
+                pass
+
+    def __enter__(self) -> "HSMKeyStorage":
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        self.close()
 
 
 # Example usage
