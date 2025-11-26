@@ -80,6 +80,8 @@ WORKDIR /app
 # Copy examples and documentation
 COPY --chown=ava:ava examples/ /app/examples/
 COPY --chown=ava:ava README.md LICENSE /app/
+# Copy monitor and benchmark scripts to /app for docker-compose services
+COPY --chown=ava:ava ava_guardian_monitor_demo.py benchmark_suite.py /app/
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \

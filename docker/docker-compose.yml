@@ -33,7 +33,7 @@ services:
     image: ava-guardian:latest
     container_name: ava-guardian-monitor
     restart: unless-stopped
-    command: python3 /app/examples/ava_guardian_monitor_demo.py
+    command: python3 /app/ava_guardian_monitor_demo.py
     volumes:
       - ../data:/data
       - ../logs:/var/log/ava-guardian
@@ -46,7 +46,7 @@ services:
   ava-benchmark:
     image: ava-guardian:latest
     container_name: ava-guardian-benchmark
-    command: python3 /app/examples/benchmark_suite.py
+    command: python3 /app/benchmark_suite.py
     volumes:
       - ../data:/data
       - ../benchmarks:/app/benchmarks

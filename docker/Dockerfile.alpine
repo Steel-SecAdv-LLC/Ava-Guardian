@@ -17,7 +17,8 @@ RUN apk add --no-cache \
 WORKDIR /build
 COPY . .
 
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Install both runtime and dev dependencies for Cython/PQC builds
+RUN pip3 install --no-cache-dir -r requirements.txt -r requirements-dev.txt
 
 RUN mkdir build && cd build && \
     cmake .. \

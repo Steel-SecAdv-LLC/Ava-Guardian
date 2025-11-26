@@ -285,7 +285,8 @@ setup(
         'scipy>=1.11.0; python_version >= "3.9"',
     ],
     extras_require={
-        "quantum": ["oqs>=0.10.0,<0.11.0"],
+        # Note: The PyPI package is 'liboqs-python' which provides the 'oqs' module
+        "quantum": ["liboqs-python>=0.10.0,<0.11.0"],
         "quantum-alt": ["pqcrypto>=0.1.3,<0.2.0"],
         "dev": [
             "pytest>=7.0.0",
@@ -303,7 +304,7 @@ setup(
             "sphinx-autodoc-typehints>=1.22.0",
         ],
         "all": [
-            "oqs>=0.10.0,<0.11.0",
+            "liboqs-python>=0.10.0,<0.11.0",
             "pytest>=7.0.0",
             "pytest-cov>=4.0.0",
             "pytest-benchmark>=4.0.0",
