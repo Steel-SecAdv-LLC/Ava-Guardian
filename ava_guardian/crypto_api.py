@@ -28,7 +28,7 @@ import secrets
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from ava_guardian.pqc_backends import (
     DILITHIUM_AVAILABLE,
@@ -968,16 +968,16 @@ class CryptoPackageResult:
 
     content_hash: str
     primary_signature: Signature
-    sphincs_signature: Signature | None
-    kem_ciphertext: bytes | None
-    kem_shared_secret: bytes | None
+    sphincs_signature: Optional[Signature]
+    kem_ciphertext: Optional[bytes]
+    kem_shared_secret: Optional[bytes]
     keypairs: Dict[str, KeyPair]
     metadata: Dict[str, Any]
 
 
 def create_crypto_package(
     content: bytes,
-    config: CryptoPackageConfig | None = None,
+    config: Optional[CryptoPackageConfig] = None,
 ) -> CryptoPackageResult:
     """
     Create a cryptographic package with configurable algorithm selection.
@@ -1034,9 +1034,9 @@ def create_crypto_package(
 
     # Initialize result containers
     keypairs: Dict[str, KeyPair] = {}
-    sphincs_signature: Signature | None = None
-    kem_ciphertext: bytes | None = None
-    kem_shared_secret: bytes | None = None
+    sphincs_signature: Optional[Signature] = None
+    kem_ciphertext: Optional[bytes] = None
+    kem_shared_secret: Optional[bytes] = None
 
     # Generate primary signature
     primary_crypto = AvaGuardianCrypto(algorithm=config.signature_algorithm)
