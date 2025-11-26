@@ -42,7 +42,7 @@
 
 Ava Guardian ♱ (AG♱) is a production-grade, multi-language cryptographic security system designed to protect people, data, and networks against both classical and quantum threats. Built on a foundation of mathematically rigorous post-quantum cryptography (PQC), AG♱ delivers enterprise-ready features with exceptional performance.
 
-Novel in assimilation, the system combines cutting-edge NIST-approved post-quantum algorithms with a unique 3R runtime security monitoring framework, creating a defense-in-depth architecture that provides unprecedented visibility into cryptographic operations while maintaining less than 2% performance overhead. The multi-language architecture (C + Cython + Python) enables both maximum security through constant-time implementations and optimal performance through 18-37x Cython acceleration, making it suitable for environments ranging from high-security government applications to performance-critical enterprise systems.
+Novel in assimilation, the system combines cutting-edge NIST-approved post-quantum algorithms with a unique 3R runtime security monitoring framework, creating a defense-in-depth architecture that provides unprecedented visibility into cryptographic operations while maintaining less than 2% performance overhead. The multi-language architecture (C + Cython + Python) enables both maximum security through constant-time implementations and optional Cython acceleration (18-37x speedup when built), making it suitable for environments ranging from high-security government applications to performance-critical enterprise systems.
 
 > **Security Disclosure:** This is a self-assessed cryptographic implementation without third-party audit. Production use REQUIRES:
 > - FIPS 140-2 Level 3+ HSM for master secrets (no software-only keys in high-security environments)
@@ -96,7 +96,7 @@ AG♱ addresses all three challenges through:
 
 - **Quantum Resistance**: NIST-approved ML-DSA-65 (FIPS 204) and Kyber-1024 (FIPS 203) provide 50+ years of protection
 - **Transparent Security**: 3R monitoring (Resonance-Recursion-Refactoring) provides real-time cryptographic operation analysis
-- **Optimized Performance**: Cython acceleration delivers 18-37x speedup over pure Python, making PQC practical
+- **Optimized Performance**: Cython acceleration available (manual build required); benchmarked at 18-37x speedup over pure Python baseline
 
 ### Target Use Cases
 
@@ -197,7 +197,7 @@ Future-proof cryptography:
 **Unique Value:** Transaction security with real-time anomaly detection
 
 - **Quantum-Resistant Signatures**: ML-DSA-65 signatures on transactions remain valid even after quantum computers exist.
-- **High-Frequency Trading**: Cython-optimized operations (18-37x speedup) with sub-millisecond signature verification.
+- **High-Frequency Trading**: Cython-optimized operations available (18-37x speedup when built) with sub-millisecond signature verification.
 - **Anomaly Detection**: 3R timing analysis surfaces anomalous cryptographic behavior that may indicate potential attacks.
 - **Audit Compliance**: Complete cryptographic audit trail with ethical constraint enforcement.
 - **Long-term Archival**: Financial records with 50+ year security guarantees.
