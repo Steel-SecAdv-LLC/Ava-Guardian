@@ -85,7 +85,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # Pygments style
 pygments_style = "sphinx"
 
-# TODO settings
+# Sphinx TODO extension settings
 todo_include_todos = True
 
 # HTML output options
