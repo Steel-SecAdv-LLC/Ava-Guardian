@@ -1043,7 +1043,11 @@ def get_rfc3161_timestamp(data: bytes, tsa_url: str = None) -> Optional[bytes]:
 
     try:
         # Create timestamp request using OpenSSL
-        # Try to use OpenSSL ts command
+        # NOTE: SHA-256 is used here instead of SHA3-256 for TSA compatibility.
+        # Most RFC 3161 TSA services (FreeTSA, DigiCert, GlobalSign) do not support
+        # SHA3-256. This is a deliberate design choice for interoperability.
+        # The timestamp token itself provides proof-of-existence, and the SHA-256
+        # hash is only used for the TSA request, not for the package integrity.
         cmd_query = ["openssl", "ts", "-query", "-data", "-", "-sha256", "-no_nonce"]
 
         proc = subprocess.run(cmd_query, input=data, capture_output=True, timeout=10)

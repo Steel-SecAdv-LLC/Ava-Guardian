@@ -157,6 +157,20 @@ AG applies six independent cryptographic layers:
 
 **Combined Security:** Breaking all layers requires ~2^724 classical operations or ~2^644 quantum operations.
 
+### Hash Algorithm Note: RFC 3161 Timestamps
+
+The RFC 3161 timestamp layer uses **SHA-256** instead of SHA3-256 for the TSA request. This is a deliberate design choice for interoperability:
+
+- Most RFC 3161 TSA services (FreeTSA, DigiCert, GlobalSign) do not support SHA3-256
+- The timestamp token provides proof-of-existence at a specific time
+- The SHA-256 hash is only used for the TSA request, not for package integrity
+- Package integrity is protected by SHA3-256 in layers 2-5
+
+This does not weaken security because:
+1. The timestamp proves when the package existed, not its integrity
+2. Package integrity is independently verified by SHA3-256, HMAC, and signatures
+3. SHA-256 remains secure for collision resistance (no practical attacks)
+
 ## Implementation Notes
 
 ### Constant-Time Operations
