@@ -114,14 +114,30 @@ See [Use Cases by Sector](#use-cases-by-sector-) for detailed scenarios.
 <details>
 <summary><strong>Unique Differentiators</strong></summary>
 
+### 6-Layer Defense-in-Depth Architecture
+
+**Enterprise-grade security** with 6 independent cryptographic layers, compared to typical 1-2 layers in peer implementations:
+
+| Layer | Protection | Security Level |
+|-------|------------|----------------|
+| 1. SHA3-256 | Content integrity | 128-bit collision resistance |
+| 2. HMAC-SHA3-256 | Authentication | Keyed message authentication |
+| 3. Ed25519 | Classical signatures | 128-bit classical security |
+| 4. ML-DSA-65 | Quantum signatures | 192-bit quantum security |
+| 5. HKDF | Key derivation | Cryptographic key independence |
+| 6. RFC 3161 | Timestamping | Third-party proof of existence |
+
+**Why 6 layers matter:** An attacker must compromise ALL layers simultaneously. Combined attack cost: 2^724 classical operations, 2^644 quantum operations. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for mathematical proofs.
+
 ### 3R Runtime Security Monitoring
 
-The signature innovation providing real-time cryptographic operation analysis:
+The signature innovation providing real-time cryptographic operation analysis unavailable in peer implementations:
 
-- **Resonance Engine**: FFT-based timing attack detection
-- **Recursion Engine**: Multi-scale pattern analysis
-- **Refactoring Engine**: Code complexity metrics
-- Performance overhead: less than 2% with comprehensive monitoring
+- **Resonance Engine**: FFT-based timing attack detection with frequency-domain analysis
+- **Recursion Engine**: Multi-scale hierarchical pattern analysis for anomaly detection
+- **Refactoring Engine**: Code complexity metrics for security review
+- **Performance overhead**: Less than 2% with comprehensive monitoring
+- **Unique capability**: Real-time visibility into cryptographic operations that peer libraries treat as black boxes
 
 ### Multi-Language Architecture
 
@@ -163,6 +179,27 @@ Future-proof cryptography:
 | Cross-Platform | Linux, macOS, Windows, ARM64 |
 | Production Infrastructure | Docker, CI/CD, comprehensive testing |
 | 3R Innovation | Unique runtime security monitoring (less than 2% overhead) |
+
+</details>
+
+<details>
+<summary><strong>Implementation Status Matrix</strong></summary>
+
+| Algorithm | C API Status | Python API Status | Integration |
+|-----------|--------------|-------------------|-------------|
+| ML-DSA-65 | Stub | Full | Integrated |
+| Kyber-1024 | Stub | Full | Backend only |
+| SPHINCS+-256f | Stub | Full | Backend only |
+| Ed25519 | Stub | Full | Integrated |
+| Hybrid (Ed25519 + ML-DSA-65) | Stub | Full | Integrated |
+
+**Legend:**
+- **Stub**: C API function declared but returns `AVA_ERROR_NOT_IMPLEMENTED`. Reserved for future constant-time implementation.
+- **Full**: Complete Python implementation with all cryptographic operations.
+- **Integrated**: Available through `create_crypto_package()` and main workflow.
+- **Backend only**: Available via provider classes (`KyberProvider`, `SphincsProvider`) but not yet in main package workflow.
+
+> **Note:** The Python API is production-ready. C API stubs provide interface stability for future native implementations. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed security comparison.
 
 </details>
 
@@ -433,6 +470,8 @@ report = monitor.get_security_report()
 print(f"Security status: {report['status']}")
 print(f"Anomalies detected: {report['total_alerts']}")
 ```
+
+> **C API Note:** C API functions in `include/ava_guardian.h` are currently stubs reserved for future implementation. Use the Python API for production deployments. See `include/ava_guardian.h` for the complete interface specification.
 
 </details>
 

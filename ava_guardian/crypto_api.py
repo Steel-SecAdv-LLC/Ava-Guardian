@@ -928,6 +928,224 @@ def get_pqc_capabilities() -> Dict[str, Any]:
     }
 
 
+@dataclass
+class CryptoPackageConfig:
+    """
+    Configuration for create_crypto_package() algorithm selection.
+
+    Attributes:
+        use_kyber: Enable Kyber-1024 for key encapsulation (default: False)
+        use_sphincs: Enable SPHINCS+-256f for signatures (default: False)
+        signature_algorithm: Primary signature algorithm (default: HYBRID_SIG)
+        include_kem: Include KEM encapsulation in package (default: False)
+
+    Note:
+        - Kyber-1024 requires liboqs-python backend
+        - SPHINCS+-256f requires liboqs-python backend
+        - When use_sphincs=True, SPHINCS+ signature is added alongside primary signature
+    """
+
+    use_kyber: bool = False
+    use_sphincs: bool = False
+    signature_algorithm: AlgorithmType = AlgorithmType.HYBRID_SIG
+    include_kem: bool = False
+
+
+@dataclass
+class CryptoPackageResult:
+    """
+    Result from create_crypto_package() containing all cryptographic artifacts.
+
+    Attributes:
+        content_hash: SHA3-256 hash of the content (hex)
+        primary_signature: Primary signature from selected algorithm
+        sphincs_signature: Optional SPHINCS+-256f signature (if enabled)
+        kem_ciphertext: Optional Kyber-1024 ciphertext (if KEM enabled)
+        kem_shared_secret: Optional shared secret from KEM (if enabled)
+        keypairs: Dictionary of generated keypairs by algorithm
+        metadata: Additional package metadata
+    """
+
+    content_hash: str
+    primary_signature: Signature
+    sphincs_signature: Signature | None
+    kem_ciphertext: bytes | None
+    kem_shared_secret: bytes | None
+    keypairs: Dict[str, KeyPair]
+    metadata: Dict[str, Any]
+
+
+def create_crypto_package(
+    content: bytes,
+    config: CryptoPackageConfig | None = None,
+) -> CryptoPackageResult:
+    """
+    Create a cryptographic package with configurable algorithm selection.
+
+    This function provides a unified interface for creating cryptographic
+    packages with support for:
+    - ML-DSA-65 (Dilithium) signatures
+    - Ed25519 classical signatures
+    - Hybrid signatures (Ed25519 + ML-DSA-65)
+    - Kyber-1024 key encapsulation (optional)
+    - SPHINCS+-256f signatures (optional)
+
+    Args:
+        content: The content to sign/protect (bytes)
+        config: Algorithm configuration (default: hybrid signatures only)
+
+    Returns:
+        CryptoPackageResult with all cryptographic artifacts
+
+    Raises:
+        PQCUnavailableError: If required PQC algorithm is not available
+        KyberUnavailableError: If Kyber is requested but not available
+        SphincsUnavailableError: If SPHINCS+ is requested but not available
+
+    Example:
+        >>> # Basic usage with hybrid signatures
+        >>> result = create_crypto_package(b"Hello, World!")
+        >>> print(f"Hash: {result.content_hash}")
+
+        >>> # With Kyber-1024 KEM
+        >>> config = CryptoPackageConfig(use_kyber=True, include_kem=True)
+        >>> result = create_crypto_package(b"Sensitive data", config)
+        >>> print(f"KEM ciphertext: {len(result.kem_ciphertext)} bytes")
+
+        >>> # With SPHINCS+-256f additional signature
+        >>> config = CryptoPackageConfig(use_sphincs=True)
+        >>> result = create_crypto_package(b"Long-term data", config)
+        >>> print(f"SPHINCS+ sig: {len(result.sphincs_signature.signature)} bytes")
+
+        >>> # Full quantum-resistant package
+        >>> config = CryptoPackageConfig(
+        ...     use_kyber=True,
+        ...     use_sphincs=True,
+        ...     include_kem=True,
+        ...     signature_algorithm=AlgorithmType.ML_DSA_65
+        ... )
+        >>> result = create_crypto_package(b"Maximum security", config)
+    """
+    if config is None:
+        config = CryptoPackageConfig()
+
+    # Compute content hash
+    content_hash = hashlib.sha3_256(content).hexdigest()
+
+    # Initialize result containers
+    keypairs: Dict[str, KeyPair] = {}
+    sphincs_signature: Signature | None = None
+    kem_ciphertext: bytes | None = None
+    kem_shared_secret: bytes | None = None
+
+    # Generate primary signature
+    primary_crypto = AvaGuardianCrypto(algorithm=config.signature_algorithm)
+    primary_keypair = primary_crypto.generate_keypair()
+    primary_signature = primary_crypto.sign(content, primary_keypair.secret_key)
+    keypairs[config.signature_algorithm.name] = primary_keypair
+
+    # Generate SPHINCS+ signature if requested
+    if config.use_sphincs:
+        if not SPHINCS_AVAILABLE:
+            raise SphincsUnavailableError(
+                "SPHINCS_UNAVAILABLE: SPHINCS+-256f backend not available. "
+                "Install liboqs-python: pip install liboqs-python"
+            )
+        sphincs_provider = SphincsProvider()
+        sphincs_keypair = sphincs_provider.generate_keypair()
+        sphincs_signature = sphincs_provider.sign(content, sphincs_keypair.secret_key)
+        keypairs["SPHINCS_256F"] = sphincs_keypair
+
+    # Generate Kyber KEM if requested
+    if config.use_kyber and config.include_kem:
+        if not KYBER_AVAILABLE:
+            raise KyberUnavailableError(
+                "KYBER_UNAVAILABLE: Kyber-1024 backend not available. "
+                "Install liboqs-python: pip install liboqs-python"
+            )
+        kyber_provider = KyberProvider()
+        kyber_keypair = kyber_provider.generate_keypair()
+        encapsulated = kyber_provider.encapsulate(kyber_keypair.public_key)
+        kem_ciphertext = encapsulated.ciphertext
+        kem_shared_secret = encapsulated.shared_secret
+        keypairs["KYBER_1024"] = kyber_keypair
+
+    # Build metadata
+    metadata: Dict[str, Any] = {
+        "signature_algorithm": config.signature_algorithm.name,
+        "sphincs_enabled": config.use_sphincs,
+        "kyber_enabled": config.use_kyber and config.include_kem,
+        "pqc_status": get_pqc_capabilities()["status"],
+    }
+
+    return CryptoPackageResult(
+        content_hash=content_hash,
+        primary_signature=primary_signature,
+        sphincs_signature=sphincs_signature,
+        kem_ciphertext=kem_ciphertext,
+        kem_shared_secret=kem_shared_secret,
+        keypairs=keypairs,
+        metadata=metadata,
+    )
+
+
+def verify_crypto_package(
+    content: bytes,
+    package: CryptoPackageResult,
+) -> Dict[str, bool]:
+    """
+    Verify all signatures in a crypto package.
+
+    Args:
+        content: Original content that was signed
+        package: CryptoPackageResult to verify
+
+    Returns:
+        Dictionary mapping signature type to verification result
+
+    Example:
+        >>> result = create_crypto_package(b"Hello")
+        >>> verification = verify_crypto_package(b"Hello", result)
+        >>> print(f"Primary valid: {verification['primary']}")
+    """
+    results: Dict[str, bool] = {}
+
+    # Verify content hash
+    computed_hash = hashlib.sha3_256(content).hexdigest()
+    results["content_hash"] = computed_hash == package.content_hash
+
+    # Verify primary signature
+    sig_alg_name = package.metadata.get("signature_algorithm", "HYBRID_SIG")
+    try:
+        sig_alg = AlgorithmType[sig_alg_name]
+    except KeyError:
+        sig_alg = AlgorithmType.HYBRID_SIG
+
+    if sig_alg_name in package.keypairs:
+        primary_crypto = AvaGuardianCrypto(algorithm=sig_alg)
+        results["primary"] = primary_crypto.verify(
+            content,
+            package.primary_signature.signature,
+            package.keypairs[sig_alg_name].public_key,
+        )
+    else:
+        results["primary"] = False
+
+    # Verify SPHINCS+ signature if present
+    if package.sphincs_signature is not None and "SPHINCS_256F" in package.keypairs:
+        if SPHINCS_AVAILABLE:
+            sphincs_provider = SphincsProvider()
+            results["sphincs"] = sphincs_provider.verify(
+                content,
+                package.sphincs_signature.signature,
+                package.keypairs["SPHINCS_256F"].public_key,
+            )
+        else:
+            results["sphincs"] = False
+
+    return results
+
+
 # Re-export PQC types for convenience
 __all__ = [
     "AlgorithmType",
@@ -947,6 +1165,10 @@ __all__ = [
     "quick_verify",
     "quick_kem",
     "get_pqc_capabilities",
+    "CryptoPackageConfig",
+    "CryptoPackageResult",
+    "create_crypto_package",
+    "verify_crypto_package",
     "PQCStatus",
     "PQCUnavailableError",
     "KyberUnavailableError",
