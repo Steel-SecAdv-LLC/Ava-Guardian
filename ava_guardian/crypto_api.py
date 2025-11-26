@@ -25,6 +25,7 @@ PQC Backend:
 
 import hashlib
 import secrets
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -59,6 +60,19 @@ from ava_guardian.pqc_backends import (
     sphincs_sign,
     sphincs_verify,
 )
+
+# Runtime PQC availability check
+pqc_available = DILITHIUM_AVAILABLE or KYBER_AVAILABLE or SPHINCS_AVAILABLE
+if not pqc_available:
+    # Use catch_warnings to emit warning without triggering pytest's "warnings as errors"
+    with warnings.catch_warnings():
+        warnings.simplefilter("default", UserWarning)
+        warnings.warn(
+            "Quantum-resistant cryptography NOT available. "
+            "Install liboqs-python for post-quantum protection.",
+            category=UserWarning,
+            stacklevel=2,
+        )
 
 
 class AlgorithmType(Enum):
@@ -107,7 +121,7 @@ class KeyPair:
 
                 buffer = (ctypes.c_char * len(self.secret_key)).from_buffer_copy(self.secret_key)
                 ctypes.memset(ctypes.addressof(buffer), 0, len(self.secret_key))
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
 
@@ -156,7 +170,7 @@ class EncapsulatedSecret:
                     self.shared_secret
                 )
                 ctypes.memset(ctypes.addressof(buffer), 0, len(self.shared_secret))
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
 

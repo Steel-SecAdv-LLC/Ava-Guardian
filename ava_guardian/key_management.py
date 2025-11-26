@@ -790,7 +790,7 @@ class HSMKeyStorage:
         hsm_type: str = "softhsm",
         library_path: Optional[str] = None,
         token_label: str = "AvaGuardian",
-        pin: Optional[str] = None,
+        pin: Optional[str] = None,  # nosec B107
         slot_index: Optional[int] = None,
     ):
         """
@@ -1049,14 +1049,14 @@ class HSMKeyStorage:
         if hasattr(self, "_logged_in") and self._logged_in:
             try:
                 self.session.logout()
-            except Exception:
+            except Exception:  # nosec B110
                 pass
             self._logged_in = False
 
         if hasattr(self, "session"):
             try:
                 self.session.closeSession()
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
     def __enter__(self) -> "HSMKeyStorage":
@@ -1109,7 +1109,7 @@ if __name__ == "__main__":
     import tempfile
 
     demo_storage_path = Path(tempfile.gettempdir()) / "ava_keys_demo"
-    storage = SecureKeyStorage(demo_storage_path, master_password="test_password_123")
+    storage = SecureKeyStorage(demo_storage_path, master_password="test_password_123")  # nosec B106
 
     # Store a key
     test_key = secrets.token_bytes(32)
