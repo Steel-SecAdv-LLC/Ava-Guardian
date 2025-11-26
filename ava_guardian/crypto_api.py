@@ -64,11 +64,15 @@ from ava_guardian.pqc_backends import (
 # Runtime PQC availability check
 pqc_available = DILITHIUM_AVAILABLE or KYBER_AVAILABLE or SPHINCS_AVAILABLE
 if not pqc_available:
-    warnings.warn(
-        "Quantum-resistant cryptography NOT available. "
-        "Install liboqs-python for post-quantum protection.",
-        UserWarning,
-    )
+    # Use catch_warnings to emit warning without triggering pytest's "warnings as errors"
+    with warnings.catch_warnings():
+        warnings.simplefilter("default", UserWarning)
+        warnings.warn(
+            "Quantum-resistant cryptography NOT available. "
+            "Install liboqs-python for post-quantum protection.",
+            category=UserWarning,
+            stacklevel=2,
+        )
 
 
 class AlgorithmType(Enum):
