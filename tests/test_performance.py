@@ -22,7 +22,7 @@ import pytest
 
 from dna_guardian_secure import (
     canonical_hash_dna,
-    create_cryptographic_package,
+    create_crypto_package,
     generate_ed25519_keypair,
     hmac_authenticate,
 )
@@ -148,7 +148,7 @@ class TestPackageCreationPerformance:
 
         # Measure single operation latency
         start = time.perf_counter()
-        create_cryptographic_package(dna, params)
+        create_crypto_package(dna, params)
         elapsed = time.perf_counter() - start
 
         assert elapsed < 0.1, f"Package creation took {elapsed * 1000:.1f}ms, exceeds 100ms"
@@ -158,7 +158,7 @@ class TestPackageCreationPerformance:
         dna = "ACGT" * 100
         params = [(1.0, 1.0)]
 
-        ops_per_sec = benchmark(lambda: create_cryptographic_package(dna, params), iterations=50)
+        ops_per_sec = benchmark(lambda: create_crypto_package(dna, params), iterations=50)
 
         assert ops_per_sec > 10, f"Package creation {ops_per_sec:.1f} ops/sec below 10"
 
