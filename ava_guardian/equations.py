@@ -29,7 +29,7 @@ Frameworks:
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-11-24
+Date: 2025-11-26
 Version: 1.0.0
 
 AI Co-Architects:
@@ -246,7 +246,7 @@ def convergence_time(
     """
     if V_initial <= 0:
         return 0.0
-    return -np.log(threshold) / (2 * lambda_decay)
+    return float(-np.log(threshold) / (2 * lambda_decay))
 
 
 def lyapunov_stability_proof(
@@ -446,7 +446,7 @@ def initialize_ethical_matrix(
     E = E + noise
 
     # Ensure positive-definite
-    min_eig = np.min(np.linalg.eigvals(E).real)
+    min_eig: float = float(np.min(np.linalg.eigvals(E).real))
     if min_eig <= 0:
         E += np.eye(dim) * (abs(min_eig) + 0.1 * PHI_CUBED)
 
@@ -548,9 +548,9 @@ if __name__ == "__main__":
         print(f"  σ_quadratic (corrected) = {sigma_corrected:.6f}")
 
     print("\n[5/5] Overall Framework Status:")
-    for framework, status in results.items():
+    for framework, framework_status in results.items():
         if framework != "frameworks_ready":
-            print(f"  {'✓' if status else '✗'} {framework}: {status}")
+            print(f"  {'✓' if framework_status else '✗'} {framework}: {framework_status}")
 
     print("\n" + "=" * 70)
     if results["frameworks_ready"]:

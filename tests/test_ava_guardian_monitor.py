@@ -29,7 +29,7 @@ Tests cover:
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-11-24
+Date: 2025-11-26
 Version: 1.0.0
 Project: Ava Guardian 3R Test Suite
 
@@ -44,11 +44,218 @@ import pytest
 
 from ava_guardian_monitor import (
     AvaGuardianMonitor,
+    IncrementalStats,
     RecursionPatternMonitor,
     RefactoringAnalyzer,
     ResonanceTimingMonitor,
     TimingAnomaly,
 )
+
+
+class TestIncrementalStats:
+    """
+    Test suite for IncrementalStats (Welford's online algorithm).
+
+    Tests verify O(1) incremental statistics computation produces identical
+    results to numpy's mean() and std() functions.
+    """
+
+    def test_initialization_empty_state(self):
+        """Test that IncrementalStats initializes with empty state."""
+        stats = IncrementalStats()
+        assert stats.n == 0
+        assert stats.mean == 0.0
+        assert stats.M2 == 0.0
+
+    def test_single_value_addition(self):
+        """Test statistics after adding a single value."""
+        stats = IncrementalStats()
+        mean, std = stats.update(10.0)
+
+        assert stats.n == 1
+        assert mean == 10.0
+        assert std == 0.0  # No variance with single value
+
+    def test_multiple_value_addition(self):
+        """Test statistics after adding multiple values."""
+        stats = IncrementalStats()
+        values = [10.0, 20.0, 30.0, 40.0, 50.0]
+
+        for v in values:
+            stats.update(v)
+
+        mean, std = stats.get_stats()
+
+        # Compare to numpy
+        expected_mean = np.mean(values)
+        expected_std = np.std(values)
+
+        assert abs(mean - expected_mean) < 1e-10
+        assert abs(std - expected_std) < 1e-10
+
+    def test_mean_calculation_accuracy(self):
+        """Test mean calculation accuracy compared to numpy."""
+        stats = IncrementalStats()
+        values = [1.5, 2.7, 3.2, 4.8, 5.1, 6.9, 7.3, 8.6, 9.4, 10.2]
+
+        for v in values:
+            stats.update(v)
+
+        mean, _ = stats.get_stats()
+        expected_mean = np.mean(values)
+
+        assert abs(mean - expected_mean) < 1e-10
+
+    def test_standard_deviation_accuracy(self):
+        """Test standard deviation calculation accuracy compared to numpy."""
+        stats = IncrementalStats()
+        values = [2.3, 4.5, 6.7, 8.9, 10.1, 12.3, 14.5, 16.7, 18.9, 20.1]
+
+        for v in values:
+            stats.update(v)
+
+        _, std = stats.get_stats()
+        expected_std = np.std(values)
+
+        assert abs(std - expected_std) < 1e-10
+
+    def test_variance_calculation(self):
+        """Test variance calculation (M2/n)."""
+        stats = IncrementalStats()
+        values = [1.0, 2.0, 3.0, 4.0, 5.0]
+
+        for v in values:
+            stats.update(v)
+
+        # Variance = M2 / n
+        variance = stats.M2 / stats.n
+        expected_variance = np.var(values)
+
+        assert abs(variance - expected_variance) < 1e-10
+
+    def test_edge_case_zero_values(self):
+        """Test with all zero values."""
+        stats = IncrementalStats()
+        values = [0.0, 0.0, 0.0, 0.0, 0.0]
+
+        for v in values:
+            stats.update(v)
+
+        mean, std = stats.get_stats()
+
+        assert mean == 0.0
+        assert std == 0.0
+
+    def test_edge_case_negative_values(self):
+        """Test with negative values."""
+        stats = IncrementalStats()
+        values = [-10.0, -5.0, 0.0, 5.0, 10.0]
+
+        for v in values:
+            stats.update(v)
+
+        mean, std = stats.get_stats()
+        expected_mean = np.mean(values)
+        expected_std = np.std(values)
+
+        assert abs(mean - expected_mean) < 1e-10
+        assert abs(std - expected_std) < 1e-10
+
+    def test_edge_case_very_large_values(self):
+        """Test with very large values for numerical stability."""
+        stats = IncrementalStats()
+        values = [1e10, 1e10 + 1, 1e10 + 2, 1e10 + 3, 1e10 + 4]
+
+        for v in values:
+            stats.update(v)
+
+        mean, std = stats.get_stats()
+        expected_mean = np.mean(values)
+        expected_std = np.std(values)
+
+        # Allow slightly larger tolerance for large values
+        assert abs(mean - expected_mean) < 1e-5
+        assert abs(std - expected_std) < 1e-5
+
+    def test_numerical_stability_many_values(self):
+        """Test numerical stability with 1000+ values."""
+        stats = IncrementalStats()
+        np.random.seed(42)  # Reproducible
+        values = np.random.randn(1000) * 100 + 500  # Mean ~500, std ~100
+
+        for v in values:
+            stats.update(float(v))
+
+        mean, std = stats.get_stats()
+        expected_mean = np.mean(values)
+        expected_std = np.std(values)
+
+        # Welford's algorithm should maintain accuracy even with many values
+        assert abs(mean - expected_mean) < 1e-8
+        assert abs(std - expected_std) < 1e-8
+
+    def test_reset_functionality(self):
+        """Test that reset() clears all accumulators."""
+        stats = IncrementalStats()
+
+        # Add some values
+        for v in [10.0, 20.0, 30.0]:
+            stats.update(v)
+
+        assert stats.n == 3
+        assert stats.mean != 0.0
+
+        # Reset
+        stats.reset()
+
+        assert stats.n == 0
+        assert stats.mean == 0.0
+        assert stats.M2 == 0.0
+
+    def test_get_stats_with_insufficient_data(self):
+        """Test get_stats() with 0 or 1 values."""
+        stats = IncrementalStats()
+
+        # No values
+        mean, std = stats.get_stats()
+        assert mean == 0.0
+        assert std == 0.0
+
+        # One value
+        stats.update(42.0)
+        mean, std = stats.get_stats()
+        assert mean == 42.0
+        assert std == 0.0  # No variance with single value
+
+    def test_update_returns_current_stats(self):
+        """Test that update() returns current mean and std."""
+        stats = IncrementalStats()
+
+        mean1, std1 = stats.update(10.0)
+        assert mean1 == 10.0
+        assert std1 == 0.0
+
+        mean2, std2 = stats.update(20.0)
+        assert mean2 == 15.0  # (10 + 20) / 2
+        # std should be non-zero now
+        assert std2 > 0
+
+    def test_consistency_with_numpy_random_data(self):
+        """Test consistency with numpy using random data."""
+        np.random.seed(123)
+        for _ in range(10):  # Run multiple trials
+            stats = IncrementalStats()
+            values = np.random.uniform(-1000, 1000, size=100).tolist()
+
+            for v in values:
+                stats.update(v)
+
+            mean, std = stats.get_stats()
+            expected_mean = np.mean(values)
+            expected_std = np.std(values)
+
+            assert abs(mean - expected_mean) < 1e-8
+            assert abs(std - expected_std) < 1e-8
 
 
 class TestResonanceTimingMonitor:

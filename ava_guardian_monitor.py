@@ -27,7 +27,7 @@ integrity or performance.
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-11-24
+Date: 2025-11-26
 Version: 1.0.0
 Project: Ava Guardian 3R Runtime Monitoring
 
@@ -40,7 +40,7 @@ import time
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Deque, Dict, List, Optional
+from typing import Any, Deque, Dict, List, Optional
 
 import numpy as np
 from scipy.fft import fft, fftfreq
@@ -537,7 +537,7 @@ class RefactoringAnalyzer:
 
             tree = ast.parse(source)
 
-            metrics = {
+            metrics: Dict[str, Any] = {
                 "total_functions": 0,
                 "total_classes": 0,
                 "total_lines": len(source.splitlines()),
@@ -556,7 +556,9 @@ class RefactoringAnalyzer:
                         "name": node.name,
                         "complexity": complexity,
                         "lines": (
-                            node.end_lineno - node.lineno if hasattr(node, "end_lineno") else 0
+                            node.end_lineno - node.lineno
+                            if hasattr(node, "end_lineno") and node.end_lineno is not None
+                            else 0
                         ),
                         "recommendation": self._get_recommendation(complexity),
                     }
@@ -741,13 +743,13 @@ class AvaGuardianMonitor:
         if not self.enabled:
             return {"status": "monitoring_disabled"}
 
-        results = []
+        results: List[Dict[str, Any]] = []
         for py_file in directory.rglob("*.py"):
             analysis = self.analyzer.analyze_file(py_file)
             results.append({"filepath": str(py_file), "analysis": analysis})
 
         # Aggregate statistics
-        all_complexities = []
+        all_complexities: List[int] = []
         for r in results:
             if "functions" in r["analysis"]:
                 all_complexities.extend([f["complexity"] for f in r["analysis"]["functions"]])
@@ -784,7 +786,7 @@ class AvaGuardianMonitor:
         if not self.enabled:
             return {"status": "monitoring_disabled"}
 
-        report = {
+        report: Dict[str, Any] = {
             "status": "active",
             "timing_baseline": self.timing.baseline_stats,
             "pattern_analysis": self.patterns.analyze_patterns(),

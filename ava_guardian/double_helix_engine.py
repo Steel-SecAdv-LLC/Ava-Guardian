@@ -29,7 +29,7 @@ Where:
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-11-24
+Date: 2025-11-26
 Version: 1.0.0
 
 AI Co-Architects:
@@ -329,7 +329,7 @@ class AvaEquationEngine:
         """𝐈: Information entropy gradient."""
         # Entropy-based push toward uniform distribution
         probs = np.abs(state) / (np.sum(np.abs(state)) + 1e-8)
-        entropy = -np.sum(probs * np.log(probs + 1e-8))
+        entropy: float = float(-np.sum(probs * np.log(probs + 1e-8)))
         max_entropy = np.log(len(state))
         info_gradient = (max_entropy - entropy) * np.sign(state - np.mean(state))
         return 0.05 * info_gradient

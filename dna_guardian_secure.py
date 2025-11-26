@@ -22,7 +22,7 @@ Complete cryptographic protection system for helical mathematical DNA codes.
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-11-24
+Date: 2025-11-26
 Version: 1.0.0
 Project: Post-quantum cryptographic security system
 
@@ -68,7 +68,7 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, cast
 
 if TYPE_CHECKING:
     from ava_guardian_monitor import AvaGuardianMonitor
@@ -88,6 +88,9 @@ except ImportError:
     raise
 
 # Quantum-resistant cryptography (CRYSTALS-Dilithium)
+# Type annotation for DILITHIUM_BACKEND (can be None if no backend available)
+DILITHIUM_BACKEND: Optional[str]
+
 try:
     # Try liboqs-python first (recommended)
     import oqs
@@ -162,7 +165,7 @@ class QuantumSignatureRequiredError(Exception):
 # ============================================================================
 
 
-def secure_wipe(data: bytearray) -> None:
+def secure_wipe(data: Union[bytes, bytearray]) -> None:
     """
     Securely wipe sensitive data from memory.
 
@@ -917,10 +920,10 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
         if DILITHIUM_BACKEND == "liboqs":
             sig = oqs.Signature("ML-DSA-65")
             sig.secret_key = private_key
-            return sig.sign(message)
+            return cast(bytes, sig.sign(message))
 
         elif DILITHIUM_BACKEND == "pqcrypto":
-            return dilithium3.sign(message, private_key)
+            return cast(bytes, dilithium3.sign(message, private_key))
 
     # Fail-closed: Do not return fake signatures
     raise QuantumSignatureUnavailableError(
@@ -956,7 +959,7 @@ def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> boo
         if DILITHIUM_BACKEND == "liboqs":
             try:
                 sig = oqs.Signature("ML-DSA-65")
-                return sig.verify(message, signature, public_key)
+                return cast(bool, sig.verify(message, signature, public_key))
             except Exception:
                 return False
 
@@ -978,7 +981,7 @@ def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> boo
 # ============================================================================
 
 
-def get_rfc3161_timestamp(data: bytes, tsa_url: str = None) -> Optional[bytes]:
+def get_rfc3161_timestamp(data: bytes, tsa_url: Optional[str] = None) -> Optional[bytes]:
     """
     Get RFC 3161 trusted timestamp for data.
 
@@ -1068,7 +1071,7 @@ def get_rfc3161_timestamp(data: bytes, tsa_url: str = None) -> Optional[bytes]:
         with urllib.request.urlopen(req, timeout=10) as response:  # nosec B310
             tsr = response.read()
 
-        return tsr
+        return cast(bytes, tsr)
 
     except Exception as e:
         print(f"Warning: RFC 3161 timestamp failed: {e}")
@@ -1226,7 +1229,7 @@ assert all(w == 1.0 for w in ETHICAL_VECTOR.values())
 
 
 def create_ethical_hkdf_context(
-    base_context: bytes, ethical_vector: Dict[str, float] = None
+    base_context: bytes, ethical_vector: Optional[Dict[str, float]] = None
 ) -> bytes:
     """
     Integrates ethical vector into HKDF key derivation context.
@@ -1287,8 +1290,8 @@ def derive_keys(
     master_secret: bytes,
     info: str,
     num_keys: int = 3,
-    ethical_vector: Dict[str, float] = None,
-    salt: bytes = None,
+    ethical_vector: Optional[Dict[str, float]] = None,
+    salt: Optional[bytes] = None,
 ) -> Tuple[List[bytes], bytes]:
     """
     Derive multiple independent keys from master secret using HKDF with ethical context.
@@ -1554,7 +1557,7 @@ class KeyManagementSystem:
 
 
 def generate_key_management_system(
-    author: str, ethical_vector: Dict[str, float] = None
+    author: str, ethical_vector: Optional[Dict[str, float]] = None
 ) -> KeyManagementSystem:
     """
     Initialize complete key management system with ethical integration.
@@ -1584,7 +1587,7 @@ def generate_key_management_system(
     - HKDF ensures one-way derivation (cannot recover master)
     - Author info provides domain separation
     - Ethical vector provides additional context binding
-    - Enhanced security: Production ready with ethical integration
+    - Enhanced security: Secure and tested with ethical integration
 
     Args:
         author: Key owner identifier (for domain separation)
