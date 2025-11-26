@@ -804,76 +804,85 @@ class HSMKeyStorage:
             ValueError: If HSM type is unknown
             RuntimeError: If token not found or login fails
         """
+        self.pkcs11 = self._import_pykcs11()
+        self.library_path = self._resolve_library_path(hsm_type, library_path)
+        self.lib = self._load_pkcs11_library()
+        self.slot = self._find_token_slot(token_label, slot_index)
+        self.session = self._open_session()
+        self._login(pin, token_label)
+        self._logged_in = True
+
+    def _import_pykcs11(self) -> Any:
+        """Import PyKCS11 module (optional dependency)."""
         try:
             import PyKCS11
 
-            self.pkcs11 = PyKCS11
+            return PyKCS11
         except ImportError:
             raise ImportError(
                 "HSM support requires PyKCS11. Install with: pip install ava-guardian[hsm]"
             )
 
-        # Find library path
-        self.library_path = library_path
-        if not self.library_path:
-            paths = self.PKCS11_PATHS.get(hsm_type)
-            if not paths:
-                raise ValueError(
-                    f"Unknown HSM type: {hsm_type}. "
-                    f"Supported: {', '.join(self.PKCS11_PATHS.keys())}"
-                )
-            for path in paths:
-                if os.path.exists(path):
-                    self.library_path = path
-                    break
-            if not self.library_path:
-                raise RuntimeError(
-                    f"PKCS#11 library not found for {hsm_type}. " f"Searched: {paths}"
-                )
+    def _resolve_library_path(self, hsm_type: str, library_path: Optional[str]) -> str:
+        """Resolve PKCS#11 library path for the given HSM type."""
+        if library_path:
+            return library_path
 
-        # Load library
-        self.lib = self.pkcs11.PyKCS11Lib()
+        paths = self.PKCS11_PATHS.get(hsm_type)
+        if not paths:
+            raise ValueError(
+                f"Unknown HSM type: {hsm_type}. "
+                f"Supported: {', '.join(self.PKCS11_PATHS.keys())}"
+            )
+
+        for path in paths:
+            if os.path.exists(path):
+                return path
+
+        raise RuntimeError(f"PKCS#11 library not found for {hsm_type}. Searched: {paths}")
+
+    def _load_pkcs11_library(self) -> Any:
+        """Load the PKCS#11 library."""
+        lib = self.pkcs11.PyKCS11Lib()
         try:
-            self.lib.load(self.library_path)
+            lib.load(self.library_path)
+            return lib
         except self.pkcs11.PyKCS11Error as e:
             raise RuntimeError(f"Failed to load PKCS#11 library: {e}")
 
-        # Find token slot
+    def _find_token_slot(self, token_label: str, slot_index: Optional[int]) -> Any:
+        """Find the HSM token slot by label or index."""
         slots = self.lib.getSlotList(tokenPresent=True)
         if not slots:
             raise RuntimeError("No HSM tokens found. Is the device connected?")
 
-        self.slot = None
         if slot_index is not None:
             if slot_index < len(slots):
-                self.slot = slots[slot_index]
-            else:
-                raise ValueError(f"Slot index {slot_index} out of range (0-{len(slots) - 1})")
-        else:
-            for slot in slots:
-                try:
-                    info = self.lib.getTokenInfo(slot)
-                    if info.label.strip() == token_label:
-                        self.slot = slot
-                        break
-                except self.pkcs11.PyKCS11Error:
-                    continue
+                return slots[slot_index]
+            raise ValueError(f"Slot index {slot_index} out of range (0-{len(slots) - 1})")
 
-        if self.slot is None:
-            available = [self.lib.getTokenInfo(s).label.strip() for s in slots]
-            raise RuntimeError(
-                f"Token '{token_label}' not found. " f"Available tokens: {available}"
-            )
+        for slot in slots:
+            try:
+                info = self.lib.getTokenInfo(slot)
+                if info.label.strip() == token_label:
+                    return slot
+            except self.pkcs11.PyKCS11Error:
+                continue
 
-        # Open session
+        available = [self.lib.getTokenInfo(s).label.strip() for s in slots]
+        raise RuntimeError(f"Token '{token_label}' not found. Available tokens: {available}")
+
+    def _open_session(self) -> Any:
+        """Open a PKCS#11 session with the HSM."""
         try:
-            self.session = self.lib.openSession(
+            return self.lib.openSession(
                 self.slot, self.pkcs11.CKF_SERIAL_SESSION | self.pkcs11.CKF_RW_SESSION
             )
         except self.pkcs11.PyKCS11Error as e:
             raise RuntimeError(f"Failed to open HSM session: {e}")
 
-        # Login
+    def _login(self, pin: Optional[str], token_label: str) -> None:
+        """Login to the HSM session."""
         if pin is None:
             import getpass
 
@@ -886,8 +895,6 @@ class HSMKeyStorage:
             if "CKR_PIN_INCORRECT" in str(e):
                 raise RuntimeError("Invalid PIN")
             raise RuntimeError(f"HSM login failed: {e}")
-
-        self._logged_in = True
 
     def generate_aes_key(
         self,
