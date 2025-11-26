@@ -22,7 +22,6 @@ from typing import Generator, Tuple
 
 import pytest
 
-
 # =============================================================================
 # TEMPORARY DIRECTORY FIXTURES
 # =============================================================================
@@ -180,7 +179,7 @@ def ed25519_keypair(crypto_ed25519) -> Tuple[bytes, bytes]:
 @pytest.fixture
 def test_message() -> bytes:
     """Provide a standard test message for signature tests."""
-    return b"Test message for Ava Guardian ♱ cryptographic operations."
+    return b"Test message for Ava Guardian cryptographic operations."
 
 
 @pytest.fixture
@@ -353,8 +352,12 @@ def skip_if_no_sphincs(sphincs_available):
 
 def pytest_configure(config):
     """Configure custom pytest markers."""
-    config.addinivalue_line("markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')")
-    config.addinivalue_line("markers", "quantum: marks tests that require quantum-resistant libraries")
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+    )
+    config.addinivalue_line(
+        "markers", "quantum: marks tests that require quantum-resistant libraries"
+    )
     config.addinivalue_line("markers", "integration: marks integration tests")
     config.addinivalue_line("markers", "security: marks security-related tests")
     config.addinivalue_line("markers", "performance: marks performance-related tests")

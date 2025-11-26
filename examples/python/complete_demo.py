@@ -52,7 +52,7 @@ def demo_crypto_api():
         (AlgorithmType.HYBRID_SIG, "Hybrid (Ed25519 + ML-DSA-65)"),
     ]
 
-    message = b"Ava Guardian ♱ protects people, data, and networks!"
+    message = b"Ava Guardian protects people, data, and networks!"
 
     for algorithm, name in algorithms:
         print(f"\n{name}:")

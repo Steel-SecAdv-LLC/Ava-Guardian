@@ -18,10 +18,8 @@ Test Categories:
 import json
 import os
 import secrets
-import tempfile
 import warnings
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -35,7 +33,6 @@ from ava_guardian.key_management import (
     SecureKeyStorage,
     SecurityWarning,
 )
-
 
 # =============================================================================
 # HD KEY DERIVATION TESTS
@@ -215,9 +212,7 @@ class TestKeyRotationManagerComprehensive:
 
     def test_register_key_with_expiration(self, rotation_manager):
         """Register key with expiration."""
-        meta = rotation_manager.register_key(
-            "key-1", "encryption", expires_in=timedelta(days=30)
-        )
+        meta = rotation_manager.register_key("key-1", "encryption", expires_in=timedelta(days=30))
 
         assert meta.expires_at is not None
         assert meta.expires_at > datetime.now()
@@ -230,9 +225,7 @@ class TestKeyRotationManagerComprehensive:
 
     def test_register_key_with_derivation_path(self, rotation_manager):
         """Register key with HD derivation path."""
-        meta = rotation_manager.register_key(
-            "key-1", "signing", derivation_path="m/44'/0'/0'/0/0"
-        )
+        meta = rotation_manager.register_key("key-1", "signing", derivation_path="m/44'/0'/0'/0/0")
 
         assert meta.derivation_path == "m/44'/0'/0'/0/0"
 
@@ -269,9 +262,7 @@ class TestKeyRotationManagerComprehensive:
     def test_should_rotate_expired_key(self, rotation_manager):
         """Expired key should need rotation."""
         # Register with already expired expiration
-        meta = rotation_manager.register_key(
-            "key-1", "signing", expires_in=timedelta(seconds=-1)
-        )
+        rotation_manager.register_key("key-1", "signing", expires_in=timedelta(seconds=-1))
 
         assert rotation_manager.should_rotate("key-1") is True
 
@@ -407,9 +398,7 @@ class TestKeyRotationManagerComprehensive:
 
     def test_export_metadata_with_expiration(self, rotation_manager):
         """Export metadata includes expiration."""
-        rotation_manager.register_key(
-            "key-1", "signing", expires_in=timedelta(days=30)
-        )
+        rotation_manager.register_key("key-1", "signing", expires_in=timedelta(days=30))
 
         export = rotation_manager.export_metadata()
 
@@ -494,7 +483,9 @@ class TestSecureKeyStorageComprehensive:
         """Delete nonexistent key returns False."""
         assert secure_storage.delete_key("nonexistent") is False
 
-    def test_delete_key_secure_overwrite(self, secure_storage, test_key_material, temp_storage_path):
+    def test_delete_key_secure_overwrite(
+        self, secure_storage, test_key_material, temp_storage_path
+    ):
         """Delete key overwrites file before removal."""
         secure_storage.store_key("test-key", test_key_material)
         key_file = temp_storage_path / "test-key.json"
@@ -590,8 +581,6 @@ class TestSecureKeyStorageComprehensive:
 
     def test_file_permissions(self, temp_storage_path, test_password, test_key_material):
         """Key files have secure permissions (0600)."""
-        import stat
-
         storage = SecureKeyStorage(temp_storage_path, master_password=test_password)
         storage.store_key("test-key", test_key_material)
 

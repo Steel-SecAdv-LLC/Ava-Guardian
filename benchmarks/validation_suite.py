@@ -261,7 +261,7 @@ class BenchmarkValidator:
         print("CRYPTOGRAPHIC OPERATION BENCHMARKS")
         print("=" * 70)
 
-        test_data = b"Ava Guardian ♱ benchmark test data for cryptographic operations" * 10
+        test_data = b"Ava Guardian benchmark test data for cryptographic operations" * 10
 
         # SHA3-256 hashing
         def sha3_hash():

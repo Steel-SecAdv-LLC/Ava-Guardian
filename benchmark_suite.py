@@ -166,7 +166,7 @@ class BenchmarkSuite:
         print("🔐 Benchmarking Cryptographic Operations...")
 
         # Setup test data
-        test_data = b"Benchmark test data for Ava Guardian ♱ cryptographic operations"
+        test_data = b"Benchmark test data for Ava Guardian cryptographic operations"
         kms = generate_key_management_system("benchmark")
 
         results = {}

@@ -34,7 +34,6 @@ import hmac
 import json
 import sys
 from datetime import datetime
-from functools import wraps
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -42,7 +41,7 @@ from typing import Any, Dict, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 try:
-    from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
+    from fastapi import Depends, FastAPI, Header, HTTPException, Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
     from pydantic import BaseModel, Field
@@ -59,7 +58,6 @@ from ava_guardian.crypto_api import (
 from dna_guardian_secure import (
     create_crypto_package,
     generate_key_management_system,
-    verify_crypto_package,
 )
 
 
