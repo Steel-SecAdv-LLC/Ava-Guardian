@@ -29,7 +29,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -211,8 +211,9 @@ def run_full_package_verify_benchmark(iterations: int = 20) -> float:
         verify_crypto_package(
             dna_codes=dna_codes,
             helix_params=helix_params,
-            pkg=package,
+            package=package,
             hmac_key=kms.hmac_key,
+            require_quantum_signatures=False,
         )
 
     return benchmark_operation(operation, iterations, warmup=2)
@@ -223,13 +224,17 @@ def run_dilithium_keygen_benchmark(iterations: int = 20) -> Optional[float]:
     try:
         import oqs
 
-        sig = oqs.Signature("Dilithium3")
+        # Try ML-DSA-65 first (NIST standard name), fall back to Dilithium3
+        try:
+            sig = oqs.Signature("ML-DSA-65")
+        except Exception:
+            sig = oqs.Signature("Dilithium3")
 
         def operation():
             sig.generate_keypair()
 
         return benchmark_operation(operation, iterations, warmup=2)
-    except ImportError:
+    except (ImportError, Exception):
         return None
 
 
@@ -238,15 +243,19 @@ def run_dilithium_sign_benchmark(iterations: int = 20) -> Optional[float]:
     try:
         import oqs
 
-        sig = oqs.Signature("Dilithium3")
-        public_key = sig.generate_keypair()
+        # Try ML-DSA-65 first (NIST standard name), fall back to Dilithium3
+        try:
+            sig = oqs.Signature("ML-DSA-65")
+        except Exception:
+            sig = oqs.Signature("Dilithium3")
+        sig.generate_keypair()
         message = b"Test message for Dilithium signing" * 10
 
         def operation():
             sig.sign(message)
 
         return benchmark_operation(operation, iterations, warmup=2)
-    except ImportError:
+    except (ImportError, Exception):
         return None
 
 
@@ -255,7 +264,11 @@ def run_dilithium_verify_benchmark(iterations: int = 20) -> Optional[float]:
     try:
         import oqs
 
-        sig = oqs.Signature("Dilithium3")
+        # Try ML-DSA-65 first (NIST standard name), fall back to Dilithium3
+        try:
+            sig = oqs.Signature("ML-DSA-65")
+        except Exception:
+            sig = oqs.Signature("Dilithium3")
         public_key = sig.generate_keypair()
         message = b"Test message for Dilithium signing" * 10
         signature = sig.sign(message)
@@ -264,7 +277,7 @@ def run_dilithium_verify_benchmark(iterations: int = 20) -> Optional[float]:
             sig.verify(message, signature, public_key)
 
         return benchmark_operation(operation, iterations, warmup=2)
-    except ImportError:
+    except (ImportError, Exception):
         return None
 
 

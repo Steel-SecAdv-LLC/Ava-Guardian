@@ -27,8 +27,6 @@ import time
 from dataclasses import asdict
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, List
-from unittest.mock import patch
 
 import pytest
 
@@ -195,7 +193,7 @@ class TestKeyManagementWorkflows:
         manager = KeyRotationManager(rotation_period=timedelta(days=90))
 
         # Register initial key
-        key1 = manager.register_key(
+        manager.register_key(
             "primary-key-v1",
             purpose="signing",
             max_usage=100,
@@ -203,7 +201,7 @@ class TestKeyManagementWorkflows:
         assert manager.get_active_key() == "primary-key-v1"
 
         # Register replacement key
-        key2 = manager.register_key(
+        manager.register_key(
             "primary-key-v2",
             purpose="signing",
             parent_id="primary-key-v1",
