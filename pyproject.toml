@@ -45,7 +45,9 @@ classifiers = [
 requires-python = ">=3.8"
 dependencies = [
     "cryptography>=41.0.0",
-    "numpy>=1.21.0",
+    # NumPy/SciPy: Version constraints aligned with requirements-dev.txt
+    # for Python 3.8-3.12 compatibility
+    "numpy>=1.21.0,<2.0.0",
     "scipy>=1.7.0",
 ]
 
