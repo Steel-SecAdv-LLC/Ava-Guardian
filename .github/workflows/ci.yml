@@ -158,3 +158,33 @@ jobs:
       with:
         name: bandit-security-report
         path: bandit-report.json
+
+  benchmark-regression:
+    name: Benchmark Regression Detection
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install cryptography
+
+    - name: Run benchmark regression tests
+      run: |
+        python benchmarks/benchmark_runner.py --verbose --output benchmark-results.json
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: benchmark-results
+        path: benchmark-results.json

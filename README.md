@@ -9,6 +9,7 @@
 [![PQC](https://img.shields.io/badge/PQC-ML--DSA--65%20%7C%20Kyber--1024-purple.svg)](CRYPTOGRAPHY.md)
 [![3R Monitoring](https://img.shields.io/badge/3R-Runtime%20Security-orange.svg)](MONITORING.md)
 [![Architecture](https://img.shields.io/badge/architecture-C%20%2B%20Python%20%2B%20Cython-blue.svg)](ARCHITECTURE.md)
+[![Coverage](https://codecov.io/gh/Steel-SecAdv-LLC/Ava-Guardian/branch/main/graph/badge.svg)](https://codecov.io/gh/Steel-SecAdv-LLC/Ava-Guardian)
 
 ```
 +======================================================================+
@@ -885,6 +886,10 @@ Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) file for 
 - **Kyber**: Public domain (NIST PQC)
 - **SPHINCS+**: Public domain (NIST PQC)
 - **Ed25519**: Public domain (ref10 implementation)
+
+### Dependency Graph
+
+GitHub's dependency graph is enabled for this repository. Once the repository is public, you can view the complete dependency tree at: `Insights > Dependency graph`. This provides visibility into all direct and transitive dependencies, security advisories, and Dependabot alerts for automated vulnerability detection.
 
 ---
 
