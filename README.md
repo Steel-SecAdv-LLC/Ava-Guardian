@@ -44,6 +44,13 @@ Ava Guardian ♱ (AG♱) is a production-grade, multi-language cryptographic sec
 
 Novel in assimilation, the system combines cutting-edge NIST-approved post-quantum algorithms with a unique 3R runtime security monitoring framework, creating a defense-in-depth architecture that provides unprecedented visibility into cryptographic operations while maintaining less than 2% performance overhead. The multi-language architecture (C + Cython + Python) enables both maximum security through constant-time implementations and optimal performance through 18-37x Cython acceleration, making it suitable for environments ranging from high-security government applications to performance-critical enterprise systems.
 
+> **Security Disclosure:** This is a self-assessed cryptographic implementation without third-party audit. Production use REQUIRES:
+> - FIPS 140-2 Level 3+ HSM for master secrets (no software-only keys in high-security environments)
+> - Independent security review by qualified cryptographers
+> - Constant-time implementation verification for side-channel resistance
+>
+> See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed security properties and threat model.
+
 ---
 
 ## Table of Contents
