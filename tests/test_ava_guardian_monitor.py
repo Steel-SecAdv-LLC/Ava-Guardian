@@ -116,17 +116,22 @@ class TestResonanceTimingMonitor:
         """Test that severity escalates with deviation magnitude."""
         monitor = ResonanceTimingMonitor(threshold_sigma=3.0)
 
-        # Baseline: mean=10, std=0.1
-        for i in range(50):
-            monitor.record_timing("test_op", 10.0 + 0.1 * np.random.randn())
+        # Deterministic baseline: mean=10.0, std=0.1 (alternating 9.9 and 10.1)
+        # This eliminates randomness that caused flaky test results
+        baseline = [9.9, 10.1] * 25  # 50 samples with exact mean=10.0, std=0.1
+        for value in baseline:
+            monitor.record_timing("test_op", value)
 
         # Warning-level anomaly (3σ < dev < 5σ)
-        anomaly = monitor.record_timing("test_op", 10.4)  # ~4σ
+        # With mean=10.0, std=0.1: deviation for 10.4 = (10.4-10.0)/0.1 = 4σ
+        anomaly = monitor.record_timing("test_op", 10.4)
         if anomaly:
             assert anomaly.severity == "warning"
 
         # Critical-level anomaly (dev > 5σ)
-        anomaly = monitor.record_timing("test_op", 11.0)  # >>5σ
+        # Use extreme value to ensure > 5σ even after baseline drift from prior test value
+        # 15.0 is far enough from mean ~10 to guarantee critical severity
+        anomaly = monitor.record_timing("test_op", 15.0)
         if anomaly:
             assert anomaly.severity == "critical"
 
