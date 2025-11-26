@@ -3,8 +3,8 @@
 # Licensed under the Apache License, Version 2.0
 
 """
-Ava Guardian - Algorithm-Agnostic Cryptographic API
-====================================================
+Ava Guardian ♱ (AG♱) - Algorithm-Agnostic Cryptographic API
+===========================================================
 
 Unified interface for all post-quantum cryptographic algorithms.
 Enables seamless switching between ML-DSA-65, Kyber-1024, SPHINCS+-256f,

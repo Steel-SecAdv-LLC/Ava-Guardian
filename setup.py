@@ -326,7 +326,7 @@ setup(
 # Print build configuration
 if __name__ == "__main__":
     print("=" * 70)
-    print("Ava Guardian Build Configuration")
+    print("Ava Guardian ♱ Build Configuration")
     print("=" * 70)
     print(f"Version:          {VERSION}")
     print(f"Python:           {sys.version.split()[0]}")

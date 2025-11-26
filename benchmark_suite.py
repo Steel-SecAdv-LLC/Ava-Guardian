@@ -69,7 +69,7 @@ from dna_guardian_secure import (
 
 
 class BenchmarkSuite:
-    """Comprehensive performance benchmarking for Ava Guardian."""
+    """Comprehensive performance benchmarking for Ava Guardian ♱."""
 
     def __init__(self):
         self.results = {}

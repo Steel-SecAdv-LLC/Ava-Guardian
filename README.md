@@ -10,7 +10,6 @@
 [![3R Monitoring](https://img.shields.io/badge/3R-Runtime%20Security-orange.svg)](MONITORING.md)
 [![Architecture](https://img.shields.io/badge/architecture-C%20%2B%20Python%20%2B%20Cython-blue.svg)](ARCHITECTURE.md)
 [![Tests](https://img.shields.io/badge/tests-514%2B%20passing-brightgreen.svg)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-95%25%2B%20target-brightgreen.svg)](.github/workflows/ci.yml)
 
 ```
 +======================================================================+

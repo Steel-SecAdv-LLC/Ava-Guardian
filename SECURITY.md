@@ -30,7 +30,7 @@ We actively maintain and provide security updates for the following versions:
 
 ## Security Features
 
-Ava Guardian implements defense-in-depth with six independent security layers:
+Ava Guardian ♱ implements defense-in-depth with six independent security layers:
 
 1. **SHA3-256 Content Hashing** (NIST FIPS 202)
 2. **HMAC-SHA3-256 Authentication** (RFC 2104)

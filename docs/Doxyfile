@@ -1,8 +1,8 @@
-# Doxyfile for Ava Guardian C API Documentation
+# Doxyfile for Ava Guardian ♱ C API Documentation
 # Copyright 2025 Steel Security Advisors LLC
 
 # Project information
-PROJECT_NAME           = "Ava Guardian"
+PROJECT_NAME           = "Ava Guardian ♱"
 PROJECT_NUMBER         = 1.0.0
 PROJECT_BRIEF          = "Quantum-Resistant Cryptographic Protection System"
 PROJECT_LOGO           =

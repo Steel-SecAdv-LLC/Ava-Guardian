@@ -1,4 +1,4 @@
-# Ava Guardian Performance Benchmarks
+# Ava Guardian ♱ Performance Benchmarks
 
 ## Document Information
 

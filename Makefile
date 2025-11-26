@@ -1,7 +1,7 @@
 # Copyright 2025 Steel Security Advisors LLC
 # Licensed under the Apache License, Version 2.0
 #
-# Makefile for Ava Guardian
+# Makefile for Ava Guardian ♱
 #
 # Quick build targets:
 #   make all        - Build everything (C library + Python extensions)
@@ -63,7 +63,7 @@ clean:
 
 # Install system-wide
 install: all
-	@echo "Installing Ava Guardian..."
+	@echo "Installing Ava Guardian ♱..."
 	@cd build && sudo $(MAKE) install
 	@pip3 install -e .
 	@echo "✓ Installed successfully"

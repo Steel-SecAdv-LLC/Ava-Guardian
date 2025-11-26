@@ -45,7 +45,7 @@ def example_1_simple_signing():
     )
 
     # Your message to sign
-    message = b"Hello, Ava Guardian! Protect my data."
+    message = b"Hello, Ava Guardian ♱! Protect my data."
 
     # Sign with Ed25519 (always available)
     keypair, signature = quick_sign(message, algorithm=AlgorithmType.ED25519)

@@ -6,7 +6,7 @@
 Ava Guardian ♱ Complete Feature Demonstration
 ==============================================
 
-Comprehensive demonstration of all Ava Guardian capabilities:
+Comprehensive demonstration of all Ava Guardian ♱ capabilities:
 - Algorithm-agnostic cryptographic API
 - Hierarchical deterministic key derivation
 - Key rotation and management

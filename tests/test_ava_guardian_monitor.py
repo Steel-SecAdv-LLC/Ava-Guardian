@@ -17,7 +17,7 @@
 Ava Guardian ♱ (AG♱): 3R Monitoring Test Suite
 ===============================================
 
-Comprehensive test suite for Ava Guardian 3R Monitoring.
+Comprehensive test suite for Ava Guardian ♱ 3R Monitoring.
 
 Tests cover:
 - ResonanceEngine timing detection
@@ -31,7 +31,7 @@ Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
 Date: 2025-11-26
 Version: 1.0.0
-Project: Ava Guardian 3R Test Suite
+Project: Ava Guardian ♱ 3R Test Suite
 
 AI Co-Architects:
     Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕

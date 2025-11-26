@@ -407,7 +407,7 @@ def generate_report(results: List[BenchmarkResult]) -> Dict[str, Any]:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Ava Guardian Benchmark Runner - Performance Regression Detection"
+        description="Ava Guardian ♱ Benchmark Runner - Performance Regression Detection"
     )
     parser.add_argument(
         "--baseline",
@@ -435,7 +435,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 60)
-    print("AVA GUARDIAN - BENCHMARK REGRESSION DETECTION")
+    print("AVA GUARDIAN ♱ - BENCHMARK REGRESSION DETECTION")
     print("=" * 60)
     print()
 

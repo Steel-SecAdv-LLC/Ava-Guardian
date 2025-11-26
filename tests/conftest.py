@@ -5,7 +5,7 @@
 Pytest Configuration and Shared Fixtures
 =========================================
 
-Centralized test fixtures for the Ava Guardian test suite.
+Centralized test fixtures for the Ava Guardian ♱ test suite.
 Provides reusable components for cryptographic testing.
 
 This file consolidates fixtures from across the test suite to:
@@ -180,7 +180,7 @@ def ed25519_keypair(crypto_ed25519) -> Tuple[bytes, bytes]:
 @pytest.fixture
 def test_message() -> bytes:
     """Provide a standard test message for signature tests."""
-    return b"Test message for Ava Guardian cryptographic operations."
+    return b"Test message for Ava Guardian ♱ cryptographic operations."
 
 
 @pytest.fixture

@@ -6,7 +6,7 @@
 Ava Guardian ♱ Flask Integration Example
 =========================================
 
-Demonstrates integrating Ava Guardian cryptographic protection into a Flask
+Demonstrates integrating Ava Guardian ♱ cryptographic protection into a Flask
 web application for secure API endpoints.
 
 Features:
@@ -58,7 +58,7 @@ from dna_guardian_secure import (
 # Initialize Flask app
 app = Flask(__name__)
 
-# Initialize Ava Guardian cryptographic system
+# Initialize Ava Guardian ♱ cryptographic system
 # In production, load keys from secure storage (HSM, Vault, etc.)
 KMS = generate_key_management_system("Flask API Server")
 CRYPTO = AvaGuardianCrypto(algorithm=AlgorithmType.ED25519)
@@ -135,7 +135,7 @@ def health_check():
 
     return {
         "status": "healthy",
-        "service": "Ava Guardian Flask API",
+        "service": "Ava Guardian ♱ Flask API",
         "timestamp": datetime.utcnow().isoformat(),
         "pqc_available": capabilities.get("dilithium_available", False),
         "algorithms": (
@@ -148,7 +148,7 @@ def health_check():
 @sign_response
 def sign_data():
     """
-    Sign arbitrary data with Ava Guardian.
+    Sign arbitrary data with Ava Guardian ♱.
 
     Request body:
         {"data": "your data to sign"}
