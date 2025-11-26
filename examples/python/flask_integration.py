@@ -332,8 +332,8 @@ def main():
     print("Server public key:", KEYPAIR.public_key.hex()[:32] + "...")
     print()
 
-    # Run development server
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    # Run development server (debug=True is intentional for this example)
+    app.run(host="127.0.0.1", port=5000, debug=True)  # nosec B201
 
 
 if __name__ == "__main__":
