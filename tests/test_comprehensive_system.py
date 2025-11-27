@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Ava Guardian (AG): Comprehensive System Test Suite
+Ava Guardian ♱ (AG♱): Comprehensive System Test Suite
 ===================================================
 
 100% System Testing for complete coverage of all cryptographic operations,

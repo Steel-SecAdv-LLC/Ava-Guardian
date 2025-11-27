@@ -1,4 +1,4 @@
-# Ava Guardian Build Instructions
+# Ava Guardian ♱ Build Instructions
 
 ## Document Information
 
@@ -6,13 +6,13 @@
 |----------|-------|
 | Document Version | 1.0.0 |
 | Last Updated | 2025-11-26 |
-| Applies To | Ava Guardian v1.0.0+ |
+| Applies To | Ava Guardian ♱ v1.0.0+ |
 
 ---
 
 ## Overview
 
-This document provides comprehensive build instructions for the Ava Guardian quantum-resistant cryptographic protection system. The system supports multiple build configurations including pure Python, Python with C extensions, and standalone C library builds.
+This document provides comprehensive build instructions for the Ava Guardian ♱ quantum-resistant cryptographic protection system. The system supports multiple build configurations including pure Python, Python with C extensions, and standalone C library builds.
 
 ---
 

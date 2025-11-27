@@ -2,7 +2,7 @@
  * Copyright 2025 Steel Security Advisors LLC
  * Licensed under the Apache License, Version 2.0
  *
- * Simple example demonstrating Ava Guardian C API usage
+ * Simple example demonstrating Ava Guardian ♱ C API usage
  */
 
 #include <stdio.h>

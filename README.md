@@ -9,24 +9,25 @@
 [![PQC](https://img.shields.io/badge/PQC-ML--DSA--65%20%7C%20Kyber--1024-purple.svg)](CRYPTOGRAPHY.md)
 [![3R Monitoring](https://img.shields.io/badge/3R-Runtime%20Security-orange.svg)](MONITORING.md)
 [![Architecture](https://img.shields.io/badge/architecture-C%20%2B%20Python%20%2B%20Cython-blue.svg)](ARCHITECTURE.md)
-[![Coverage](https://codecov.io/gh/Steel-SecAdv-LLC/Ava-Guardian/branch/main/graph/badge.svg)](https://codecov.io/gh/Steel-SecAdv-LLC/Ava-Guardian)
 
 ```
-+======================================================================+
-|                           AVA GUARDIAN ♱                             |
-|           Production Multi-Language PQC Security System              |
-|                                                                      |
-|  6-Layer Defense            Quantum-Resistant                        |
-|  Cython-Optimized           3R Runtime Monitoring                    |
-|  Security Hardened          Cross-Platform                           |
-|                                                                      |
-|  C Core (Constant-Time)  |  Cython Optimization Layer                |
-|  HD Key Derivation       |  Algorithm-Agnostic API                   |
-|  Key Rotation            |  18+ Equation Variants                    |
-|  Docker + CI/CD          |  Side-Channel Resistant                   |
-|                                                                      |
-|           Built with Mathematical Rigor & Transparency               |
-+======================================================================+
+              +==============================================================================+
+              |                              AVA GUARDIAN ♱                                  |
+              |              Production Multi-Language PQC Security System                   |
+              |                                                                              |
+              |   6-Layer Defense      |   Quantum-Resistant    |   Security Hardened        |
+              |   Cython-Optimized     |   3R Runtime Monitor   |   Cross-Platform           |
+              |   HD Key Derivation    |   Algorithm-Agnostic   |   Side-Channel Resistant   |
+              |                                                                              |
+              |   C Core               |   Cython Layer         |   Python API               |
+              |   ─────────────────    |   ─────────────────    |   ─────────────────        |
+              |   Constant-Time Ops    |   18-37x Speedup       |   Algorithm Agnostic       |
+              |   Memory Protection    |   NumPy Integration    |   Key Management           |
+              |   Timing Attack Safe   |   Math Engine          |   3R Monitoring            |
+              |   liboqs Bindings      |   Double-Helix Eqns    |   Docker + CI/CD           |
+              |                                                                              |
+              |                   Built for a civilized evolution.                           |
+              +==============================================================================+
 ```
 
 **Copyright 2025 Steel Security Advisors LLC**  
@@ -43,10 +44,10 @@
 
 Ava Guardian ♱ (AG♱) is a secure, multi-language cryptographic security system designed to protect people, data, and networks against both classical and quantum threats. Built on a foundation of mathematically rigorous post-quantum cryptography (PQC), AG♱ delivers security-hardened features with exceptional performance.
 
-> **Audit Status:** Community-tested, not externally audited. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for self-assessment details.
-
 Novel in assimilation, the system combines cutting-edge NIST-approved post-quantum algorithms with a unique 3R runtime security monitoring framework, creating a defense-in-depth architecture that provides unprecedented visibility into cryptographic operations while maintaining less than 2% performance overhead. The multi-language architecture (C + Cython + Python) enables both maximum security through constant-time implementations and optional Cython acceleration (18-37x speedup when built), making it suitable for environments ranging from high-security government applications to performance-critical enterprise systems.
 
+> **Audit Status:** Community-tested, not externally audited. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for self-assessment details.
+> 
 > **Security Disclosure:** This is a self-assessed cryptographic implementation without third-party audit. Production use REQUIRES:
 > - FIPS 140-2 Level 3+ HSM for master secrets (no software-only keys in high-security environments)
 > - Independent security review by qualified cryptographers
@@ -803,7 +804,7 @@ make security-audit
 <details>
 <summary><strong>Ethical Cryptography</strong> - Mathematically-Bound Ethical Constraints</summary>
 
-Ava Guardian pioneers the integration of ethical principles directly into cryptographic operations through mathematically rigorous constraints. Unlike traditional security systems that treat ethics as policy overlays, AG♱ embeds ethical considerations into the cryptographic foundation itself.
+Ava Guardian ♱ pioneers the integration of ethical principles directly into cryptographic operations through mathematically rigorous constraints. Unlike traditional security systems that treat ethics as policy overlays, AG♱ embeds ethical considerations into the cryptographic foundation itself.
 
 **12 Omni-DNA Ethical Pillars** are mathematically integrated into key derivation:
 

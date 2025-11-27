@@ -51,7 +51,7 @@ def example_1_simple_signing():
     keypair, signature = quick_sign(message, algorithm=AlgorithmType.ED25519)
 
     print(f"\nMessage: {message.decode()}")
-    print(f"Algorithm: Ed25519")
+    print("Algorithm: Ed25519")
     print(f"Public key: {keypair.public_key.hex()[:32]}...")
     print(f"Signature: {signature.signature.hex()[:32]}...")
 
@@ -67,7 +67,7 @@ def example_1_simple_signing():
     # Try quantum-resistant signing if available
     try:
         keypair_pqc, signature_pqc = quick_sign(message, algorithm=AlgorithmType.ML_DSA_65)
-        print(f"\nQuantum-resistant (ML-DSA-65) also available!")
+        print("\nQuantum-resistant (ML-DSA-65) also available!")
         print(f"PQC signature size: {len(signature_pqc.signature)} bytes")
     except Exception as e:
         print(f"\nNote: PQC not available ({e})")
@@ -110,8 +110,8 @@ def example_2_key_management():
     print("\n--- Key Rotation ---")
     rotation_mgr = KeyRotationManager(rotation_period=timedelta(days=90))
 
-    key1 = rotation_mgr.register_key("key-v1", "signing", max_usage=1000)
-    key2 = rotation_mgr.register_key("key-v2", "signing")
+    rotation_mgr.register_key("key-v1", "signing", max_usage=1000)
+    rotation_mgr.register_key("key-v2", "signing")
 
     print(f"Active key: {rotation_mgr.get_active_key()}")
 
@@ -171,7 +171,7 @@ def example_3_data_protection():
         use_rfc3161=False,  # Set True for trusted timestamp
     )
 
-    print(f"\nPackage created:")
+    print("\nPackage created:")
     print(f"  Content hash: {package.content_hash[:32]}...")
     print(f"  HMAC tag: {package.hmac_tag[:32]}...")
     print(f"  Ed25519 signature: {package.ed25519_signature[:32]}...")
@@ -257,9 +257,9 @@ def example_4_humanitarian_use_case():
 def main():
     """Run all examples."""
     print("=" * 60)
-    print("AVA GUARDIAN - BASIC USAGE EXAMPLES")
+    print("AVA GUARDIAN ♱ - BASIC USAGE EXAMPLES")
     print("=" * 60)
-    print("\nThese examples demonstrate core Ava Guardian capabilities.")
+    print("\nThese examples demonstrate core Ava Guardian ♱ capabilities.")
     print("For full documentation, see: https://github.com/Steel-SecAdv-LLC/Ava-Guardian")
 
     try:

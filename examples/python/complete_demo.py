@@ -6,7 +6,7 @@
 Ava Guardian ♱ Complete Feature Demonstration
 ==============================================
 
-Comprehensive demonstration of all Ava Guardian capabilities:
+Comprehensive demonstration of all Ava Guardian ♱ capabilities:
 - Algorithm-agnostic cryptographic API
 - Hierarchical deterministic key derivation
 - Key rotation and management
@@ -336,7 +336,7 @@ def main():
     print("=" * 70)
     print("AVA GUARDIAN ♱ COMPLETE FEATURE DEMONSTRATION")
     print("=" * 70)
-    print("\nDemonstrating all capabilities of Ava Guardian 2.0")
+    print("\nDemonstrating all capabilities of Ava Guardian ♱ 1.0")
     print("Production-grade multi-language PQC system")
     print()
 

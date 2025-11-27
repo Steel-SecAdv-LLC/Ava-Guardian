@@ -1,7 +1,7 @@
 Ava Guardian ♱ Documentation
 ============================
 
-Welcome to the Ava Guardian documentation. This system provides quantum-resistant
+Welcome to the Ava Guardian ♱ documentation. This system provides quantum-resistant
 cryptographic protection with a multi-language architecture optimized for both
 security and performance.
 

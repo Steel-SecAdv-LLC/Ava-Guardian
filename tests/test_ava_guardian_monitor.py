@@ -17,7 +17,7 @@
 Ava Guardian ♱ (AG♱): 3R Monitoring Test Suite
 ===============================================
 
-Comprehensive test suite for Ava Guardian 3R Monitoring.
+Comprehensive test suite for Ava Guardian ♱ 3R Monitoring.
 
 Tests cover:
 - ResonanceEngine timing detection
@@ -31,7 +31,7 @@ Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
 Date: 2025-11-26
 Version: 1.0.0
-Project: Ava Guardian 3R Test Suite
+Project: Ava Guardian ♱ 3R Test Suite
 
 AI Co-Architects:
     Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
@@ -833,7 +833,7 @@ class TestAvaGuardianMonitor:
 # Integration test markers
 @pytest.mark.integration
 class TestMonitorIntegration:
-    """Integration tests with full Ava Guardian system."""
+    """Integration tests with full Ava Guardian ♱ system."""
 
     def test_end_to_end_monitoring(self):
         """Test complete workflow with monitoring."""
@@ -882,7 +882,7 @@ class TestMonitorIntegration:
         except (ImportError, Exception) as e:
             # Skip if imports fail (missing dependencies) or if there are
             # version mismatches (e.g., liboqs version warnings)
-            pytest.skip(f"Integration test requires full Ava Guardian system: {e}")
+            pytest.skip(f"Integration test requires full Ava Guardian ♱ system: {e}")
 
 
 if __name__ == "__main__":

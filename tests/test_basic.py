@@ -2,7 +2,7 @@
 # Copyright 2025 Steel Security Advisors LLC
 # Licensed under the Apache License, Version 2.0
 
-"""Basic tests for Ava Guardian"""
+"""Basic tests for Ava Guardian ♱"""
 
 import ava_guardian
 

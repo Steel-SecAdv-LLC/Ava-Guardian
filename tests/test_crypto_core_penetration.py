@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Ava Guardian (AG): Core Cryptographic Penetration Test Suite
+Ava Guardian ♱ (AG♱): Core Cryptographic Penetration Test Suite
 =============================================================
 
 100% Penetration Validation for cryptographic primitives.

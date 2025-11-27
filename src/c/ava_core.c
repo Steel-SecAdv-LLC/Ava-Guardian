@@ -16,7 +16,7 @@
 
 /**
  * @file ava_core.c
- * @brief Core Ava Guardian context and lifecycle management
+ * @brief Core Ava Guardian ♱ context and lifecycle management
  * @author Andrew E. A., Steel Security Advisors LLC
  * @date 2025-11-24
  */
@@ -26,7 +26,7 @@
 #include <string.h>
 
 /**
- * Ava Guardian context structure (opaque)
+ * Ava Guardian ♱ context structure (opaque)
  */
 struct ava_context_t {
     ava_algorithm_t algorithm;
@@ -50,7 +50,7 @@ void ava_version_number(int* major, int* minor, int* patch) {
 }
 
 /**
- * Initialize Ava Guardian context
+ * Initialize Ava Guardian ♱ context
  */
 ava_context_t* ava_context_init(ava_algorithm_t algorithm) {
     ava_context_t* ctx;
@@ -76,7 +76,7 @@ ava_context_t* ava_context_init(ava_algorithm_t algorithm) {
 }
 
 /**
- * Free Ava Guardian context
+ * Free Ava Guardian ♱ context
  */
 void ava_context_free(ava_context_t* ctx) {
     if (!ctx) {

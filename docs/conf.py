@@ -2,7 +2,7 @@
 # Copyright 2025 Steel Security Advisors LLC
 # Licensed under the Apache License, Version 2.0
 #
-# Sphinx configuration for Ava Guardian Python API documentation
+# Sphinx configuration for Ava Guardian ♱ Python API documentation
 
 import os
 import sys
@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, os.path.abspath("../src/python"))
 
 # Project information
-project = "Ava Guardian"
+project = "Ava Guardian ♱"
 copyright = "2025, Steel Security Advisors LLC"
 author = "Andrew E. A."
 version = "1.0.0"
@@ -85,7 +85,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # Pygments style
 pygments_style = "sphinx"
 
-# TODO settings
+# Sphinx TODO extension settings
 todo_include_todos = True
 
 # HTML output options

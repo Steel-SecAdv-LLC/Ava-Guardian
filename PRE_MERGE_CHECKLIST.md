@@ -1,4 +1,4 @@
-# Ava Guardian Pre-Merge Checklist
+# Ava Guardian ♱ Pre-Merge Checklist
 
 ## Document Information
 

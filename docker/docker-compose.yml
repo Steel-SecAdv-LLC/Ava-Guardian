@@ -1,12 +1,12 @@
 # Copyright 2025 Steel Security Advisors LLC
 # Licensed under the Apache License, Version 2.0
 #
-# Docker Compose configuration for Ava Guardian
+# Docker Compose configuration for Ava Guardian ♱
 
 version: '3.8'
 
 services:
-  # Main Ava Guardian service
+  # Main Ava Guardian ♱ service
   ava-guardian:
     build:
       context: ..

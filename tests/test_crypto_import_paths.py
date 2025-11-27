@@ -14,8 +14,8 @@
 # limitations under the License.
 
 """
-Ava Guardian (AG): Import Path and Edge Case Tests
-===================================================
+Ava Guardian ♱ (AG♱): Import Path and Edge Case Tests
+======================================================
 
 Tests for import error handling, CRYPTO_AVAILABLE/DILITHIUM_AVAILABLE paths,
 pqcrypto backend paths, RFC 3161 success paths, and other edge cases needed

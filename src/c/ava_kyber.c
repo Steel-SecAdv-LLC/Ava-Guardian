@@ -3,24 +3,33 @@
  * Licensed under the Apache License, Version 2.0
  *
  * @file ava_kyber.c
- * @brief CRYSTALS-Kyber-1024 Key Encapsulation Mechanism
+ * @brief CRYSTALS-Kyber-1024 Key Encapsulation Mechanism - Native C Implementation
  * @author Andrew E. A., Steel Security Advisors LLC
  * @date 2025-11-24
  *
- * Implementation of NIST PQC Kyber-1024 (ML-KEM-1024).
- * Provides IND-CCA2 secure key encapsulation.
+ * IMPLEMENTATION STATUS: PLACEHOLDER
+ * ==================================
+ * This file contains polynomial arithmetic foundations for a future native
+ * Kyber-1024 implementation. Currently, production Kyber operations use the
+ * Python API with liboqs-python backend for full NIST FIPS 203 compliance.
  *
- * Parameters (Kyber-1024):
+ * The polynomial operations (poly_add, poly_sub, montgomery_reduce) are
+ * implemented and tested. Full KEM operations (keygen, encaps, decaps)
+ * return AVA_ERROR_NOT_IMPLEMENTED - use the Python API instead.
+ *
+ * Parameters (Kyber-1024 / ML-KEM-1024):
  * - Security level: NIST Level 5 (~256-bit classical, ~128-bit quantum)
  * - Public key: 1568 bytes
  * - Secret key: 3168 bytes
  * - Ciphertext: 1568 bytes
  * - Shared secret: 32 bytes
  *
- * Based on:
- * - NIST PQC Round 3 Kyber specification
+ * Standards:
+ * - NIST FIPS 203 (ML-KEM)
  * - Module-LWE hardness assumption
- * - Fujisaki-Okamoto transform for CCA2 security
+ * - Fujisaki-Okamoto transform for IND-CCA2 security
+ *
+ * For production use: pip install ava-guardian[quantum]
  */
 
 #include "../include/ava_guardian.h"
@@ -28,7 +37,7 @@
 #include <string.h>
 #include <stdint.h>
 
-/* Suppress unused function warnings for stub implementations */
+/* Suppress unused function warnings for polynomial arithmetic foundations */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 
@@ -102,13 +111,18 @@ static void kyber_free(kyber_context_t* ctx) {
 /**
  * Generate Kyber-1024 keypair
  *
- * NOTE: This is a stub implementation. In production, this would:
+ * PLACEHOLDER: Native C implementation reserved for future development.
+ * Production implementations should use the Python API with liboqs backend.
+ *
+ * Full implementation would:
  * 1. Generate matrix A from seed using SHAKE128
  * 2. Sample secret vector s from centered binomial distribution
  * 3. Sample error vector e from centered binomial distribution
  * 4. Compute t = A*s + e (in NTT domain)
  * 5. Encode (seed, t) as public key
  * 6. Encode s as secret key
+ *
+ * @return AVA_ERROR_NOT_IMPLEMENTED (use Python API instead)
  */
 ava_error_t kyber_keypair_generate(
     uint8_t* public_key,
@@ -121,24 +135,26 @@ ava_error_t kyber_keypair_generate(
         return AVA_ERROR_INVALID_PARAM;
     }
 
-    /* Suppress unused parameter warnings for stub implementation */
+    /* Parameters validated but not used - placeholder returns NOT_IMPLEMENTED */
     (void)public_key;
     (void)secret_key;
 
-    /* TODO: Implement full Kyber keygen
-     * For now, return not implemented
-     */
     return AVA_ERROR_NOT_IMPLEMENTED;
 }
 
 /**
  * Encapsulate shared secret
  *
- * NOTE: This is a stub. Production implementation would:
+ * PLACEHOLDER: Native C implementation reserved for future development.
+ * Production implementations should use the Python API with liboqs backend.
+ *
+ * Full implementation would:
  * 1. Generate random message m
  * 2. Compute (K, r) = G(m || H(pk))
  * 3. Encrypt m to get ciphertext c
  * 4. Compute shared secret ss = KDF(K || H(c))
+ *
+ * @return AVA_ERROR_NOT_IMPLEMENTED (use Python API instead)
  */
 ava_error_t kyber_encapsulate(
     const uint8_t* public_key,
@@ -153,25 +169,29 @@ ava_error_t kyber_encapsulate(
         return AVA_ERROR_INVALID_PARAM;
     }
 
-    /* Suppress unused parameter warnings for stub implementation */
+    /* Parameters validated but not used - placeholder returns NOT_IMPLEMENTED */
     (void)public_key;
     (void)ciphertext;
     (void)ciphertext_len;
     (void)shared_secret;
 
-    /* TODO: Implement full encapsulation */
     return AVA_ERROR_NOT_IMPLEMENTED;
 }
 
 /**
  * Decapsulate shared secret
  *
- * NOTE: This is a stub. Production implementation would:
+ * PLACEHOLDER: Native C implementation reserved for future development.
+ * Production implementations should use the Python API with liboqs backend.
+ *
+ * Full implementation would:
  * 1. Decrypt ciphertext to get m'
  * 2. Compute (K', r') = G(m' || H(pk))
  * 3. Re-encrypt m' with r' to get c'
  * 4. If c' == c: return ss = KDF(K' || H(c))
  * 5. Else: return ss = KDF(z || H(c)) [implicit rejection]
+ *
+ * @return AVA_ERROR_NOT_IMPLEMENTED (use Python API instead)
  */
 ava_error_t kyber_decapsulate(
     const uint8_t* ciphertext,
@@ -187,17 +207,20 @@ ava_error_t kyber_decapsulate(
         return AVA_ERROR_INVALID_PARAM;
     }
 
-    /* Suppress unused parameter warnings for stub implementation */
+    /* Parameters validated but not used - placeholder returns NOT_IMPLEMENTED */
     (void)ciphertext;
     (void)secret_key;
     (void)shared_secret;
 
-    /* TODO: Implement full decapsulation */
     return AVA_ERROR_NOT_IMPLEMENTED;
 }
 
 /* ============================================================================
- * POLYNOMIAL ARITHMETIC (stubs - full implementation would go here)
+ * POLYNOMIAL ARITHMETIC FOUNDATIONS
+ * ============================================================================
+ * These functions provide the mathematical foundations for Kyber operations.
+ * poly_add, poly_sub, and montgomery_reduce are implemented.
+ * NTT and other operations are placeholders for future development.
  * ============================================================================ */
 
 static void poly_add(poly* r, const poly* a, const poly* b) {
@@ -214,28 +237,32 @@ static void poly_sub(poly* r, const poly* a, const poly* b) {
 
 /**
  * Number Theoretic Transform (forward)
- * TODO: Implement full NTT with precomputed twiddle factors
+ *
+ * PLACEHOLDER: Requires precomputed twiddle factors for Kyber's NTT.
+ * Would transform polynomial to NTT domain for efficient multiplication.
  */
 static void poly_ntt(poly* r) {
-    /* Stub */
+    /* Placeholder - full NTT requires twiddle factor tables */
     (void)r;
 }
 
 /**
  * Inverse NTT
- * TODO: Implement inverse NTT
+ *
+ * PLACEHOLDER: Transforms polynomial back from NTT domain.
  */
 static void poly_invntt(poly* r) {
-    /* Stub */
+    /* Placeholder - inverse NTT implementation */
     (void)r;
 }
 
 /**
  * Pointwise multiplication in NTT domain
- * TODO: Implement basemul with Montgomery reduction
+ *
+ * PLACEHOLDER: Performs coefficient-wise multiplication with Montgomery reduction.
  */
 static void poly_basemul(poly* r, const poly* a, const poly* b) {
-    /* Stub */
+    /* Placeholder - basemul with Montgomery reduction */
     (void)r; (void)a; (void)b;
 }
 
@@ -257,34 +284,42 @@ static int16_t montgomery_reduce(int32_t a) {
 
 /**
  * Compress polynomial
- * TODO: Implement compression: round(2^bits * x / q)
+ *
+ * PLACEHOLDER: Compresses coefficients using round(2^bits * x / q).
+ * Used for ciphertext compression in Kyber.
  */
 static void poly_compress(uint8_t* r, const poly* a, int bits) {
-    /* Stub */
+    /* Placeholder - compression for ciphertext size reduction */
     (void)r; (void)a; (void)bits;
 }
 
 /**
  * Decompress polynomial
- * TODO: Implement decompression: round(q * x / 2^bits)
+ *
+ * PLACEHOLDER: Decompresses using round(q * x / 2^bits).
+ * Inverse of poly_compress for decryption.
  */
 static void poly_decompress(poly* r, const uint8_t* a, int bits) {
-    /* Stub */
+    /* Placeholder - decompression for decryption */
     (void)r; (void)a; (void)bits;
 }
 
 /**
  * Serialize polynomial to bytes
+ *
+ * PLACEHOLDER: Packs 256 12-bit coefficients into 384 bytes.
  */
 static void poly_tobytes(uint8_t* r, const poly* a) {
-    /* Stub - would pack 256 coefficients into 384 bytes */
+    /* Placeholder - polynomial serialization */
     (void)r; (void)a;
 }
 
 /**
  * Deserialize polynomial from bytes
+ *
+ * PLACEHOLDER: Unpacks 384 bytes into 256 12-bit coefficients.
  */
 static void poly_frombytes(poly* r, const uint8_t* a) {
-    /* Stub - would unpack 384 bytes into 256 coefficients */
+    /* Placeholder - polynomial deserialization */
     (void)r; (void)a;
 }

@@ -6,7 +6,7 @@
 Ava Guardian ♱ Flask Integration Example
 =========================================
 
-Demonstrates integrating Ava Guardian cryptographic protection into a Flask
+Demonstrates integrating Ava Guardian ♱ cryptographic protection into a Flask
 web application for secure API endpoints.
 
 Features:
@@ -46,19 +46,16 @@ from ava_guardian.crypto_api import (
     AlgorithmType,
     AvaGuardianCrypto,
     get_pqc_capabilities,
-    quick_sign,
-    quick_verify,
 )
 from dna_guardian_secure import (
     create_crypto_package,
     generate_key_management_system,
-    verify_crypto_package,
 )
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# Initialize Ava Guardian cryptographic system
+# Initialize Ava Guardian ♱ cryptographic system
 # In production, load keys from secure storage (HSM, Vault, etc.)
 KMS = generate_key_management_system("Flask API Server")
 CRYPTO = AvaGuardianCrypto(algorithm=AlgorithmType.ED25519)
@@ -135,7 +132,7 @@ def health_check():
 
     return {
         "status": "healthy",
-        "service": "Ava Guardian Flask API",
+        "service": "Ava Guardian ♱ Flask API",
         "timestamp": datetime.utcnow().isoformat(),
         "pqc_available": capabilities.get("dilithium_available", False),
         "algorithms": (
@@ -148,7 +145,7 @@ def health_check():
 @sign_response
 def sign_data():
     """
-    Sign arbitrary data with Ava Guardian.
+    Sign arbitrary data with Ava Guardian ♱.
 
     Request body:
         {"data": "your data to sign"}
@@ -214,7 +211,7 @@ def get_protected_data():
     """
     Get cryptographically protected data package.
 
-    Returns a complete Ava Guardian crypto package with:
+    Returns a complete Ava Guardian ♱ crypto package with:
     - Content hash (SHA3-256)
     - HMAC authentication
     - Ed25519 signature
@@ -316,10 +313,10 @@ def handle_error(error):
 def main():
     """Run the Flask development server."""
     print("=" * 60)
-    print("AVA GUARDIAN - FLASK INTEGRATION EXAMPLE")
+    print("AVA GUARDIAN ♱ - FLASK INTEGRATION EXAMPLE")
     print("=" * 60)
     print()
-    print("Starting Flask server with Ava Guardian cryptographic protection...")
+    print("Starting Flask server with Ava Guardian ♱ cryptographic protection...")
     print()
     print("Available endpoints:")
     print("  GET  /api/health          - Health check (signed)")

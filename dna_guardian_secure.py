@@ -2065,7 +2065,7 @@ def verify_crypto_package(
 
 def main():
     """
-    Demonstrate complete Ava Guardian system with all DNA codes.
+    Demonstrate complete Ava Guardian ♱ system with all DNA codes.
     """
     print("\n" + "=" * 70)
     print("Ava Guardian ♱ (AG♱): SHA3-256 Security Hash")
