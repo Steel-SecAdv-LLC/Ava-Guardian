@@ -975,7 +975,7 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. THE AUTHORS AND 
 
 **Ava Guardian ♱ (AG♱) - Protecting people, data, and networks with quantum-resistant cryptography**
 
-*Built with precision. Secured with mathematics. Protected by innovation.*
+*Promoting action over inaction. In hopes of helping. But, possibly landed in cargo cult cryptography. Remian aware, be caustious. The percieved absence of a threat does not consitute the lack of a threat. Hopeful that AG♱ can deter, mitigate, and elevaite security issues. Not create them. 
 
 <img src="assets/ama_logo.png" alt="AMA" height="24">
 
