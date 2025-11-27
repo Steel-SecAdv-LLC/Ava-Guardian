@@ -418,7 +418,9 @@ class TestPerformanceRegression:
         else:
             threshold = 0.01  # 10ms for Linux/macOS (observed: ~2-3ms)
 
-        assert hash_time < threshold, f"Hashing too slow: {hash_time:.6f}s (threshold: {threshold}s)"
+        assert (
+            hash_time < threshold
+        ), f"Hashing too slow: {hash_time:.6f}s (threshold: {threshold}s)"
 
 
 class TestHumanitarianUseCases:
