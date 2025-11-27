@@ -153,23 +153,27 @@ class MLKEM512Spec:
 @pytest.fixture
 def dilithium_provider():
     """Get Dilithium provider if available."""
-    try:
-        from ava_guardian.pqc_backends import DilithiumProvider
+    from ava_guardian.pqc_backends import DILITHIUM_AVAILABLE
 
-        return DilithiumProvider()
-    except ImportError:
-        pytest.skip("Dilithium provider not available (install oqs package)")
+    if not DILITHIUM_AVAILABLE:
+        pytest.skip("Dilithium backend not available (install oqs package)")
+
+    from ava_guardian.pqc_backends import DilithiumProvider
+
+    return DilithiumProvider()
 
 
 @pytest.fixture
 def kyber_provider():
     """Get Kyber provider if available."""
-    try:
-        from ava_guardian.pqc_backends import KyberProvider
+    from ava_guardian.pqc_backends import KYBER_AVAILABLE
 
-        return KyberProvider()
-    except ImportError:
-        pytest.skip("Kyber provider not available (install oqs package)")
+    if not KYBER_AVAILABLE:
+        pytest.skip("Kyber backend not available (install oqs package)")
+
+    from ava_guardian.pqc_backends import KyberProvider
+
+    return KyberProvider()
 
 
 # =============================================================================
