@@ -17,7 +17,7 @@ Ava Guardian ♱ includes optional runtime security monitoring using the 3R Mech
 
 | Component | Function | Purpose |
 |-----------|----------|---------|
-| ResonanceEngine | Timing attack detection | Frequency-domain analysis of operation timings |
+| ResonanceEngine | Runtime timing anomaly monitoring | Frequency-domain analysis of operation timings (statistical anomaly detection) |
 | RecursionEngine | Pattern analysis | Hierarchical anomaly detection across time scales |
 | RefactoringEngine | Code complexity metrics | Static analysis for manual security review |
 
@@ -52,9 +52,11 @@ Ava Guardian ♱ includes optional runtime security monitoring using the 3R Mech
 
 ## Component Deep Dive
 
-### ResonanceEngine: Timing Attack Detection
+### ResonanceEngine: Runtime Timing Anomaly Monitoring
 
-**Purpose**: Identify timing side-channels through frequency-domain analysis.
+**Purpose**: Surface statistical timing anomalies through frequency-domain analysis for security review.
+
+**IMPORTANT**: This is a MONITORING system that surfaces statistical anomalies. It does NOT guarantee detection or prevention of timing attacks or other side-channel vulnerabilities. Constant-time implementations at the cryptographic primitive level are the primary defense against timing side-channels.
 
 **Technical Approach**:
 1. Record operation timings (e.g., Ed25519 sign, Dilithium verify)
@@ -62,11 +64,11 @@ Ava Guardian ♱ includes optional runtime security monitoring using the 3R Mech
 3. Detect periodic patterns (resonance) indicating side-channels
 4. Alert on statistical anomalies (>3σ deviations)
 
-**Threat Model**:
-- Cache timing attacks (Bernstein's attack on AES)
-- Branch prediction leakage  
-- Memory access pattern correlation
-- CPU microarchitecture side-channels
+**Anomaly Patterns Monitored** (examples of behaviors that can produce distinctive timing signatures; the system surfaces anomalies but does not guarantee detection of any particular attack):
+- Cache timing patterns (e.g., Bernstein's attack on AES)
+- Branch prediction leakage patterns
+- Memory access pattern correlations
+- CPU microarchitecture timing variations
 
 **Configuration**:
 - `threshold_sigma`: Anomaly sensitivity (default: 3.0)

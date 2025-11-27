@@ -288,7 +288,16 @@ class EWMAStats:
 @dataclass
 class TimingAnomaly:
     """
-    Detected timing side-channel anomaly.
+    Detected statistical timing anomaly.
+
+    This represents a statistical anomaly in operation timing that may be
+    consistent with side-channel behavior. This is a monitoring signal for
+    human security review, NOT a guaranteed detection of a timing attack.
+
+    The 3R monitoring system surfaces anomalies but does not guarantee
+    detection or prevention of timing attacks or other side-channel
+    vulnerabilities. Constant-time implementations at the cryptographic
+    primitive level are the primary defense against timing side-channels.
 
     Attributes:
         operation: Name of the cryptographic operation

@@ -36,6 +36,8 @@ Standards:
 AI Co-Architects: Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 """
 
+import os
+import warnings
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional, cast
@@ -70,6 +72,26 @@ class SphincsUnavailableError(PQCUnavailableError):
 
     pass
 
+
+class SecurityWarning(UserWarning):
+    """
+    Security-related warning for potentially unsafe cryptographic configurations.
+
+    This warning is raised when using PQC backends that are not guaranteed to be
+    constant-time, which may be vulnerable to timing side-channel attacks.
+    """
+
+    pass
+
+
+# Environment variable to require constant-time backends
+# Set AVA_REQUIRE_CONSTANT_TIME=true to refuse non-constant-time backends
+AVA_REQUIRE_CONSTANT_TIME = os.getenv("AVA_REQUIRE_CONSTANT_TIME", "").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
 # Backend detection
 _DILITHIUM_AVAILABLE = False
@@ -137,6 +159,38 @@ KYBER_AVAILABLE: bool = _KYBER_AVAILABLE
 KYBER_BACKEND: Optional[str] = _KYBER_BACKEND
 SPHINCS_AVAILABLE: bool = _SPHINCS_AVAILABLE
 SPHINCS_BACKEND: Optional[str] = _SPHINCS_BACKEND
+
+# =============================================================================
+# SECURITY WARNINGS AND CONSTANT-TIME ENFORCEMENT
+# =============================================================================
+
+# Issue warning if using non-constant-time backend (pqcrypto)
+if _DILITHIUM_BACKEND == "pqcrypto" and _dilithium3_module is not None:
+    warnings.warn(
+        "Using pure Python PQC implementation (pqcrypto). This is NOT constant-time "
+        "and may be vulnerable to timing side-channels. Do not use in environments "
+        "where timing attacks are a concern. Install liboqs-python for constant-time "
+        "implementations: pip install liboqs-python. "
+        "Set AVA_REQUIRE_CONSTANT_TIME=true to reject this configuration.",
+        SecurityWarning,
+        stacklevel=2,
+    )
+
+# Enforce constant-time requirement if AVA_REQUIRE_CONSTANT_TIME is set
+if AVA_REQUIRE_CONSTANT_TIME:
+    # Require liboqs-based implementations for all PQC algorithms
+    if _DILITHIUM_AVAILABLE and _DILITHIUM_BACKEND != "liboqs":
+        raise PQCUnavailableError(
+            "PQC_UNAVAILABLE: AVA_REQUIRE_CONSTANT_TIME is set but a verified "
+            "constant-time Dilithium backend (liboqs) is not available. "
+            "The pqcrypto backend is not guaranteed constant-time. "
+            "Install liboqs-python: pip install liboqs-python"
+        )
+    if not _DILITHIUM_AVAILABLE:
+        raise PQCUnavailableError(
+            "PQC_UNAVAILABLE: AVA_REQUIRE_CONSTANT_TIME is set but no Dilithium "
+            "backend is available. Install liboqs-python: pip install liboqs-python"
+        )
 
 # Key sizes from liboqs (authoritative source)
 # ML-DSA-65 (Dilithium3)

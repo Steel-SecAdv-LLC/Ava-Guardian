@@ -17,6 +17,20 @@
 Ava Guardian ♱ (AG♱) - Mathematical Equations Suite
 ====================================================
 
+**IMPORTANT: NON-CRYPTOGRAPHIC MODULE**
+
+This module provides mathematical and analytical utilities for the Ava Guardian
+system. It is NOT a cryptographic primitive and should NOT be relied upon for
+security guarantees. The functions here implement mathematical frameworks for:
+
+- Data structure validation and integrity checking
+- Analytical metrics and convergence analysis
+- Mathematical modeling and simulation
+
+These utilities support the overall system architecture but do not provide
+cryptographic protection. For cryptographic operations, use the dedicated
+modules: pqc_backends.py, crypto_api.py, and dna_guardian_secure.py.
+
 Complete implementation of 5 proven mathematical frameworks with machine-precision verification.
 
 Frameworks:
