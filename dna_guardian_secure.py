@@ -257,8 +257,8 @@ def length_prefixed_encode(*fields: str) -> bytes:
         ValueError: If any field exceeds 4GB
     """
     encoded = b""
-    for i, field in enumerate(fields):
-        field_bytes = field.encode("utf-8")
+    for i, field_value in enumerate(fields):
+        field_bytes = field_value.encode("utf-8")
 
         # Validate field size
         if len(field_bytes) > 0xFFFFFFFF:
