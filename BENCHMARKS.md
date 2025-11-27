@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| Document Version | 1.1.0 |
+| Document Version | 1.2.0 |
 | Last Updated | 2025-11-27 |
 | Classification | Public |
 | Maintainer | Steel Security Advisors LLC |
@@ -231,7 +231,42 @@ These benchmarks compare our Cython-optimized mathematical engine against pure P
 
 ---
 
-## 9. How to Run Benchmarks
+## 9. CI Regression Detection
+
+### 9.1 Tiered Tolerance Approach
+
+Ava Guardian uses a **tiered tolerance system** for CI benchmark regression detection:
+
+| Tier | Benchmarks | Tolerance | Detects | Rationale |
+|------|-----------|-----------|---------|-----------|
+| **Tier 1** (Microbenchmarks) | SHA3-256, HMAC, Ed25519, HKDF | **25%** | ~1.7-1.8x regressions | Stable CPU-bound operations |
+| **Tier 2** (Complex Operations) | Full package create/verify, PQC | **35-40%** | ~2-2.5x regressions | Higher variance due to I/O, PQC libs |
+
+### 9.2 Baseline Calibration
+
+Baselines are calibrated to **GitHub Actions ubuntu-latest** runner performance, not development hardware:
+
+| Benchmark | CI Performance | Baseline | Headroom |
+|-----------|---------------|----------|----------|
+| SHA3-256 | ~198k ops/sec | 150k | 32% below CI |
+| HMAC-SHA3 | ~95k ops/sec | 70k | 36% below CI |
+| Ed25519 keygen | ~26k ops/sec | 15k | 73% below CI |
+
+This ensures CI passes reliably while still catching real performance regressions.
+
+### 9.3 How to Run Regression Detection
+
+```bash
+# Run benchmark regression detection
+python benchmarks/benchmark_runner.py --verbose
+
+# Update baseline (use with caution)
+python benchmarks/benchmark_runner.py --update-baseline
+```
+
+---
+
+## 10. How to Run Benchmarks
 
 ```bash
 # Run the benchmark suite
@@ -246,7 +281,7 @@ python -m cProfile -o profile.stats dna_guardian_secure.py
 
 ---
 
-## 10. Conclusion
+## 11. Conclusion
 
 Ava Guardian ♱ delivers **high-performance cryptography** with:
 
@@ -277,6 +312,7 @@ Ava Guardian ♱ delivers **high-performance cryptography** with:
 |---------|------|---------|
 | 1.0.0 | 2025-11-26 | Initial professional release |
 | 1.1.0 | 2025-11-27 | Updated benchmarks with fresh measurements from Python 3.12 |
+| 1.2.0 | 2025-11-27 | Added tiered tolerance approach for CI regression detection |
 
 ---
 

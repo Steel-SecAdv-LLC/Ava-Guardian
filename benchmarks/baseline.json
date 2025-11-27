@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "version": "1.2.0",
-    "created": "2025-11-27T09:45:00Z",
+    "version": "1.3.0",
+    "created": "2025-11-27T10:00:00Z",
     "description": "Ava Guardian ♱ performance baseline for regression detection",
     "system": "GitHub Actions ubuntu-latest, Python 3.11",
-    "notes": "Baselines calibrated to CI runner performance. Tolerances set to 35% to account for shared CI hardware variance. A real regression (3-5x slowdown) will still fail CI."
+    "notes": "Tiered tolerance approach: Tier 1 microbenchmarks (SHA3, HMAC, Ed25519, HKDF) use 25% tolerance to detect ~1.7-1.8x regressions. Tier 2 complex operations (full package, PQC) use 35-40% tolerance to account for higher variance. Baselines calibrated below CI runner performance for headroom."
   },
   "thresholds": {
     "regression_threshold_percent": 10,
@@ -17,56 +17,64 @@
       "metric": "operations_per_second",
       "baseline_value": 150000,
       "unit": "ops/sec",
-      "tolerance_percent": 35
+      "tolerance_percent": 25,
+      "tier": "microbenchmark"
     },
     "hmac_sha3_256": {
       "description": "HMAC-SHA3-256 authentication",
       "metric": "operations_per_second",
       "baseline_value": 70000,
       "unit": "ops/sec",
-      "tolerance_percent": 35
+      "tolerance_percent": 25,
+      "tier": "microbenchmark"
     },
     "ed25519_keygen": {
       "description": "Ed25519 key pair generation",
       "metric": "operations_per_second",
       "baseline_value": 15000,
       "unit": "ops/sec",
-      "tolerance_percent": 35
+      "tolerance_percent": 25,
+      "tier": "microbenchmark"
     },
     "ed25519_sign": {
       "description": "Ed25519 signature generation",
       "metric": "operations_per_second",
       "baseline_value": 10000,
       "unit": "ops/sec",
-      "tolerance_percent": 35
+      "tolerance_percent": 25,
+      "tier": "microbenchmark"
     },
     "ed25519_verify": {
       "description": "Ed25519 signature verification",
       "metric": "operations_per_second",
       "baseline_value": 5000,
       "unit": "ops/sec",
-      "tolerance_percent": 35
+      "tolerance_percent": 25,
+      "tier": "microbenchmark"
     },
     "hkdf_derive": {
       "description": "HKDF key derivation (3 keys)",
       "metric": "operations_per_second",
       "baseline_value": 60000,
       "unit": "ops/sec",
-      "tolerance_percent": 35
+      "tolerance_percent": 25,
+      "tier": "microbenchmark"
     },
     "full_package_create": {
       "description": "Complete crypto package creation (with PQC)",
       "metric": "operations_per_second",
       "baseline_value": 2000,
       "unit": "ops/sec",
-      "tolerance_percent": 40
+      "tolerance_percent": 40,
+      "tier": "complex_operation"
     },
     "full_package_verify": {
       "description": "Complete crypto package verification (with PQC)",
       "metric": "operations_per_second",
       "baseline_value": 2000,
       "unit": "ops/sec",
-      "tolerance_percent": 40
+      "tolerance_percent": 40,
+      "tier": "complex_operation"
     }
   },
   "pqc_benchmarks": {
