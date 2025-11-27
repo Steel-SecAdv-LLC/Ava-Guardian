@@ -5,7 +5,7 @@
 | Property | Value |
 |----------|-------|
 | Document Version | 1.0.0 |
-| Last Updated | 2025-11-26 |
+| Last Updated | 2025-11-27 |
 | Classification | Public |
 | Maintainer | Steel Security Advisors LLC |
 
@@ -18,6 +18,41 @@ All notable changes to Ava Guardian ♱ will be documented in this file. The for
 ---
 
 ## [Unreleased]
+
+### Added - Constant-Time Verification and NIST KAT Documentation
+
+**Enhancement:** Added dudect-style timing analysis harness and documented NIST KAT coverage.
+
+#### Summary
+
+Addresses remaining security audit concerns by adding constant-time verification tooling and documenting existing NIST KAT test vector coverage.
+
+#### Changes
+
+- **Constant-Time Verification (`tools/constant_time/`):**
+  - `dudect_harness.c`: Implements Welch's t-test timing analysis for all 5 constant-time functions
+  - `Makefile`: Build system with `make test` (100K iterations) and `make test-full` (1M iterations)
+  - Tests: `ava_consttime_memcmp`, `ava_consttime_swap`, `ava_secure_memzero`, `ava_consttime_lookup`, `ava_consttime_copy`
+  - Threshold: |t| < 4.5 (dudect convention, ~10⁻⁵ false positive probability)
+
+- **Documentation:**
+  - `CONSTANT_TIME_VERIFICATION.md`: Methodology documentation with scope table
+  - `README.md`: Added "Constant-Time Verification" and "NIST KAT Validation" sections
+  - `IMPLEMENTATION_GUIDE.md`: Added NIST KAT and constant-time verification to pre-deployment checklist
+  - `SECURITY_ANALYSIS.md`: Updated limitations section to reflect addressed concerns
+
+- **Header Fix (`include/ava_guardian.h`):**
+  - Fixed `ava_consttime_lookup` parameter order to match implementation (table_len, elem_size)
+
+#### Security Analysis
+
+The dudect-style harness provides statistical timing analysis, not formal verification. Results indicate no detectable timing leakage under tested conditions. Environment-sensitive; run on target hardware for production validation.
+
+#### References
+
+- Reparaz, O., Balasch, J., & Verbauwhede, I. (2017). "Dude, is my code constant time?" https://eprint.iacr.org/2016/1123.pdf
+
+---
 
 ### Changed - HKDF Algorithm Unification
 

@@ -623,7 +623,7 @@ The harness tests all 5 constant-time functions using Welch's t-test:
 | `ava_consttime_lookup` | Table lookup | First-half vs second-half index |
 | `ava_consttime_copy` | Conditional copy | condition=0 vs condition=1 |
 
-A t-value with |t| < 4.5 after 10^6 measurements indicates no detectable timing leakage at 99.999% confidence. See [CONSTANT_TIME_VERIFICATION.md](CONSTANT_TIME_VERIFICATION.md) for methodology details.
+A t-value with |t| < 4.5 after 10^6 measurements indicates no detectable timing leakage (dudect convention: ~10⁻⁵ false positive probability under the null). See [CONSTANT_TIME_VERIFICATION.md](CONSTANT_TIME_VERIFICATION.md) for methodology details.
 
 **Note:** This is statistical timing analysis, not formal verification. Results are environment-sensitive (CPU frequency scaling, interrupts). Run multiple times on target hardware to confirm.
 
