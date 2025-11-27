@@ -199,9 +199,9 @@ static int demo_kyber_1024(void) {
     printf("   Ciphertext size:     %d bytes\n", AVA_KYBER_1024_CIPHERTEXT_BYTES);
     printf("   Shared secret size:  %d bytes\n", AVA_KYBER_1024_SHARED_SECRET_BYTES);
 
-    err = kyber_encapsulate(public_key, sizeof(public_key),
-                            ciphertext, &ciphertext_len,
-                            shared_secret_enc, sizeof(shared_secret_enc));
+    err = ava_kem_encapsulate(ctx, public_key, sizeof(public_key),
+                               ciphertext, &ciphertext_len,
+                               shared_secret_enc, sizeof(shared_secret_enc));
     if (err != AVA_SUCCESS) {
         fprintf(stderr, "   ERROR: Encapsulation failed (error %d)\n", err);
         result = -1;
@@ -214,9 +214,9 @@ static int demo_kyber_1024(void) {
 
     /* Decapsulate - recover shared secret from ciphertext */
     printf("4. Decapsulating shared secret...\n");
-    err = kyber_decapsulate(ciphertext, ciphertext_len,
-                            secret_key, sizeof(secret_key),
-                            shared_secret_dec, sizeof(shared_secret_dec));
+    err = ava_kem_decapsulate(ctx, ciphertext, ciphertext_len,
+                               secret_key, sizeof(secret_key),
+                               shared_secret_dec, sizeof(shared_secret_dec));
     if (err != AVA_SUCCESS) {
         fprintf(stderr, "   ERROR: Decapsulation failed (error %d)\n", err);
         result = -1;
