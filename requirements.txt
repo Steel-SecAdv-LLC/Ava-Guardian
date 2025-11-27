@@ -7,7 +7,8 @@ cryptography>=41.0.0
 # Quantum-resistant cryptography (recommended for production)
 # The PyPI package is 'oqs' (not 'liboqs-python')
 # Provides ML-DSA (Dilithium) and ML-KEM (Kyber) implementations
-oqs>=0.10.0,<0.11.0
+# Note: oqs wheels only available for Python 3.10+
+oqs>=0.10.0,<0.11.0; python_version >= "3.10"
 
 # NOTE: The 'oqs' package wraps the liboqs C library for quantum-resistant crypto.
 # If installation fails, ensure liboqs is installed on your system:

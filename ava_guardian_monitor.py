@@ -446,10 +446,16 @@ class ResonanceTimingMonitor:
         deviation = 0.0
         detection_method = "z-score"
 
+        # Numerical tolerance for floating-point threshold comparisons
+        # This prevents flaky behavior when deviation is very close to threshold
+        # (e.g., 2.9984 vs 3.0 due to EWMA variance calculation)
+        THRESHOLD_EPSILON = 0.01
+
         # Primary: Z-score based detection
+        # Use >= with epsilon tolerance for numerical robustness
         if std > 0:
             deviation = abs(duration_ms - mean) / std
-            if deviation > self.threshold:
+            if deviation >= self.threshold - THRESHOLD_EPSILON:
                 is_anomaly = True
 
         # Secondary: MAD-based detection (more robust to outliers)
@@ -458,7 +464,11 @@ class ResonanceTimingMonitor:
             detection_method = "mad"
 
         if is_anomaly:
-            severity = "critical" if deviation > 5.0 else "warning"
+            # Critical threshold: 5.0σ with same epsilon tolerance
+            CRITICAL_THRESHOLD = 5.0
+            severity = (
+                "critical" if deviation >= CRITICAL_THRESHOLD - THRESHOLD_EPSILON else "warning"
+            )
             return TimingAnomaly(
                 operation=operation,
                 expected_ms=mean,
