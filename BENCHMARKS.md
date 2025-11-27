@@ -4,8 +4,8 @@
 
 | Property | Value |
 |----------|-------|
-| Document Version | 1.0.0 |
-| Last Updated | 2025-11-26 |
+| Document Version | 1.2.0 |
+| Last Updated | 2025-11-27 |
 | Classification | Public |
 | Maintainer | Steel Security Advisors LLC |
 
@@ -39,32 +39,32 @@ This document provides **transparent, honest performance metrics** for Ava Guard
 
 | Operation | Mean (ms) | Ops/sec | Status | Notes |
 |-----------|-----------|---------|--------|-------|
-| Master Secret (256-bit) | ~0.001 | >1M | Measured | CSPRNG entropy |
-| HKDF Derivation | ~0.06 | ~16k | Measured | SHA3-256 based |
-| Ed25519 KeyGen | ~0.04 | ~25k | Measured | Classical signatures |
-| Dilithium KeyGen | ~0.08 | ~12k | Measured | Post-quantum (when available) |
-| **Full KMS** | **~0.2** | **~5k** | Measured | Complete key suite |
+| Master Secret (256-bit) | ~0.001 | >1.1M | Measured | CSPRNG entropy |
+| HKDF Derivation | ~0.08 | ~13k | Measured | SHA3-256 based |
+| Ed25519 KeyGen | ~0.04 | ~22k | Measured | Classical signatures |
+| Dilithium KeyGen | ~0.09 | ~11k | Measured | Post-quantum (liboqs) |
+| **Full KMS** | **~0.23** | **~4.3k** | Measured | Complete key suite |
 
-**Analysis**: Full key management system generation in <1ms, suitable for on-demand key creation.
+**Analysis**: Full key management system generation in <0.25ms, suitable for on-demand key creation.
 
 ### 1.2 Cryptographic Operations
 
 | Operation | Mean (ms) | Ops/sec | Status | Notes |
 |-----------|-----------|---------|--------|-------|
 | **Hashing** |
-| SHA3-256 | ~0.002 | ~500k | Measured | NIST FIPS 202 |
+| SHA3-256 | ~0.001 | >1M | Measured | NIST FIPS 202 |
 | **Authentication** |
 | HMAC-SHA3-256 Auth | ~0.004 | ~250k | Measured | RFC 2104 |
-| HMAC-SHA3-256 Verify | ~0.004 | ~250k | Measured | Constant-time |
+| HMAC-SHA3-256 Verify | ~0.004 | ~242k | Measured | Constant-time |
 | **Classical Signatures** |
-| Ed25519 Sign | ~0.07 | ~14k | Measured | RFC 8032 |
+| Ed25519 Sign | ~0.08 | ~13k | Measured | RFC 8032 |
 | Ed25519 Verify | ~0.12 | ~8k | Measured | Slower than sign |
 | **Quantum-Resistant Signatures** |
-| ML-DSA-65 Sign | ~0.14 | ~7k | Measured | NIST FIPS 204 |
+| ML-DSA-65 Sign | ~0.16 | ~6k | Measured | NIST FIPS 204 |
 | ML-DSA-65 Verify | ~0.07 | ~15k | Measured | Faster than Ed25519 verify |
 
 **Key Insights**:
-- Quantum signatures 2x slower for signing but **faster for verification**
+- Quantum signatures ~2x slower for signing but **faster for verification**
 - SHA3-256 delivers >1M ops/sec
 - Signature operations are the bottleneck (expected for PKC)
 
@@ -72,13 +72,13 @@ This document provides **transparent, honest performance metrics** for Ava Guard
 
 | Operation | Mean (ms) | Ops/sec | Status | Components |
 |-----------|-----------|---------|--------|------------|
-| Canonical Encoding | ~0.003 | ~300k | Measured | Length-prefixed |
-| DNA Hash (7 codes) | ~0.01 | ~100k | Measured | SHA3-256 |
-| **Package Creation** | **~0.30** | **~3.3k** | Measured | Full protection layers |
-| **Package Verification** | **~0.24** | **~4.1k** | Measured | All layers validated |
+| Canonical Encoding | ~0.003 | ~391k | Measured | Length-prefixed |
+| DNA Hash (7 codes) | ~0.02 | ~57k | Measured | SHA3-256 |
+| **Package Creation** | **~0.32** | **~3.1k** | Measured | Full protection layers |
+| **Package Verification** | **~0.25** | **~4.1k** | Measured | All layers validated |
 
 **Analysis**: 
-- Package creation: ~0.30ms (dominated by Dilithium signing when available)
+- Package creation: ~0.32ms (dominated by Dilithium signing when available)
 - Verification faster than creation (Dilithium verify faster than sign)
 - Throughput: >3,000 packages/sec for signing, >4,000 for verification
 
@@ -130,19 +130,19 @@ Overhead:                    0.006 ms (1.99%)
 ### 4.1 Signing Speed
 
 ```
-Ed25519 (Classical)    ████████████████████ 13,553 ops/sec
-ML-DSA-65 (Quantum)    ███████████          6,969 ops/sec
+Ed25519 (Classical)    ████████████████████ 13,324 ops/sec
+ML-DSA-65 (Quantum)    ██████████           6,161 ops/sec
 
-Quantum penalty: 2x slower for signing
+Quantum penalty: ~2x slower for signing
 ```
 
 ### 4.2 Verification Speed
 
 ```
-Ed25519 Verify         ████████████████     8,161 ops/sec
-ML-DSA-65 Verify       ████████████████████ 14,996 ops/sec
+Ed25519 Verify         ████████████████     8,257 ops/sec
+ML-DSA-65 Verify       ████████████████████ 14,698 ops/sec
 
-Quantum advantage: 1.8x FASTER for verification
+Quantum advantage: ~1.8x FASTER for verification
 ```
 
 **Practical Implications**:
@@ -157,15 +157,15 @@ Quantum advantage: 1.8x FASTER for verification
 ### 5.1 Single-Threaded Performance
 
 ```
-Package Creation:     3,317 packages/second
-Package Verification: 4,135 packages/second
+Package Creation:     3,106 packages/second
+Package Verification: 4,052 packages/second
 ```
 
 ### 5.2 Multi-Core Scaling (4 cores, Projected)
 
 ```
-Package Creation:     ~13,000 packages/second  (4x scaling)
-Package Verification: ~16,500 packages/second  (4x scaling)
+Package Creation:     ~12,400 packages/second  (4x scaling)
+Package Verification: ~16,200 packages/second  (4x scaling)
 ```
 
 **Bottleneck**: CPU-bound (cryptographic operations)
@@ -231,7 +231,42 @@ These benchmarks compare our Cython-optimized mathematical engine against pure P
 
 ---
 
-## 9. How to Run Benchmarks
+## 9. CI Regression Detection
+
+### 9.1 Tiered Tolerance Approach
+
+Ava Guardian uses a **tiered tolerance system** for CI benchmark regression detection:
+
+| Tier | Benchmarks | Tolerance | Detects | Rationale |
+|------|-----------|-----------|---------|-----------|
+| **Tier 1** (Microbenchmarks) | SHA3-256, HMAC, Ed25519, HKDF | **25%** | ~1.7-1.8x regressions | Stable CPU-bound operations |
+| **Tier 2** (Complex Operations) | Full package create/verify, PQC | **35-40%** | ~2-2.5x regressions | Higher variance due to I/O, PQC libs |
+
+### 9.2 Baseline Calibration
+
+Baselines are calibrated to **GitHub Actions ubuntu-latest** runner performance, not development hardware:
+
+| Benchmark | CI Performance | Baseline | Headroom |
+|-----------|---------------|----------|----------|
+| SHA3-256 | ~198k ops/sec | 150k | 32% below CI |
+| HMAC-SHA3 | ~95k ops/sec | 70k | 36% below CI |
+| Ed25519 keygen | ~26k ops/sec | 15k | 73% below CI |
+
+This ensures CI passes reliably while still catching real performance regressions.
+
+### 9.3 How to Run Regression Detection
+
+```bash
+# Run benchmark regression detection
+python benchmarks/benchmark_runner.py --verbose
+
+# Update baseline (use with caution)
+python benchmarks/benchmark_runner.py --update-baseline
+```
+
+---
+
+## 10. How to Run Benchmarks
 
 ```bash
 # Run the benchmark suite
@@ -246,12 +281,12 @@ python -m cProfile -o profile.stats dna_guardian_secure.py
 
 ---
 
-## 10. Conclusion
+## 11. Conclusion
 
 Ava Guardian ♱ delivers **high-performance cryptography** with:
 
-- **4,717 verifications/sec** (single-threaded)
-- **<0.3ms package creation** (typical)
+- **4,052 verifications/sec** (single-threaded)
+- **<0.32ms package creation** (typical)
 - **<2% monitoring overhead** (when enabled)
 - **Linear scaling to 700 codes**
 - **Post-quantum ready** with acceptable performance trade-offs
@@ -276,6 +311,8 @@ Ava Guardian ♱ delivers **high-performance cryptography** with:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2025-11-26 | Initial professional release |
+| 1.1.0 | 2025-11-27 | Updated benchmarks with fresh measurements from Python 3.12 |
+| 1.2.0 | 2025-11-27 | Added tiered tolerance approach for CI regression detection |
 
 ---
 
