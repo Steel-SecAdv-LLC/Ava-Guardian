@@ -673,3 +673,130 @@ def sphincs_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
             return False
 
     raise SphincsUnavailableError("SPHINCS_UNAVAILABLE: Unknown backend state")
+
+
+# ============================================================================
+# PROVIDER WRAPPER CLASSES FOR KAT TESTS
+# ============================================================================
+
+
+@dataclass
+class _DilithiumKATKeyPair:
+    """Internal keypair structure for KAT test compatibility."""
+
+    public_key: bytes
+    secret_key: bytes
+
+
+class DilithiumProvider:
+    """
+    Provider wrapper for Dilithium (ML-DSA-65) operations.
+
+    This class provides a consistent interface for NIST KAT tests,
+    wrapping the underlying function-based API.
+
+    Example:
+        >>> provider = DilithiumProvider()
+        >>> keypair = provider.generate_keypair()
+        >>> signature = provider.sign(b"message", keypair.secret_key)
+        >>> provider.verify(b"message", signature, keypair.public_key)
+        True
+    """
+
+    def generate_keypair(self) -> _DilithiumKATKeyPair:
+        """
+        Generate a new Dilithium keypair.
+
+        Returns:
+            _DilithiumKATKeyPair with public_key and secret_key attributes
+        """
+        kp = generate_dilithium_keypair()
+        return _DilithiumKATKeyPair(public_key=kp.public_key, secret_key=kp.private_key)
+
+    def sign(self, message: bytes, secret_key: bytes) -> bytes:
+        """
+        Sign a message with Dilithium.
+
+        Args:
+            message: Data to sign
+            secret_key: Dilithium secret key
+
+        Returns:
+            Dilithium signature
+        """
+        return dilithium_sign(message, secret_key)
+
+    def verify(self, message: bytes, signature: bytes, public_key: bytes) -> bool:
+        """
+        Verify a Dilithium signature.
+
+        Args:
+            message: Original data
+            signature: Dilithium signature
+            public_key: Dilithium public key
+
+        Returns:
+            True if valid, False otherwise
+        """
+        return dilithium_verify(message, signature, public_key)
+
+
+@dataclass
+class _KyberKATKeyPair:
+    """Internal keypair structure for KAT test compatibility."""
+
+    public_key: bytes
+    secret_key: bytes
+
+
+class KyberProvider:
+    """
+    Provider wrapper for Kyber (ML-KEM-1024) operations.
+
+    This class provides a consistent interface for NIST KAT tests,
+    wrapping the underlying function-based API.
+
+    Example:
+        >>> provider = KyberProvider()
+        >>> keypair = provider.generate_keypair()
+        >>> ciphertext, shared_secret = provider.encapsulate(keypair.public_key)
+        >>> decapsulated = provider.decapsulate(ciphertext, keypair.secret_key)
+        >>> shared_secret == decapsulated
+        True
+    """
+
+    def generate_keypair(self) -> _KyberKATKeyPair:
+        """
+        Generate a new Kyber keypair.
+
+        Returns:
+            _KyberKATKeyPair with public_key and secret_key attributes
+        """
+        kp = generate_kyber_keypair()
+        return _KyberKATKeyPair(public_key=kp.public_key, secret_key=kp.secret_key)
+
+    def encapsulate(self, public_key: bytes) -> tuple:
+        """
+        Encapsulate a shared secret.
+
+        Args:
+            public_key: Kyber public key
+
+        Returns:
+            Tuple of (ciphertext, shared_secret)
+        """
+        result = kyber_encapsulate(public_key)
+        return (result.ciphertext, result.shared_secret)
+
+    def decapsulate(self, ciphertext: bytes, secret_key: bytes) -> bytes:
+        """
+        Decapsulate a shared secret.
+
+        Args:
+            ciphertext: Kyber ciphertext
+            secret_key: Kyber secret key
+
+        Returns:
+            Shared secret bytes
+        """
+        return kyber_decapsulate(ciphertext, secret_key)

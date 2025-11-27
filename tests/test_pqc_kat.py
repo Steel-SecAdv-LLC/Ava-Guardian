@@ -18,7 +18,6 @@ References:
 """
 
 import secrets
-from typing import Tuple
 
 import pytest
 
@@ -26,6 +25,7 @@ import pytest
 # =============================================================================
 # NIST FIPS 204 (ML-DSA / Dilithium) Constants
 # =============================================================================
+
 
 class MLDSA65Spec:
     """NIST FIPS 204 ML-DSA-65 (Dilithium3) specification constants."""
@@ -84,6 +84,7 @@ class MLDSA87Spec:
 # =============================================================================
 # NIST FIPS 203 (ML-KEM / Kyber) Constants
 # =============================================================================
+
 
 class MLKEM1024Spec:
     """NIST FIPS 203 ML-KEM-1024 (Kyber-1024) specification constants."""
@@ -149,11 +150,13 @@ class MLKEM512Spec:
 # Test Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def dilithium_provider():
     """Get Dilithium provider if available."""
     try:
         from ava_guardian.pqc_backends import DilithiumProvider
+
         return DilithiumProvider()
     except ImportError:
         pytest.skip("Dilithium provider not available (install oqs package)")
@@ -164,6 +167,7 @@ def kyber_provider():
     """Get Kyber provider if available."""
     try:
         from ava_guardian.pqc_backends import KyberProvider
+
         return KyberProvider()
     except ImportError:
         pytest.skip("Kyber provider not available (install oqs package)")
@@ -172,6 +176,7 @@ def kyber_provider():
 # =============================================================================
 # ML-DSA (Dilithium) KAT Tests
 # =============================================================================
+
 
 class TestMLDSA65KAT:
     """Known Answer Tests for ML-DSA-65 (Dilithium3)."""
@@ -247,16 +252,26 @@ class TestMLDSA65KAT:
 
         assert not is_valid, "Signature should not verify with different public key"
 
-    def test_deterministic_signature(self, dilithium_provider):
-        """ML-DSA-65 produces deterministic signatures (per FIPS 204)."""
+    def test_signature_consistency(self, dilithium_provider):
+        """ML-DSA-65 signatures are valid regardless of randomization mode.
+
+        Note: FIPS 204 allows both deterministic and randomized signing.
+        liboqs uses randomized signing by default for side-channel resistance.
+        This test verifies that multiple signatures from the same key are all valid.
+        """
         keypair = dilithium_provider.generate_keypair()
-        message = b"Determinism test"
+        message = b"Consistency test"
 
         sig1 = dilithium_provider.sign(message, keypair.secret_key)
         sig2 = dilithium_provider.sign(message, keypair.secret_key)
 
-        # FIPS 204 Dilithium is deterministic
-        assert sig1 == sig2, "ML-DSA signatures should be deterministic"
+        # Both signatures should verify correctly
+        assert dilithium_provider.verify(
+            message, sig1, keypair.public_key
+        ), "First signature should verify"
+        assert dilithium_provider.verify(
+            message, sig2, keypair.public_key
+        ), "Second signature should verify"
 
     def test_empty_message(self, dilithium_provider):
         """Can sign and verify empty message."""
@@ -286,14 +301,15 @@ class TestMLDSA65KAT:
         unique_bytes = len(set(keypair.public_key))
 
         # Should have good entropy (at least 200 unique byte values for 1952 bytes)
-        assert unique_bytes >= 200, (
-            f"Public key lacks entropy: only {unique_bytes} unique byte values"
-        )
+        assert (
+            unique_bytes >= 200
+        ), f"Public key lacks entropy: only {unique_bytes} unique byte values"
 
 
 # =============================================================================
 # ML-KEM (Kyber) KAT Tests
 # =============================================================================
+
 
 class TestMLKEM1024KAT:
     """Known Answer Tests for ML-KEM-1024 (Kyber-1024)."""
@@ -341,9 +357,9 @@ class TestMLKEM1024KAT:
         ciphertext, shared_secret_enc = kyber_provider.encapsulate(keypair.public_key)
         shared_secret_dec = kyber_provider.decapsulate(ciphertext, keypair.secret_key)
 
-        assert shared_secret_enc == shared_secret_dec, (
-            "Encapsulated and decapsulated shared secrets must match"
-        )
+        assert (
+            shared_secret_enc == shared_secret_dec
+        ), "Encapsulated and decapsulated shared secrets must match"
 
     def test_different_keypairs_different_secrets(self, kyber_provider):
         """Different keypairs produce different shared secrets."""
@@ -377,9 +393,9 @@ class TestMLKEM1024KAT:
         shared_secret_wrong = kyber_provider.decapsulate(ciphertext, keypair2.secret_key)
 
         # Should NOT match (implicit rejection returns random-looking secret)
-        assert shared_secret_enc != shared_secret_wrong, (
-            "Decapsulation with wrong key should not produce matching secret"
-        )
+        assert (
+            shared_secret_enc != shared_secret_wrong
+        ), "Decapsulation with wrong key should not produce matching secret"
 
     def test_entropy_in_shared_secret(self, kyber_provider):
         """Shared secret has good entropy distribution."""
@@ -388,14 +404,15 @@ class TestMLKEM1024KAT:
 
         # For 32 bytes, expect at least 20 unique values
         unique_bytes = len(set(shared_secret))
-        assert unique_bytes >= 20, (
-            f"Shared secret lacks entropy: only {unique_bytes} unique byte values"
-        )
+        assert (
+            unique_bytes >= 20
+        ), f"Shared secret lacks entropy: only {unique_bytes} unique byte values"
 
 
 # =============================================================================
 # Cross-Algorithm Tests
 # =============================================================================
+
 
 class TestPQCInteroperability:
     """Tests for PQC algorithm interoperability and consistency."""
@@ -421,6 +438,7 @@ class TestPQCInteroperability:
 # =============================================================================
 # Stress Tests
 # =============================================================================
+
 
 class TestPQCStress:
     """Stress tests for PQC operations."""

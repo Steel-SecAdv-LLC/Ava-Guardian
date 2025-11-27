@@ -12,10 +12,8 @@ Verifies:
 - Graceful fallback when pynacl is not available
 """
 
-import os
 import platform
 import secrets
-import sys
 
 import pytest
 
@@ -130,34 +128,52 @@ class TestSecureMlock:
     """Tests for memory locking functionality."""
 
     def test_mlock_returns_bool(self):
-        """secure_mlock returns boolean indicating success."""
+        """secure_mlock returns boolean indicating success or graceful fallback."""
+        import warnings
+
         from ava_guardian.secure_memory import secure_mlock
 
         data = bytearray(4096)
-        result = secure_mlock(data)
+
+        # Suppress expected warning when pynacl mlock is unavailable
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            result = secure_mlock(data)
 
         assert isinstance(result, bool)
 
     def test_mlock_munlock_roundtrip(self):
         """Can lock and unlock memory without error."""
+        import warnings
+
         from ava_guardian.secure_memory import secure_mlock, secure_munlock
 
         data = bytearray(4096)
 
-        locked = secure_mlock(data)
-        # Whether it succeeds depends on system limits
-        # Just verify no crash
+        # Suppress expected warning when pynacl mlock is unavailable
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            locked = secure_mlock(data)
+            # Whether it succeeds depends on system limits
+            # Just verify no crash
 
-        if locked:
-            unlocked = secure_munlock(data)
-            # May or may not succeed depending on implementation
+            if locked:
+                secure_munlock(data)
+                # May or may not succeed depending on implementation
 
     def test_mlock_empty_buffer(self):
         """secure_mlock handles empty buffer."""
+        import warnings
+
         from ava_guardian.secure_memory import secure_mlock
 
         data = bytearray()
-        result = secure_mlock(data)  # Should not raise
+
+        # Suppress expected warning when pynacl mlock is unavailable
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            result = secure_mlock(data)  # Should not raise
+
         assert isinstance(result, bool)
 
 
@@ -217,24 +233,34 @@ class TestSecureBuffer:
 
     def test_basic_usage(self):
         """SecureBuffer can be used as context manager."""
+        import warnings
+
         from ava_guardian.secure_memory import SecureBuffer
 
-        with SecureBuffer(32) as buf:
-            assert len(buf) == 32
-            buf[:] = secrets.token_bytes(32)
-            # Can use buffer within context
+        # Suppress expected warning when pynacl mlock is unavailable
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            with SecureBuffer(32) as buf:
+                assert len(buf) == 32
+                buf[:] = secrets.token_bytes(32)
+                # Can use buffer within context
 
         # Buffer is zeroed after context exits
 
     def test_buffer_zeroed_on_exit(self):
         """SecureBuffer zeros data on context exit."""
+        import warnings
+
         from ava_guardian.secure_memory import SecureBuffer
 
         buffer_ref = None
 
-        with SecureBuffer(100) as buf:
-            buf[:] = b"x" * 100
-            buffer_ref = buf
+        # Suppress expected warning when pynacl mlock is unavailable
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            with SecureBuffer(100) as buf:
+                buf[:] = b"x" * 100
+                buffer_ref = buf
 
         # After exit, buffer should be zeroed
         assert all(b == 0 for b in buffer_ref)
@@ -264,22 +290,32 @@ class TestSecureBuffer:
 
     def test_zero_size(self):
         """SecureBuffer with zero size works."""
+        import warnings
+
         from ava_guardian.secure_memory import SecureBuffer
 
-        with SecureBuffer(0) as buf:
-            assert len(buf) == 0
+        # Suppress expected warning when pynacl mlock is unavailable
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            with SecureBuffer(0) as buf:
+                assert len(buf) == 0
 
     def test_exception_still_zeros(self):
         """SecureBuffer zeros data even if exception occurs."""
+        import warnings
+
         from ava_guardian.secure_memory import SecureBuffer
 
         buffer_ref = None
 
-        with pytest.raises(ValueError):
-            with SecureBuffer(50) as buf:
-                buf[:] = b"sensitive" + b"\x00" * 41
-                buffer_ref = buf
-                raise ValueError("Test exception")
+        # Suppress expected warning when pynacl mlock is unavailable
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            with pytest.raises(ValueError):
+                with SecureBuffer(50) as buf:
+                    buf[:] = b"sensitive" + b"\x00" * 41
+                    buffer_ref = buf
+                    raise ValueError("Test exception")
 
         # Should still be zeroed
         assert all(b == 0 for b in buffer_ref)
@@ -290,21 +326,31 @@ class TestSecureBufferFunction:
 
     def test_basic_usage(self):
         """secure_buffer() can be used as context manager."""
+        import warnings
+
         from ava_guardian.secure_memory import secure_buffer
 
-        with secure_buffer(32) as buf:
-            assert len(buf) == 32
-            buf[:] = secrets.token_bytes(32)
+        # Suppress expected warning when pynacl mlock is unavailable
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            with secure_buffer(32) as buf:
+                assert len(buf) == 32
+                buf[:] = secrets.token_bytes(32)
 
     def test_buffer_zeroed_on_exit(self):
         """secure_buffer() zeros data on exit."""
+        import warnings
+
         from ava_guardian.secure_memory import secure_buffer
 
         buffer_ref = None
 
-        with secure_buffer(100) as buf:
-            buf[:] = b"x" * 100
-            buffer_ref = buf
+        # Suppress expected warning when pynacl mlock is unavailable
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            with secure_buffer(100) as buf:
+                buf[:] = b"x" * 100
+                buffer_ref = buf
 
         assert all(b == 0 for b in buffer_ref)
 
@@ -348,6 +394,8 @@ class TestPlatformCompatibility:
 
     def test_works_on_current_platform(self):
         """Module works on current platform."""
+        import warnings
+
         from ava_guardian.secure_memory import (
             SecureBuffer,
             constant_time_compare,
@@ -370,9 +418,12 @@ class TestPlatformCompatibility:
         rand = secure_random_bytes(16)
         assert len(rand) == 16
 
-        with SecureBuffer(32) as buf:
-            buf[:] = rand + rand
-            assert len(buf) == 32
+        # Suppress expected warning when pynacl mlock is unavailable
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            with SecureBuffer(32) as buf:
+                buf[:] = rand + rand
+                assert len(buf) == 32
 
     @pytest.mark.skipif(platform.system() == "Windows", reason="mlock may fail on Windows")
     def test_mlock_on_unix(self):

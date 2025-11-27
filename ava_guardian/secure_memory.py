@@ -17,23 +17,30 @@
 Ava Guardian Secure Memory Module
 =================================
 
-Provides secure memory operations using libsodium (via pynacl) for
-cryptographic applications requiring memory protection.
+Provides secure memory operations with optional libsodium enhancement
+for cryptographic applications requiring memory protection.
 
 Features:
-- Memory locking (sodium_mlock) - prevents swapping to disk
-- Secure zeroing (sodium_memzero) - overwrites with zeros, compiler barrier
-- Guarded heap allocations (sodium_malloc) - guard pages, canary values
+- Secure zeroing - multi-pass overwrite with fallback implementation
+- Memory locking (when libsodium bindings available) - prevents swapping
 - Constant-time comparison - prevents timing side-channels
+- SecureBuffer context manager - automatic cleanup on exit
 
 Dependencies:
-    pip install pynacl>=1.5.0
+    pip install pynacl>=1.5.0  (optional, for enhanced security)
 
-Security Properties:
-- Memory locked pages cannot be swapped to disk
-- Secure zeroing includes compiler barriers to prevent optimization
-- Guard pages detect buffer overflows/underflows
-- All operations are designed to be side-channel resistant
+Implementation Notes:
+    PyNaCl does not expose all libsodium memory functions directly.
+    This module provides:
+    - secure_memzero: Multi-pass Python fallback (libsodium binding not exposed)
+    - secure_mlock/munlock: Returns False if libsodium binding unavailable
+    - constant_time_compare: Uses hmac.compare_digest or pure Python fallback
+    - secure_random_bytes: Uses nacl.utils.random or os.urandom fallback
+
+    The fallback implementations provide best-effort security but cannot
+    guarantee the same level of protection as native libsodium calls.
+    For production high-security environments, consider using the C API
+    with direct libsodium linking.
 
 Usage:
     from ava_guardian.secure_memory import (
@@ -48,20 +55,14 @@ Usage:
     with SecureBuffer(32) as buf:
         buf[:] = secret_key_bytes
         # ... use buffer ...
-    # Buffer automatically zeroed and unlocked on exit
+    # Buffer automatically zeroed on exit
 
     # Manual operations
     secret = bytearray(b"sensitive data")
-    secure_mlock(secret)  # Lock in RAM
+    secure_mlock(secret)  # Attempt to lock in RAM (may return False)
     # ... use secret ...
-    secure_memzero(secret)  # Securely wipe
+    secure_memzero(secret)  # Securely wipe (multi-pass fallback)
     secure_munlock(secret)  # Allow swapping again
-
-Note:
-    This module provides a fresh implementation separate from the existing
-    secure_wipe() function in dna_guardian_secure.py. The existing function
-    uses pure Python, while this module leverages libsodium's battle-tested
-    memory protection primitives.
 
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
@@ -221,8 +222,7 @@ def secure_mlock(data: Union[bytes, bytearray, memoryview]) -> bool:
             return True
     except (OSError, AttributeError, TypeError) as e:
         warnings.warn(
-            f"Memory locking failed: {e}. "
-            "Check system limits (ulimit -l) and permissions.",
+            f"Memory locking failed: {e}. " "Check system limits (ulimit -l) and permissions.",
             RuntimeWarning,
             stacklevel=2,
         )
@@ -383,9 +383,7 @@ class SecureBuffer:
             RuntimeError: If accessed outside context manager
         """
         if not self._entered or self._data is None:
-            raise RuntimeError(
-                "SecureBuffer must be used within 'with' statement"
-            )
+            raise RuntimeError("SecureBuffer must be used within 'with' statement")
         return self._data
 
     def __enter__(self) -> bytearray:

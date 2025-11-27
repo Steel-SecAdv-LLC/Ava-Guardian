@@ -86,7 +86,8 @@ gcc -shared -o libava_guardian.so *.o \
 
 ### CMake Build (Recommended)
 
-Create a `CMakeLists.txt` in the project root:
+This project does not include a pre-built CMakeLists.txt. Below is an example
+configuration you can create in the project root to build with CMake:
 
 ```cmake
 cmake_minimum_required(VERSION 3.14)
