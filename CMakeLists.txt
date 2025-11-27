@@ -18,6 +18,23 @@ option(AVA_ENABLE_SIMD "Enable SIMD optimizations" ON)
 option(AVA_ENABLE_AVX2 "Enable AVX2 instructions" ON)
 option(AVA_ENABLE_SANITIZERS "Enable address/undefined sanitizers" OFF)
 option(AVA_ENABLE_LTO "Enable link-time optimization" ON)
+option(AVA_USE_LIBOQS "Enable liboqs for post-quantum cryptography" OFF)
+
+# Find liboqs if requested
+if(AVA_USE_LIBOQS)
+    find_library(LIBOQS_LIBRARY NAMES oqs liboqs)
+    find_path(LIBOQS_INCLUDE_DIR NAMES oqs/oqs.h)
+    
+    if(LIBOQS_LIBRARY AND LIBOQS_INCLUDE_DIR)
+        message(STATUS "Found liboqs: ${LIBOQS_LIBRARY}")
+        message(STATUS "liboqs include: ${LIBOQS_INCLUDE_DIR}")
+        set(AVA_LIBOQS_FOUND TRUE)
+    else()
+        message(WARNING "liboqs requested but not found. PQC functions will return AVA_ERROR_NOT_IMPLEMENTED.")
+        message(WARNING "Install liboqs: https://github.com/open-quantum-safe/liboqs")
+        set(AVA_LIBOQS_FOUND FALSE)
+    endif()
+endif()
 
 # C standard
 set(CMAKE_C_STANDARD 11)
@@ -89,6 +106,13 @@ if(AVA_BUILD_SHARED)
         PRIVATE OpenSSL::Crypto
     )
     target_compile_definitions(ava_guardian_shared PRIVATE AVA_BUILDING_SHARED)
+    
+    # Add liboqs support if available
+    if(AVA_USE_LIBOQS AND AVA_LIBOQS_FOUND)
+        target_compile_definitions(ava_guardian_shared PRIVATE AVA_USE_LIBOQS)
+        target_include_directories(ava_guardian_shared PRIVATE ${LIBOQS_INCLUDE_DIR})
+        target_link_libraries(ava_guardian_shared PRIVATE ${LIBOQS_LIBRARY})
+    endif()
 endif()
 
 # Create static library
@@ -101,6 +125,13 @@ if(AVA_BUILD_STATIC)
     target_link_libraries(ava_guardian_static
         PRIVATE OpenSSL::Crypto
     )
+    
+    # Add liboqs support if available
+    if(AVA_USE_LIBOQS AND AVA_LIBOQS_FOUND)
+        target_compile_definitions(ava_guardian_static PRIVATE AVA_USE_LIBOQS)
+        target_include_directories(ava_guardian_static PRIVATE ${LIBOQS_INCLUDE_DIR})
+        target_link_libraries(ava_guardian_static PRIVATE ${LIBOQS_LIBRARY})
+    endif()
 endif()
 
 # Examples
@@ -159,4 +190,17 @@ message(STATUS "  SIMD:           ${AVA_ENABLE_SIMD}")
 message(STATUS "  AVX2:           ${AVA_ENABLE_AVX2}")
 message(STATUS "  Sanitizers:     ${AVA_ENABLE_SANITIZERS}")
 message(STATUS "  LTO:            ${AVA_ENABLE_LTO}")
+message(STATUS "")
+message(STATUS "Post-Quantum Cryptography:")
+message(STATUS "  liboqs enabled: ${AVA_USE_LIBOQS}")
+if(AVA_USE_LIBOQS)
+    if(AVA_LIBOQS_FOUND)
+        message(STATUS "  liboqs found:   YES (${LIBOQS_LIBRARY})")
+        message(STATUS "  PQC algorithms: ML-DSA-65, Kyber-1024, SPHINCS+-256f")
+    else()
+        message(STATUS "  liboqs found:   NO (PQC functions will return NOT_IMPLEMENTED)")
+    endif()
+else()
+    message(STATUS "  liboqs found:   DISABLED (use -DAVA_USE_LIBOQS=ON to enable)")
+endif()
 message(STATUS "")

@@ -1,6 +1,11 @@
 # Ava Guardian ♱ (AG♱)
 
-**Secure Multi-Language Post-Quantum Cryptographic Security System**
+**Protecting people, data, and networks with quantum-resistant cryptography**
+
+> **Project Philosophy:** Promoting action over inaction in the hope of helping secure critical systems against emerging quantum threats. This project is experimental and under active development. While we strive for cryptographic rigor, users should remain cautious and conduct independent security reviews before production deployment. The perceived absence of a threat does not constitute the lack of a threat. Our goal is to deter, mitigate, and elevate security posture—not create new vulnerabilities.
+>
+> **Status:** Experimental | Community-tested | Not externally audited  
+> **Last Updated:** 2025-11-27
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org)
@@ -13,18 +18,17 @@
 ```
               +==============================================================================+
               |                              AVA GUARDIAN ♱                                  |
-              |              Production Multi-Language PQC Security System                   |
+              |                Experimental Post-Quantum Security System                     |
               |                                                                              |
-              |   6-Layer Defense      |   Quantum-Resistant    |   Security Hardened        |
-              |   Cython-Optimized     |   3R Runtime Monitor   |   Cross-Platform           |
-              |   HD Key Derivation    |   Algorithm-Agnostic   |   Side-Channel Resistant   |
+              |   6-Layer Defense      |   Quantum-Resistant    |   Defense-in-Depth         |
+              |   Cython-Optimized     |   3R Anomaly Monitor   |   Cross-Platform           |
+              |   HD Key Derivation    |   Algorithm-Agnostic   |   NIST PQC Standards       |
               |                                                                              |
-              |   C Core               |   Cython Layer         |   Python API               |
+              |   C Layer (liboqs)     |   Cython Layer         |   Python API               |
               |   ─────────────────    |   ─────────────────    |   ─────────────────        |
-              |   Constant-Time Ops    |   18-37x Speedup       |   Algorithm Agnostic       |
-              |   Memory Protection    |   NumPy Integration    |   Key Management           |
-              |   Timing Attack Safe   |   Math Engine          |   3R Monitoring            |
-              |   liboqs Bindings      |   Double-Helix Eqns    |   Docker + CI/CD           |
+              |   liboqs Bindings      |   18-37x Speedup       |   Algorithm Agnostic       |
+              |   Memory Helpers       |   NumPy Integration    |   Key Management           |
+              |   (Stubs w/o liboqs)   |   Math Engine          |   3R Monitoring            |
               |                                                                              |
               |                   Built for a civilized evolution.                           |
               +==============================================================================+
@@ -137,19 +141,22 @@ See [Use Cases by Sector](#use-cases-by-sector-) for detailed scenarios.
 
 The signature innovation providing real-time cryptographic operation analysis unavailable in peer implementations:
 
-- **Resonance Engine**: FFT-based timing attack detection with frequency-domain analysis
+- **Resonance Engine**: FFT-based anomaly detection with frequency-domain analysis (monitors for statistical anomalies, not a timing attack prevention system)
 - **Recursion Engine**: Multi-scale hierarchical pattern analysis for anomaly detection
 - **Refactoring Engine**: Code complexity metrics for security review
+
 - **Performance overhead**: Less than 2% with comprehensive monitoring
 - **Unique capability**: Real-time visibility into cryptographic operations that peer libraries treat as black boxes
+
+> **Note:** The 3R system is a runtime anomaly monitoring framework. It surfaces statistical anomalies for security review but does not guarantee detection or prevention of timing attacks or other side-channel vulnerabilities.
 
 ### Multi-Language Architecture
 
 Optimized for both security and performance:
 
-- **C Core**: Constant-time cryptographic primitives for maximum security
+- **C Layer**: liboqs bindings for PQC operations; constant-time utility functions; native implementations are stubs without liboqs (see [Implementation Status Matrix](#implementation-status-matrix))
 - **Cython Layer**: Optimized mathematical operations (benchmarked at 27-37x vs pure Python)
-- **Python API**: High-level, user-friendly interface for rapid development
+- **Python API**: High-level, user-friendly interface for rapid development (primary production API)
 
 ### Advanced Features
 
@@ -642,20 +649,35 @@ See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for complete cryptographic anal
 ## Build System 🖥️
 
 <details>
-<summary><strong>CMake (C Library)</strong></summary>
+<summary><strong>CMake (C Library with liboqs)</strong></summary>
 
+The C library provides a liboqs-backed API for post-quantum cryptography. When built with `-DAVA_USE_LIBOQS=ON`, the library supports ML-DSA-65 (Dilithium), Kyber-1024, and SPHINCS+-256f.
+
+**Prerequisites:**
+```bash
+# Install liboqs (https://github.com/open-quantum-safe/liboqs)
+git clone https://github.com/open-quantum-safe/liboqs.git
+cd liboqs && mkdir build && cd build
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..
+make -j$(nproc) && sudo make install
+```
+
+**Build with PQC support:**
 ```bash
 mkdir build && cd build
 
-# Configure with options
+# Configure with liboqs support
 cmake .. \
   -DCMAKE_BUILD_TYPE=Release \
+  -DAVA_USE_LIBOQS=ON \
   -DAVA_ENABLE_AVX2=ON \
-  -DAVA_BUILD_SHARED_LIBS=ON \
   -DAVA_ENABLE_LTO=ON
 
 # Build
 cmake --build . -j$(nproc)
+
+# Run PQC demo
+./bin/pqc_demo
 
 # Test
 ctest --output-on-failure
@@ -664,11 +686,23 @@ ctest --output-on-failure
 sudo cmake --install .
 ```
 
+**Build without liboqs (stubs only):**
+```bash
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . -j$(nproc)
+# Note: PQC functions will return AVA_ERROR_NOT_IMPLEMENTED
+```
+
 **CMake Options**:
-- `AVA_BUILD_SHARED_LIBS` - Build shared library (default: ON)
+- `AVA_USE_LIBOQS` - Enable liboqs for PQC (ML-DSA-65, Kyber-1024, SPHINCS+)
+- `AVA_BUILD_SHARED` - Build shared library (default: ON)
+- `AVA_BUILD_STATIC` - Build static library (default: ON)
 - `AVA_ENABLE_AVX2` - Enable AVX2 SIMD optimizations
 - `AVA_ENABLE_SANITIZERS` - Enable AddressSanitizer/UBSan
 - `AVA_ENABLE_LTO` - Link-time optimization
+
+> **Note:** Without `-DAVA_USE_LIBOQS=ON`, the C PQC functions return `AVA_ERROR_NOT_IMPLEMENTED`. The Python API is the recommended production interface and handles PQC via its own liboqs-python bindings.
 
 </details>
 

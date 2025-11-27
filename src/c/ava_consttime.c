@@ -170,15 +170,39 @@ static inline int consttime_lt_u32(uint32_t a, uint32_t b) {
 }
 
 /**
+ * Constant-time equality check for size_t values
+ *
+ * Returns 1 if a == b, 0 otherwise, in constant time.
+ * Uses XOR and arithmetic to avoid branches.
+ *
+ * @param a First value
+ * @param b Second value
+ * @return 1 if equal, 0 otherwise
+ */
+static inline int consttime_eq_size(size_t a, size_t b) {
+    size_t diff = a ^ b;
+    /* If diff == 0, then (diff - 1) overflows to all 1s, and the high bit is 1.
+     * If diff != 0, then (diff - 1) does not overflow, and we OR with diff
+     * to ensure the high bit reflects non-equality. */
+    size_t result = (diff - 1) & ~diff;
+    /* Extract the high bit: 1 if equal, 0 if not */
+    return (int)(result >> (sizeof(size_t) * 8 - 1));
+}
+
+/**
  * Constant-time array lookup
  *
  * Looks up an element in an array in constant time.
  * Always scans entire array to prevent timing leaks.
  *
+ * SECURITY NOTE: This function uses constant-time comparison to avoid
+ * timing side-channels. The equality check uses arithmetic operations
+ * that do not branch on the secret index value.
+ *
  * @param table Array to search
  * @param table_len Number of elements
  * @param elem_size Size of each element in bytes
- * @param index Index to retrieve
+ * @param index Index to retrieve (may be secret)
  * @param output Output buffer for element
  */
 void ava_consttime_lookup(
@@ -197,9 +221,10 @@ void ava_consttime_lookup(
     /* Initialize output to zero */
     ava_secure_memzero(output, elem_size);
 
-    /* Scan entire table */
+    /* Scan entire table using constant-time comparison */
     for (i = 0; i < table_len; i++) {
-        match = (i == index);
+        /* Use constant-time equality check instead of direct comparison */
+        match = consttime_eq_size(i, index);
         mask = (uint8_t)(-(int8_t)match);
 
         /* Conditionally OR in this element */
