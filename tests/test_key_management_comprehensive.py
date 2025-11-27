@@ -579,6 +579,7 @@ class TestSecureKeyStorageComprehensive:
         with pytest.raises(FileNotFoundError, match="Salt file not found"):
             SecureKeyStorage.from_existing(temp_dir, "password")
 
+    @pytest.mark.skipif(os.name == "nt", reason="Unix file permissions not supported on Windows")
     def test_file_permissions(self, temp_storage_path, test_password, test_key_material):
         """Key files have secure permissions (0600)."""
         storage = SecureKeyStorage(temp_storage_path, master_password=test_password)
