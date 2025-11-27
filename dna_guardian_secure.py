@@ -22,7 +22,7 @@ Complete cryptographic protection system for helical mathematical DNA codes.
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-11-26
+Date: 2025-11-27
 Version: 1.0.0
 Project: Post-quantum cryptographic security system
 
@@ -65,7 +65,7 @@ import secrets
 import struct
 import subprocess
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, cast
@@ -257,8 +257,8 @@ def length_prefixed_encode(*fields: str) -> bytes:
         ValueError: If any field exceeds 4GB
     """
     encoded = b""
-    for i, field in enumerate(fields):
-        field_bytes = field.encode("utf-8")
+    for i, field_value in enumerate(fields):
+        field_bytes = field_value.encode("utf-8")
 
         # Validate field size
         if len(field_bytes) > 0xFFFFFFFF:
@@ -518,7 +518,7 @@ class Ed25519KeyPair:
                Journal of Cryptographic Engineering, 2(2), 77-89.
     """
 
-    private_key: bytes  # 32 bytes
+    private_key: bytes = field(repr=False)  # 32 bytes - excluded from repr to prevent exposure
     public_key: bytes  # 32 bytes
 
 
@@ -816,7 +816,9 @@ class DilithiumKeyPair:
        binary LWE." ACISP 2014, LNCS 8544, pp. 322-337.
     """
 
-    private_key: bytes  # 4032 bytes for ML-DSA-65 (Dilithium3)
+    private_key: bytes = field(
+        repr=False
+    )  # 4032 bytes for ML-DSA-65 (Dilithium3) - excluded from repr
     public_key: bytes  # 1952 bytes for Dilithium3
 
 
@@ -1542,9 +1544,11 @@ class KeyManagementSystem:
     3. PKCS#11 v2.40: "Cryptographic Token Interface Standard"
     """
 
-    master_secret: bytes  # 32 bytes, NEVER expose
-    hmac_key: bytes  # 32 bytes, derived
-    hkdf_salt: bytes  # 32 bytes, random salt for HKDF (RFC 5869)
+    master_secret: bytes = field(repr=False)  # 32 bytes, NEVER expose - excluded from repr
+    hmac_key: bytes = field(repr=False)  # 32 bytes, derived - excluded from repr
+    hkdf_salt: bytes = field(
+        repr=False
+    )  # 32 bytes, random salt for HKDF (RFC 5869) - excluded from repr
     ed25519_keypair: Ed25519KeyPair  # Classical signatures
     dilithium_keypair: Optional[
         DilithiumKeyPair

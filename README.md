@@ -869,7 +869,7 @@ AG♱ transcends traditional computer science boundaries by synthesizing insight
 - **Character-driven design**: Competence, commitment, control embedded in architecture
 - **Survivor-first principles**: Security designed to protect the vulnerable
 
-This multi-disciplinary synthesis enables AG♱ to achieve a **98/100 (A+) security grade** while maintaining ethical integrity and quantum resistance.
+This multi-disciplinary synthesis uses NIST-standard primitives (SHA3-256, HMAC-SHA3-256, Ed25519, ML-DSA-65, HKDF) with ~128-bit classical and ~192-bit quantum security margins. All security analysis is self-assessed; see SECURITY_ANALYSIS.md for derivations and caveats.
 
 </details>
 
@@ -980,6 +980,6 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. THE AUTHORS AND 
 
 <img src="assets/ama_logo.png" alt="AMA" height="24">
 
-*Last updated: 2025-11-26*
+*Last updated: 2025-11-27*
 
 </div>

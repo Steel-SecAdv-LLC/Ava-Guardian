@@ -27,7 +27,7 @@ import hashlib
 import secrets
 import warnings
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Dict, Optional, Tuple, cast
 
@@ -108,7 +108,7 @@ class KeyPair:
     """
 
     public_key: bytes
-    secret_key: bytes
+    secret_key: bytes = field(repr=False)  # SENSITIVE - excluded from repr to prevent exposure
     algorithm: AlgorithmType
     metadata: Dict[str, Any]
 
@@ -156,7 +156,7 @@ class EncapsulatedSecret:
     """
 
     ciphertext: bytes
-    shared_secret: bytes
+    shared_secret: bytes = field(repr=False)  # SENSITIVE - excluded from repr to prevent exposure
     algorithm: AlgorithmType
     metadata: Dict[str, Any]
 

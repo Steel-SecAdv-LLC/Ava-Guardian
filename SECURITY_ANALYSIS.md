@@ -66,6 +66,16 @@ Ava Guardian ♱ provides cryptographic protection for DNA Code (helical mathema
 - ⚠️ PQC algorithms are recent standards (limited real-world deployment history)
 - ⚠️ Constant-time implementation needs independent verification
 
+**Security Bound Statement**:
+
+> Security reduces to the minimum of the underlying primitives AND the soundness of key management and verification logic. When all layers are enforced and keys are secure, a cryptographic forgery requires breaking at least one of SHA3-256/HMAC/Ed25519/Dilithium at their advertised security levels (~128–192 bits).
+
+**Real-World Bottlenecks** (in order of likelihood):
+1. **Key compromise** — If master_secret, HMAC key, or private keys are stolen, no cryptographic layer helps
+2. **Implementation bugs** — Verification logic errors or parameter misuse can bypass layers
+3. **Side channels** — Timing or cache attacks on non-constant-time code paths
+4. **Misconfiguration** — Not requiring all checks (e.g., `require_quantum_signatures=False`)
+
 **Production Requirements** (MANDATORY):
 - 🔒 **HSM/TPM REQUIRED**: Master secrets MUST be stored in FIPS 140-2 Level 3+ Hardware Security Module for production deployments
 - 🔒 **No Software-Only Keys**: Software-based key storage is ONLY permitted for development/testing environments
@@ -77,7 +87,7 @@ Ava Guardian ♱ provides cryptographic protection for DNA Code (helical mathema
 
 ### Defense-in-Depth Strategy
 
-The system implements multiple independent security layers. An attacker must compromise ALL layers to successfully forge a package:
+The system implements multiple independent security layers. When verification requires all checks to pass, a cryptographic forgery requires breaking at least one primitive at its advertised security level (assuming keys remain secure):
 
 ```
 DNA Codes + Helix Parameters
