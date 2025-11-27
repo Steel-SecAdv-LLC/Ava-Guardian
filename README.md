@@ -212,6 +212,15 @@ Future-proof cryptography:
 
 > **Note:** The Python API is secure and tested. C API stubs provide interface stability for future native implementations. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed security comparison.
 
+**PQC Backend Security Considerations:**
+
+| Backend | Constant-Time | Recommended Use |
+|---------|---------------|-----------------|
+| liboqs-python | Yes (C implementation) | Production environments |
+| pqcrypto | No (Pure Python) | Development/testing only |
+
+> **WARNING:** The pure Python PQC fallback (pqcrypto) is NOT constant-time and may be vulnerable to timing side-channel attacks. For production environments where timing attacks are a concern, install liboqs-python: `pip install liboqs-python`. Set the environment variable `AVA_REQUIRE_CONSTANT_TIME=true` to refuse non-constant-time backends at runtime.
+
 </details>
 
 ---
@@ -236,7 +245,7 @@ Future-proof cryptography:
 
 - **Long-term Classified Data**: Documents that must remain secret for decades protected against future quantum computers.
 - **Secure Communications**: TLS with Kyber-1024 key exchange resistant to "harvest now, decrypt later" attacks.
-- **Timing Attack Resistance**: 3R monitoring detects cache-timing and power analysis attempts on cryptographic operations.
+- **Runtime Anomaly Monitoring**: 3R monitoring surfaces statistical anomalies in operation timing that may be consistent with cache-timing or power-analysis behavior, but does not guarantee detection or prevention of timing attacks or other side-channel vulnerabilities.
 - **Integrity Verification**: Mathematical invariant checking catches sophisticated tampering beyond standard checksums.
 - **Zero-Trust Environments**: Runtime monitoring provides continuous verification of cryptographic operations.
 
@@ -777,7 +786,7 @@ make install      # Install system-wide
 
 The **3R Mechanism** (Resonance-Recursion-Refactoring) is a novel security framework providing:
 
-- **Timing Attack Detection** via FFT frequency-domain analysis
+- **Runtime Timing Anomaly Monitoring** via FFT frequency-domain analysis (statistical anomaly detection, not guaranteed timing attack detection)
 - **Pattern Anomaly Detection** through multi-scale hierarchical analysis
 - **Code Complexity Metrics** for security review
 - **Less than 2% Performance Overhead** in production

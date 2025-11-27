@@ -18,10 +18,14 @@ Ava Guardian ♱ (AG♱): 3R Monitoring Demonstration
 ==================================================
 
 Demonstrates:
-1. Timing attack detection (ResonanceEngine)
+1. Runtime timing anomaly monitoring (ResonanceEngine)
 2. Pattern analysis (RecursionEngine)
 3. Security reporting
 4. Integration with existing crypto functions
+
+Note: The 3R system is a runtime ANOMALY MONITORING framework. It surfaces
+statistical anomalies for security review but does NOT guarantee detection
+or prevention of timing attacks or other side-channel vulnerabilities.
 
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
@@ -54,8 +58,8 @@ def print_section(title: str) -> None:
 
 
 def demo_timing_monitoring() -> None:
-    """Demonstrate timing attack detection."""
-    print_section("3R DEMO: ResonanceEngine - Timing Attack Detection")
+    """Demonstrate runtime timing anomaly monitoring."""
+    print_section("3R DEMO: ResonanceEngine - Runtime Timing Anomaly Monitoring")
 
     monitor = AvaGuardianMonitor(enabled=True)
     kms = generate_key_management_system("Demo-Timing")

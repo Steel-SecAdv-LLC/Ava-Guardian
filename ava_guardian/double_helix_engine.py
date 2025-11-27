@@ -17,6 +17,21 @@
 Ava Guardian ♱ (AG♱) - Double-Helix Evolution Engine
 =====================================================
 
+**IMPORTANT: NON-CRYPTOGRAPHIC MODULE**
+
+This module provides mathematical modeling and analytical utilities for the
+Ava Guardian system. It is NOT a cryptographic primitive and should NOT be
+relied upon for security guarantees. The Double-Helix Evolution Engine
+implements:
+
+- Mathematical state evolution and convergence algorithms
+- Analytical modeling inspired by biological and physical systems
+- Optimization and constraint satisfaction frameworks
+
+These utilities support system analytics and modeling but do not provide
+cryptographic protection. For cryptographic operations, use the dedicated
+modules: pqc_backends.py, crypto_api.py, and dna_guardian_secure.py.
+
 Implements 18+ Ava Equation variants with Double-Helix Evolution Architecture.
 
 Fundamental Equation:
