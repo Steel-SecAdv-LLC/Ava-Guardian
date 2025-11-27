@@ -1,12 +1,5 @@
 # Ava Guardian ♱ (AG♱)
 
-**Protecting people, data, and networks with quantum-resistant cryptography**
-
-> **Project Philosophy:** Promoting action over inaction in the hope of helping secure critical systems against emerging quantum threats. This project is experimental and under active development. While we strive for cryptographic rigor, users should remain cautious and conduct independent security reviews before production deployment. The perceived absence of a threat does not constitute the lack of a threat. Our goal is to deter, mitigate, and elevate security posture—not create new vulnerabilities.
->
-> **Status:** Experimental | Community-tested | Not externally audited  
-> **Last Updated:** 2025-11-27
-
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org)
 [![C](https://img.shields.io/badge/C-C11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
@@ -50,12 +43,18 @@ Ava Guardian ♱ (AG♱) is a secure, multi-language cryptographic security syst
 
 Novel in assimilation, the system combines cutting-edge NIST-approved post-quantum algorithms with a unique 3R runtime security monitoring framework, creating a defense-in-depth architecture that provides unprecedented visibility into cryptographic operations while maintaining less than 2% performance overhead. The multi-language architecture (C + Cython + Python) enables both maximum security through constant-time implementations and optional Cython acceleration (18-37x speedup when built), making it suitable for environments ranging from high-security government applications to performance-critical enterprise systems.
 
-> **Audit Status:** Community-tested, not externally audited. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for self-assessment details.
+**Protecting people, data, and networks with quantum-resistant cryptography**
+
+> **Project Philosophy:** Promoting action over inaction in the hope of helping secure critical systems against emerging quantum threats. This project is experimental and under active development. While we strive for cryptographic rigor, users should remain cautious and conduct independent security reviews before production deployment. The perceived absence of a threat does not constitute the lack of a threat. Our goal is to deter, mitigate, and elevate security posture—not create new vulnerabilities.
 > 
 > **Security Disclosure:** This is a self-assessed cryptographic implementation without third-party audit. Production use REQUIRES:
 > - FIPS 140-2 Level 3+ HSM for master secrets (no software-only keys in high-security environments)
 > - Independent security review by qualified cryptographers
 > - Constant-time implementation verification for side-channel resistance
+>
+> **Status:** Experimental | Community-tested | Not externally audited  
+> **Last Updated:** 2025-11-27
+> **Audit Status:** Community-tested, not externally audited. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for self-assessment details.
 >
 > See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed security properties and threat model.
 
