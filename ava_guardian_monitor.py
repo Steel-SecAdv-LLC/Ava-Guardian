@@ -665,7 +665,7 @@ class RecursionPatternMonitor:
             "total_packages": len(self.package_history),
         }
 
-    def _recursive_extract(self, data: NDArray[np.floating[Any]], depth: int) -> Dict[str, Any]:
+    def _recursive_extract(self, data: "NDArray[np.floating[Any]]", depth: int) -> Dict[str, Any]:
         """
         Recursively extract features at multiple scales.
 
