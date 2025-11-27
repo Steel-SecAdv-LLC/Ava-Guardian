@@ -7,15 +7,18 @@
  * @author Andrew E. A., Steel Security Advisors LLC
  * @date 2025-11-24
  *
- * IMPLEMENTATION STATUS: PLACEHOLDER
- * ==================================
- * This file contains polynomial arithmetic foundations for a future native
- * Kyber-1024 implementation. Currently, production Kyber operations use the
- * Python API with liboqs-python backend for full NIST FIPS 203 compliance.
+ * IMPLEMENTATION STATUS: LIBOQS INTEGRATION
+ * ==========================================
+ * This file provides Kyber-1024 (ML-KEM-1024) key encapsulation using liboqs.
+ * When AVA_USE_LIBOQS is defined and liboqs is linked, the implementation
+ * provides full KEM operations (keygen, encaps, decaps).
  *
- * The polynomial operations (poly_add, poly_sub, montgomery_reduce) are
- * implemented and tested. Full KEM operations (keygen, encaps, decaps)
- * return AVA_ERROR_NOT_IMPLEMENTED - use the Python API instead.
+ * The polynomial arithmetic foundations (poly_add, poly_sub, montgomery_reduce)
+ * are retained for potential future native implementations.
+ *
+ * Build with liboqs:
+ *   cmake -DAVA_USE_LIBOQS=ON ..
+ *   Link against: -loqs
  *
  * Parameters (Kyber-1024 / ML-KEM-1024):
  * - Security level: NIST Level 5 (~256-bit classical, ~128-bit quantum)
@@ -36,6 +39,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+
+/* liboqs integration */
+#ifdef AVA_USE_LIBOQS
+#include <oqs/oqs.h>
+#endif
 
 /* Suppress unused function warnings for polynomial arithmetic foundations */
 #pragma GCC diagnostic push
@@ -109,20 +117,16 @@ static void kyber_free(kyber_context_t* ctx) {
 }
 
 /**
- * Generate Kyber-1024 keypair
+ * Generate Kyber-1024 keypair using liboqs
  *
- * PLACEHOLDER: Native C implementation reserved for future development.
- * Production implementations should use the Python API with liboqs backend.
+ * When built with AVA_USE_LIBOQS, uses liboqs ML-KEM-1024 implementation.
+ * Otherwise returns AVA_ERROR_NOT_IMPLEMENTED.
  *
- * Full implementation would:
- * 1. Generate matrix A from seed using SHAKE128
- * 2. Sample secret vector s from centered binomial distribution
- * 3. Sample error vector e from centered binomial distribution
- * 4. Compute t = A*s + e (in NTT domain)
- * 5. Encode (seed, t) as public key
- * 6. Encode s as secret key
- *
- * @return AVA_ERROR_NOT_IMPLEMENTED (use Python API instead)
+ * @param public_key Output buffer for public key (1568 bytes)
+ * @param public_key_len Length of public key buffer
+ * @param secret_key Output buffer for secret key (3168 bytes)
+ * @param secret_key_len Length of secret key buffer
+ * @return AVA_SUCCESS or error code
  */
 ava_error_t kyber_keypair_generate(
     uint8_t* public_key,
@@ -135,26 +139,40 @@ ava_error_t kyber_keypair_generate(
         return AVA_ERROR_INVALID_PARAM;
     }
 
+#ifdef AVA_USE_LIBOQS
+    OQS_KEM *kem = OQS_KEM_new(OQS_KEM_alg_ml_kem_1024);
+    if (!kem) {
+        return AVA_ERROR_CRYPTO;
+    }
+
+    OQS_STATUS rc = OQS_KEM_keypair(kem, public_key, secret_key);
+    OQS_KEM_free(kem);
+
+    if (rc != OQS_SUCCESS) {
+        return AVA_ERROR_CRYPTO;
+    }
+    return AVA_SUCCESS;
+#else
     /* Parameters validated but not used - placeholder returns NOT_IMPLEMENTED */
     (void)public_key;
     (void)secret_key;
-
     return AVA_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 /**
- * Encapsulate shared secret
+ * Encapsulate shared secret using liboqs
  *
- * PLACEHOLDER: Native C implementation reserved for future development.
- * Production implementations should use the Python API with liboqs backend.
+ * When built with AVA_USE_LIBOQS, uses liboqs ML-KEM-1024 implementation.
+ * Otherwise returns AVA_ERROR_NOT_IMPLEMENTED.
  *
- * Full implementation would:
- * 1. Generate random message m
- * 2. Compute (K, r) = G(m || H(pk))
- * 3. Encrypt m to get ciphertext c
- * 4. Compute shared secret ss = KDF(K || H(c))
- *
- * @return AVA_ERROR_NOT_IMPLEMENTED (use Python API instead)
+ * @param public_key Recipient's public key (1568 bytes)
+ * @param public_key_len Length of public key
+ * @param ciphertext Output buffer for ciphertext (1568 bytes)
+ * @param ciphertext_len Pointer to ciphertext length (in/out)
+ * @param shared_secret Output buffer for shared secret (32 bytes)
+ * @param shared_secret_len Length of shared secret buffer
+ * @return AVA_SUCCESS or error code
  */
 ava_error_t kyber_encapsulate(
     const uint8_t* public_key,
@@ -169,29 +187,52 @@ ava_error_t kyber_encapsulate(
         return AVA_ERROR_INVALID_PARAM;
     }
 
+#ifdef AVA_USE_LIBOQS
+    if (*ciphertext_len < AVA_KYBER_1024_CIPHERTEXT_BYTES) {
+        *ciphertext_len = AVA_KYBER_1024_CIPHERTEXT_BYTES;
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    OQS_KEM *kem = OQS_KEM_new(OQS_KEM_alg_ml_kem_1024);
+    if (!kem) {
+        return AVA_ERROR_CRYPTO;
+    }
+
+    OQS_STATUS rc = OQS_KEM_encaps(kem, ciphertext, shared_secret, public_key);
+    OQS_KEM_free(kem);
+
+    if (rc != OQS_SUCCESS) {
+        return AVA_ERROR_CRYPTO;
+    }
+
+    *ciphertext_len = AVA_KYBER_1024_CIPHERTEXT_BYTES;
+    return AVA_SUCCESS;
+#else
     /* Parameters validated but not used - placeholder returns NOT_IMPLEMENTED */
     (void)public_key;
     (void)ciphertext;
     (void)ciphertext_len;
     (void)shared_secret;
-
     return AVA_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 /**
- * Decapsulate shared secret
+ * Decapsulate shared secret using liboqs
  *
- * PLACEHOLDER: Native C implementation reserved for future development.
- * Production implementations should use the Python API with liboqs backend.
+ * When built with AVA_USE_LIBOQS, uses liboqs ML-KEM-1024 implementation.
+ * Otherwise returns AVA_ERROR_NOT_IMPLEMENTED.
  *
- * Full implementation would:
- * 1. Decrypt ciphertext to get m'
- * 2. Compute (K', r') = G(m' || H(pk))
- * 3. Re-encrypt m' with r' to get c'
- * 4. If c' == c: return ss = KDF(K' || H(c))
- * 5. Else: return ss = KDF(z || H(c)) [implicit rejection]
+ * Uses implicit rejection for IND-CCA2 security: returns a deterministic
+ * but random-looking value if decapsulation fails.
  *
- * @return AVA_ERROR_NOT_IMPLEMENTED (use Python API instead)
+ * @param ciphertext Ciphertext to decapsulate (1568 bytes)
+ * @param ciphertext_len Length of ciphertext
+ * @param secret_key Recipient's secret key (3168 bytes)
+ * @param secret_key_len Length of secret key
+ * @param shared_secret Output buffer for shared secret (32 bytes)
+ * @param shared_secret_len Length of shared secret buffer
+ * @return AVA_SUCCESS or error code
  */
 ava_error_t kyber_decapsulate(
     const uint8_t* ciphertext,
@@ -207,12 +248,26 @@ ava_error_t kyber_decapsulate(
         return AVA_ERROR_INVALID_PARAM;
     }
 
+#ifdef AVA_USE_LIBOQS
+    OQS_KEM *kem = OQS_KEM_new(OQS_KEM_alg_ml_kem_1024);
+    if (!kem) {
+        return AVA_ERROR_CRYPTO;
+    }
+
+    OQS_STATUS rc = OQS_KEM_decaps(kem, shared_secret, ciphertext, secret_key);
+    OQS_KEM_free(kem);
+
+    if (rc != OQS_SUCCESS) {
+        return AVA_ERROR_CRYPTO;
+    }
+    return AVA_SUCCESS;
+#else
     /* Parameters validated but not used - placeholder returns NOT_IMPLEMENTED */
     (void)ciphertext;
     (void)secret_key;
     (void)shared_secret;
-
     return AVA_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 /* ============================================================================

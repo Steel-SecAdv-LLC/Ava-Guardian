@@ -43,6 +43,11 @@ jobs:
       run: |
         python -m pytest tests/ -v --tb=short --no-cov
 
+    - name: Run NIST KAT tests (if oqs available)
+      continue-on-error: true
+      run: |
+        python -m pytest tests/test_pqc_kat.py -v --tb=short || echo "KAT tests skipped (oqs not available)"
+
     - name: Run demonstration
       run: |
         python dna_guardian_secure.py

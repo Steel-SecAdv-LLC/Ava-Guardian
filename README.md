@@ -131,7 +131,7 @@ See [Use Cases by Sector](#use-cases-by-sector-) for detailed scenarios.
 | 5. HKDF | Key derivation | Cryptographic key independence |
 | 6. RFC 3161 | Timestamping | Third-party proof of existence |
 
-**Why 6 layers matter:** An attacker must compromise ALL layers simultaneously. Combined attack cost: 2^724 classical operations, 2^644 quantum operations. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for mathematical proofs.
+**Why 6 layers matter:** Overall security is bounded by the weakest cryptographic layer (~128-bit classical, ~192-bit quantum). Defense-in-depth ensures continued protection if one layer is compromised. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed analysis.
 
 ### 3R Runtime Security Monitoring
 

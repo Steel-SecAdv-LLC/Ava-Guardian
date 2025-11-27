@@ -14,21 +14,32 @@
 # limitations under the License.
 
 """
-Ava Guardian ♱ (AG♱): 3R Security Monitoring System
-====================================================
+Ava Guardian ♱ (AG♱): 3R Runtime Anomaly Monitoring System
+==========================================================
 
-3R Mechanism: Resonance-Recursion-Refactoring for runtime security analysis.
+3R Mechanism: Resonance-Recursion-Refactoring for runtime anomaly monitoring.
 
-The 3R Mechanism is a novel security monitoring framework developed for
+The 3R Mechanism is a novel runtime anomaly monitoring framework developed for
 Ava Guardian ♱ by Steel Security Advisors LLC. It provides three complementary
 approaches to runtime security analysis without compromising cryptographic
 integrity or performance.
+
+Key Features:
+- High-resolution timing using time.perf_counter_ns() (cross-platform)
+- Per-operation baseline statistics (separate stats for each crypto operation)
+- EWMA (Exponentially Weighted Moving Average) for robust anomaly detection
+- MAD (Median Absolute Deviation) for outlier-resistant statistics
+- Sliding window analysis with configurable retention
+
+Note: This is a runtime ANOMALY MONITORING system, not a timing attack
+detection/prevention system. It surfaces statistical anomalies for
+security review - it does not guarantee side-channel resistance.
 
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
 Date: 2025-11-26
-Version: 1.0.0
+Version: 1.1.0
 Project: Ava Guardian ♱ 3R Runtime Monitoring
 
 AI Co-Architects:
@@ -38,11 +49,12 @@ AI Co-Architects:
 import ast
 import time
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any, Deque, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.fft import fft, fftfreq
 
 
@@ -69,7 +81,7 @@ class IncrementalStats:
         self.mean: float = 0.0
         self.M2: float = 0.0
 
-    def update(self, x: float) -> tuple:
+    def update(self, x: float) -> Tuple[float, float]:
         """
         Update running statistics with new value.
 
@@ -85,9 +97,9 @@ class IncrementalStats:
         delta2 = x - self.mean
         self.M2 += delta * delta2
         variance = self.M2 / self.n if self.n > 1 else 0.0
-        return self.mean, np.sqrt(variance)
+        return self.mean, float(np.sqrt(variance))
 
-    def get_stats(self) -> tuple:
+    def get_stats(self) -> Tuple[float, float]:
         """
         Get current mean and standard deviation.
 
@@ -97,7 +109,7 @@ class IncrementalStats:
         if self.n < 2:
             return self.mean, 0.0
         variance = self.M2 / self.n
-        return self.mean, np.sqrt(variance)
+        return self.mean, float(np.sqrt(variance))
 
     def reset(self) -> None:
         """Reset all accumulators to initial state."""
@@ -106,16 +118,171 @@ class IncrementalStats:
         self.M2 = 0.0
 
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __all__ = [
     "IncrementalStats",
+    "EWMAStats",
     "TimingAnomaly",
     "PatternAnomaly",
     "ResonanceTimingMonitor",
     "RecursionPatternMonitor",
     "RefactoringAnalyzer",
     "AvaGuardianMonitor",
+    "high_resolution_timer",
 ]
+
+
+def high_resolution_timer() -> float:
+    """
+    Get high-resolution timestamp in milliseconds.
+
+    Uses time.perf_counter_ns() for nanosecond precision (cross-platform).
+    This provides higher resolution than time.time() which only has
+    microsecond precision on most platforms.
+
+    Returns:
+        Current time in milliseconds (float)
+
+    Note:
+        perf_counter_ns() is available on Windows, macOS, and Linux.
+        It measures elapsed time, not wall-clock time.
+    """
+    return time.perf_counter_ns() / 1_000_000.0
+
+
+class EWMAStats:
+    """
+    Exponentially Weighted Moving Average (EWMA) statistics.
+
+    EWMA gives more weight to recent observations, making it more
+    responsive to changes while still smoothing noise. Combined with
+    MAD (Median Absolute Deviation), it provides robust anomaly detection.
+
+    Formula:
+        EWMA_t = alpha * x_t + (1 - alpha) * EWMA_{t-1}
+
+    Where:
+        - alpha: Smoothing factor (0 < alpha <= 1)
+        - Higher alpha = more weight on recent observations
+        - Lower alpha = more smoothing
+
+    Attributes:
+        alpha: Smoothing factor
+        mean: Current EWMA mean
+        variance: Current EWMA variance
+        n: Number of observations
+    """
+
+    __slots__ = ("alpha", "mean", "variance", "n", "_recent_values")
+
+    def __init__(self, alpha: float = 0.1, window_size: int = 100) -> None:
+        """
+        Initialize EWMA statistics.
+
+        Args:
+            alpha: Smoothing factor (0 < alpha <= 1). Default 0.1 for
+                   smooth response. Use 0.3 for faster response.
+            window_size: Size of recent value window for MAD calculation
+
+        Raises:
+            ValueError: If alpha not in (0, 1]
+        """
+        if not 0 < alpha <= 1:
+            raise ValueError("alpha must be in (0, 1]")
+
+        self.alpha = alpha
+        self.mean: float = 0.0
+        self.variance: float = 0.0
+        self.n: int = 0
+        self._recent_values: Deque[float] = deque(maxlen=window_size)
+
+    def update(self, x: float) -> Tuple[float, float]:
+        """
+        Update EWMA statistics with new observation.
+
+        Args:
+            x: New observation value
+
+        Returns:
+            Tuple of (current_mean, current_std)
+        """
+        self._recent_values.append(x)
+        self.n += 1
+
+        if self.n == 1:
+            # First observation
+            self.mean = x
+            self.variance = 0.0
+        else:
+            # EWMA update
+            delta = x - self.mean
+            self.mean = self.alpha * x + (1 - self.alpha) * self.mean
+            # EWMA variance (exponentially weighted)
+            self.variance = (1 - self.alpha) * (self.variance + self.alpha * delta * delta)
+
+        return self.mean, float(np.sqrt(self.variance))
+
+    def get_stats(self) -> Tuple[float, float]:
+        """
+        Get current EWMA mean and standard deviation.
+
+        Returns:
+            Tuple of (mean, std)
+        """
+        return self.mean, float(np.sqrt(self.variance))
+
+    def get_mad(self) -> float:
+        """
+        Calculate Median Absolute Deviation (MAD) from recent values.
+
+        MAD is a robust measure of variability that is resistant to outliers.
+        It's defined as: MAD = median(|x_i - median(x)|)
+
+        Returns:
+            MAD value, or 0.0 if insufficient data
+        """
+        if len(self._recent_values) < 3:
+            return 0.0
+
+        values = np.array(self._recent_values)
+        median = np.median(values)
+        mad = np.median(np.abs(values - median))
+        return float(mad)
+
+    def is_anomaly_mad(self, x: float, threshold: float = 3.5) -> bool:
+        """
+        Check if value is anomaly using MAD-based detection.
+
+        Uses modified Z-score: |x - median| / (1.4826 * MAD) > threshold
+
+        The constant 1.4826 makes MAD consistent with standard deviation
+        for normally distributed data.
+
+        Args:
+            x: Value to check
+            threshold: Detection threshold (default 3.5 = ~99.95% for normal)
+
+        Returns:
+            True if value is anomaly, False otherwise
+        """
+        if len(self._recent_values) < 10:
+            return False
+
+        mad = self.get_mad()
+        if mad == 0:
+            return False
+
+        values = np.array(self._recent_values)
+        median = np.median(values)
+        modified_z = abs(x - median) / (1.4826 * mad)
+        return modified_z > threshold
+
+    def reset(self) -> None:
+        """Reset all accumulators to initial state."""
+        self.mean = 0.0
+        self.variance = 0.0
+        self.n = 0
+        self._recent_values.clear()
 
 
 @dataclass
@@ -160,20 +327,20 @@ class PatternAnomaly:
 
 class ResonanceTimingMonitor:
     """
-    Detect timing attacks via frequency-domain analysis.
+    Detect timing anomalies via frequency-domain analysis.
 
     Uses FFT-based resonance detection to identify periodic timing patterns
-    that may indicate side-channel vulnerabilities in cryptographic
-    operations.
+    that may indicate anomalous behavior in cryptographic operations.
 
-    Timing side-channels can leak information through:
-    - Cache timing attacks
-    - Branch prediction patterns
-    - Memory access patterns
-    - CPU microarchitecture behavior
+    This is a MONITORING system that surfaces statistical anomalies for
+    security review. It does not guarantee detection of timing attacks
+    or provide side-channel resistance.
 
-    The resonance approach detects these by identifying periodic patterns
-    in operation timings that deviate from expected random noise.
+    Features:
+    - Per-operation baseline statistics (ed25519_sign, dilithium_verify, etc.)
+    - EWMA with MAD for robust, outlier-resistant anomaly detection
+    - High-resolution timing via perf_counter_ns() (cross-platform)
+    - Sliding window FFT analysis for periodic pattern detection
     """
 
     def __init__(
@@ -181,6 +348,8 @@ class ResonanceTimingMonitor:
         threshold_sigma: float = 3.0,
         window_size: int = 100,
         max_history: int = 10000,
+        use_ewma: bool = True,
+        ewma_alpha: float = 0.1,
     ) -> None:
         """
         Initialize timing monitor.
@@ -192,26 +361,37 @@ class ResonanceTimingMonitor:
                 Larger windows provide better frequency resolution.
             max_history: Maximum history entries per operation.
                 Limits memory usage for long-running systems.
+            use_ewma: Use EWMA instead of Welford's algorithm (default True).
+                EWMA is more responsive to changes in timing patterns.
+            ewma_alpha: EWMA smoothing factor (0 < alpha <= 1).
+                Higher values = faster response, lower = more smoothing.
 
         Performance Optimization:
             Uses collections.deque with maxlen for O(1) append and automatic
-            pruning, and Welford's algorithm for O(1) incremental statistics.
+            pruning, and EWMA/Welford's algorithm for O(1) incremental statistics.
         """
         self.threshold = threshold_sigma
         self.window_size = window_size
         self.max_history = max_history
+        self.use_ewma = use_ewma
+        self.ewma_alpha = ewma_alpha
         # Use deque with maxlen for O(1) append and automatic pruning
         self.timing_history: Dict[str, Deque[float]] = {}
         self.baseline_stats: Dict[str, Dict[str, float]] = {}
-        # Welford's algorithm for O(1) incremental statistics
+        # Per-operation statistics (separate baselines for each operation type)
         self._incremental_stats: Dict[str, IncrementalStats] = {}
+        self._ewma_stats: Dict[str, EWMAStats] = {}
 
     def record_timing(self, operation: str, duration_ms: float) -> Optional[TimingAnomaly]:
         """
         Record operation timing and detect anomalies.
 
+        Uses per-operation baselines to maintain separate statistics for
+        each type of cryptographic operation (e.g., ed25519_sign vs dilithium_verify).
+
         Args:
-            operation: Name of cryptographic operation (e.g., 'ed25519_sign')
+            operation: Name of cryptographic operation (e.g., 'ed25519_sign',
+                'dilithium_sign', 'kyber_encaps', etc.)
             duration_ms: Observed duration in milliseconds
 
         Returns:
@@ -222,41 +402,71 @@ class ResonanceTimingMonitor:
             This establishes a stable baseline distribution.
 
         Performance Optimization:
-            Uses O(1) incremental statistics via Welford's algorithm instead
-            of O(n) recalculation. Deque with maxlen handles automatic pruning.
+            Uses O(1) incremental statistics via EWMA or Welford's algorithm.
+            Deque with maxlen handles automatic pruning.
         """
-        # Initialize deque and incremental stats for new operations
+        # Initialize deque and stats for new operations
         if operation not in self.timing_history:
             self.timing_history[operation] = deque(maxlen=self.max_history)
             self._incremental_stats[operation] = IncrementalStats()
+            self._ewma_stats[operation] = EWMAStats(
+                alpha=self.ewma_alpha, window_size=self.window_size
+            )
 
         # O(1) append with automatic pruning via deque maxlen
         self.timing_history[operation].append(duration_ms)
 
-        # O(1) incremental statistics update via Welford's algorithm
-        mean, std = self._incremental_stats[operation].update(duration_ms)
+        # Update both stats (EWMA provides responsiveness, Welford provides accuracy)
+        self._incremental_stats[operation].update(duration_ms)
+        ewma_mean, ewma_std = self._ewma_stats[operation].update(duration_ms)
+
+        # Get sample count
+        sample_count = self._incremental_stats[operation].n
 
         # Need baseline before detection
-        if self._incremental_stats[operation].n < 30:
+        if sample_count < 30:
             return None
 
-        # Update baseline stats for reporting
-        self.baseline_stats[operation] = {"mean": mean, "std": std}
+        # Choose which stats to use
+        if self.use_ewma:
+            mean, std = ewma_mean, ewma_std
+        else:
+            mean, std = self._incremental_stats[operation].get_stats()
 
-        # Detect statistical anomaly
+        # Update baseline stats for reporting
+        self.baseline_stats[operation] = {
+            "mean": mean,
+            "std": std,
+            "samples": sample_count,
+            "mad": self._ewma_stats[operation].get_mad(),
+        }
+
+        # Detect statistical anomaly using both Z-score and MAD
+        is_anomaly = False
+        deviation = 0.0
+        detection_method = "z-score"
+
+        # Primary: Z-score based detection
         if std > 0:
             deviation = abs(duration_ms - mean) / std
-
             if deviation > self.threshold:
-                severity = "critical" if deviation > 5.0 else "warning"
-                return TimingAnomaly(
-                    operation=operation,
-                    expected_ms=mean,
-                    observed_ms=duration_ms,
-                    deviation_sigma=deviation,
-                    severity=severity,
-                    timestamp=time.time(),
-                )
+                is_anomaly = True
+
+        # Secondary: MAD-based detection (more robust to outliers)
+        if self.use_ewma and self._ewma_stats[operation].is_anomaly_mad(duration_ms):
+            is_anomaly = True
+            detection_method = "mad"
+
+        if is_anomaly:
+            severity = "critical" if deviation > 5.0 else "warning"
+            return TimingAnomaly(
+                operation=operation,
+                expected_ms=mean,
+                observed_ms=duration_ms,
+                deviation_sigma=deviation,
+                severity=severity,
+                timestamp=time.time(),
+            )
 
         return None
 
@@ -445,7 +655,7 @@ class RecursionPatternMonitor:
             "total_packages": len(self.package_history),
         }
 
-    def _recursive_extract(self, data: np.ndarray, depth: int) -> Dict:
+    def _recursive_extract(self, data: NDArray[np.floating[Any]], depth: int) -> Dict[str, Any]:
         """
         Recursively extract features at multiple scales.
 
