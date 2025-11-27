@@ -1185,12 +1185,125 @@ For the latest development updates, see the project's GitHub repository and CHAN
 
 ---
 
+## C API Build (Advanced)
+
+For users who need native C library integration with liboqs for post-quantum cryptography:
+
+### Prerequisites
+
+The C API requires [liboqs](https://github.com/open-quantum-safe/liboqs) for PQC operations.
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install -y cmake gcc ninja-build libssl-dev
+git clone https://github.com/open-quantum-safe/liboqs.git
+cd liboqs && mkdir build && cd build
+cmake -GNinja -DBUILD_SHARED_LIBS=ON ..
+ninja && sudo ninja install && sudo ldconfig
+
+# macOS
+brew install liboqs
+```
+
+### Build C Library
+
+```bash
+# Standard build (without liboqs)
+cd src/c
+gcc -c -fPIC -I../../include ava_core.c ava_kyber.c ava_consttime.c
+ar rcs libava_guardian.a *.o
+
+# Build with liboqs integration
+gcc -c -fPIC -DAVA_USE_LIBOQS -I../../include \
+    $(pkg-config --cflags liboqs) \
+    ava_core.c ava_kyber.c ava_consttime.c
+gcc -shared -o libava_guardian.so *.o $(pkg-config --libs liboqs)
+```
+
+### CMake Build (Recommended)
+
+```bash
+mkdir build && cd build
+cmake -DAVA_USE_LIBOQS=ON ..
+make -j$(nproc)
+sudo make install
+```
+
+### Supported Algorithms (with liboqs)
+
+| Algorithm | liboqs Name | Key Sizes |
+|-----------|-------------|-----------|
+| ML-DSA-65 (Dilithium3) | `OQS_SIG_alg_ml_dsa_65` | PK: 1952, SK: 4032, Sig: 3309 |
+| ML-KEM-1024 (Kyber-1024) | `OQS_KEM_alg_ml_kem_1024` | PK: 1568, SK: 3168, CT: 1568 |
+
+**Note:** For most users, the Python API (`pip install ava-guardian[quantum]`) is recommended over the C library.
+
+---
+
+## Cross-Compilation (Advanced)
+
+### For ARM64 (Raspberry Pi, AWS Graviton)
+
+```bash
+cmake .. \
+    -DCMAKE_SYSTEM_NAME=Linux \
+    -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+    -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+    -DAVA_ENABLE_AVX2=OFF
+```
+
+### CMake Build Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `AVA_BUILD_SHARED` | ON | Build shared library (.so/.dylib/.dll) |
+| `AVA_BUILD_STATIC` | ON | Build static library (.a/.lib) |
+| `AVA_ENABLE_SIMD` | ON | Enable SIMD optimizations |
+| `AVA_ENABLE_AVX2` | ON | Enable AVX2 instructions |
+| `AVA_ENABLE_LTO` | ON | Enable link-time optimization |
+
+### Environment Variables (Python Build)
+
+| Variable | Effect |
+|----------|--------|
+| `AVA_NO_CYTHON=1` | Disable Cython (use pure Python) |
+| `AVA_NO_C_EXTENSIONS=1` | Disable C extensions |
+| `AVA_DEBUG=1` | Enable debug symbols |
+
+---
+
+## Disaster Recovery
+
+### Key Compromise
+
+1. Immediately rotate all keys using `rotate_keys()`
+2. Revoke compromised key IDs
+3. Re-sign all packages with new keys
+4. Notify affected parties
+
+### HSM Failure
+
+1. Activate backup HSM
+2. Restore keys from encrypted backup
+3. Verify key integrity
+4. Resume operations
+
+### Performance Degradation
+
+1. Disable 3R monitoring temporarily (see `MONITORING.md`)
+2. Scale horizontally (add nodes)
+3. Investigate bottleneck
+4. Optimize or upgrade resources
+
+---
+
 ## Support and Resources
 
 ### Documentation
 
 - **Security Analysis:** See `SECURITY_ANALYSIS.md` for mathematical proofs
 - **Architecture:** See `ARCHITECTURE.md` for system design
+- **Monitoring:** See `MONITORING.md` for 3R security monitoring
 - **README:** See `README.md` for overview
 
 ### External Resources
