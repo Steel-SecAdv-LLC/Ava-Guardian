@@ -27,7 +27,7 @@ import secrets
 import sys
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -381,7 +381,7 @@ def run_all_benchmarks(baseline: Dict[str, Any], verbose: bool = False) -> List[
 def generate_report(results: List[BenchmarkResult]) -> Dict[str, Any]:
     """Generate a JSON report of benchmark results."""
     return {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "summary": {
             "total": len(results),
             "passed": sum(1 for r in results if r.passed),

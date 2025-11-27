@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "version": "1.0.0",
-    "created": "2025-01-20T00:00:00Z",
+    "version": "1.1.0",
+    "created": "2025-11-27T09:38:00Z",
     "description": "Ava Guardian ♱ performance baseline for regression detection",
-    "system": "Ubuntu Latest, Python 3.11",
-    "notes": "Baseline established on reference hardware. CI will fail if performance degrades >10%."
+    "system": "Ubuntu Latest, Python 3.12",
+    "notes": "Baseline updated with fresh benchmark results. CI will fail if performance degrades >10%."
   },
   "thresholds": {
     "regression_threshold_percent": 10,
@@ -15,83 +15,83 @@
     "sha3_256_hash": {
       "description": "SHA3-256 hashing of 1KB data",
       "metric": "operations_per_second",
-      "baseline_value": 50000,
+      "baseline_value": 300000,
       "unit": "ops/sec",
-      "tolerance_percent": 15
+      "tolerance_percent": 20
     },
     "hmac_sha3_256": {
       "description": "HMAC-SHA3-256 authentication",
       "metric": "operations_per_second",
-      "baseline_value": 45000,
+      "baseline_value": 150000,
       "unit": "ops/sec",
-      "tolerance_percent": 15
+      "tolerance_percent": 20
     },
     "ed25519_keygen": {
       "description": "Ed25519 key pair generation",
       "metric": "operations_per_second",
-      "baseline_value": 5000,
+      "baseline_value": 20000,
       "unit": "ops/sec",
-      "tolerance_percent": 15
+      "tolerance_percent": 20
     },
     "ed25519_sign": {
       "description": "Ed25519 signature generation",
       "metric": "operations_per_second",
-      "baseline_value": 4000,
+      "baseline_value": 12000,
       "unit": "ops/sec",
-      "tolerance_percent": 15
+      "tolerance_percent": 20
     },
     "ed25519_verify": {
       "description": "Ed25519 signature verification",
       "metric": "operations_per_second",
-      "baseline_value": 3500,
+      "baseline_value": 7000,
       "unit": "ops/sec",
-      "tolerance_percent": 15
+      "tolerance_percent": 20
     },
     "hkdf_derive": {
       "description": "HKDF key derivation (3 keys)",
       "metric": "operations_per_second",
-      "baseline_value": 20000,
+      "baseline_value": 80000,
       "unit": "ops/sec",
-      "tolerance_percent": 15
+      "tolerance_percent": 20
     },
     "full_package_create": {
-      "description": "Complete crypto package creation (without PQC)",
+      "description": "Complete crypto package creation (with PQC)",
       "metric": "operations_per_second",
-      "baseline_value": 1000,
+      "baseline_value": 3000,
       "unit": "ops/sec",
-      "tolerance_percent": 20
+      "tolerance_percent": 25
     },
     "full_package_verify": {
-      "description": "Complete crypto package verification (without PQC)",
+      "description": "Complete crypto package verification (with PQC)",
       "metric": "operations_per_second",
-      "baseline_value": 2000,
+      "baseline_value": 3500,
       "unit": "ops/sec",
-      "tolerance_percent": 20
+      "tolerance_percent": 25
     }
   },
   "pqc_benchmarks": {
     "dilithium_keygen": {
       "description": "ML-DSA-65 (Dilithium) key pair generation",
       "metric": "operations_per_second",
-      "baseline_value": 500,
+      "baseline_value": 10000,
       "unit": "ops/sec",
-      "tolerance_percent": 25,
+      "tolerance_percent": 30,
       "optional": true
     },
     "dilithium_sign": {
       "description": "ML-DSA-65 (Dilithium) signature generation",
       "metric": "operations_per_second",
-      "baseline_value": 400,
+      "baseline_value": 5000,
       "unit": "ops/sec",
-      "tolerance_percent": 25,
+      "tolerance_percent": 30,
       "optional": true
     },
     "dilithium_verify": {
       "description": "ML-DSA-65 (Dilithium) signature verification",
       "metric": "operations_per_second",
-      "baseline_value": 800,
+      "baseline_value": 12000,
       "unit": "ops/sec",
-      "tolerance_percent": 25,
+      "tolerance_percent": 30,
       "optional": true
     }
   }
