@@ -285,15 +285,15 @@ void ava_consttime_swap(int condition, void* a, void* b, size_t len);
 /**
  * @brief Constant-time table lookup
  * @param table Table to lookup from
- * @param element_size Size of each element
- * @param num_elements Number of elements in table
- * @param index Index to lookup
+ * @param table_len Number of elements in table
+ * @param elem_size Size of each element in bytes
+ * @param index Index to lookup (may be secret)
  * @param output Output buffer for selected element
  */
 void ava_consttime_lookup(
     const void* table,
-    size_t element_size,
-    size_t num_elements,
+    size_t table_len,
+    size_t elem_size,
     size_t index,
     void* output
 );
