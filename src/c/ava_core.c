@@ -410,3 +410,134 @@ ava_error_t ava_verify(
 
     return AVA_ERROR_NOT_IMPLEMENTED;
 }
+
+/**
+ * KEM Encapsulation using liboqs
+ *
+ * Generates a shared secret and ciphertext using the recipient's public key.
+ * The shared secret can be used for symmetric encryption.
+ */
+ava_error_t ava_kem_encapsulate(
+    ava_context_t* ctx,
+    const uint8_t* public_key,
+    size_t public_key_len,
+    uint8_t* ciphertext,
+    size_t* ciphertext_len,
+    uint8_t* shared_secret,
+    size_t shared_secret_len
+) {
+    if (!validate_context(ctx)) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    if (!public_key || !ciphertext || !ciphertext_len || !shared_secret) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+#ifdef AVA_USE_LIBOQS
+    OQS_STATUS rc;
+
+    if (ctx->kem) {
+        /* Validate public key length */
+        if (public_key_len < ctx->kem->length_public_key) {
+            return AVA_ERROR_INVALID_PARAM;
+        }
+
+        /* Validate ciphertext buffer size */
+        if (*ciphertext_len < ctx->kem->length_ciphertext) {
+            *ciphertext_len = ctx->kem->length_ciphertext;
+            return AVA_ERROR_INVALID_PARAM;
+        }
+
+        /* Validate shared secret buffer size */
+        if (shared_secret_len < ctx->kem->length_shared_secret) {
+            return AVA_ERROR_INVALID_PARAM;
+        }
+
+        /* Encapsulate */
+        rc = OQS_KEM_encaps(ctx->kem, ciphertext, shared_secret, public_key);
+        if (rc != OQS_SUCCESS) {
+            return AVA_ERROR_CRYPTO;
+        }
+
+        *ciphertext_len = ctx->kem->length_ciphertext;
+        return AVA_SUCCESS;
+    }
+
+    /* Signature algorithms don't support encapsulation */
+    if (ctx->sig) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+#else
+    /* Suppress unused parameter warnings when liboqs not available */
+    (void)public_key_len;
+    (void)shared_secret_len;
+#endif
+
+    return AVA_ERROR_NOT_IMPLEMENTED;
+}
+
+/**
+ * KEM Decapsulation using liboqs
+ *
+ * Recovers the shared secret from a ciphertext using the recipient's secret key.
+ * Uses implicit rejection for IND-CCA2 security.
+ */
+ava_error_t ava_kem_decapsulate(
+    ava_context_t* ctx,
+    const uint8_t* ciphertext,
+    size_t ciphertext_len,
+    const uint8_t* secret_key,
+    size_t secret_key_len,
+    uint8_t* shared_secret,
+    size_t shared_secret_len
+) {
+    if (!validate_context(ctx)) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    if (!ciphertext || !secret_key || !shared_secret) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+#ifdef AVA_USE_LIBOQS
+    OQS_STATUS rc;
+
+    if (ctx->kem) {
+        /* Validate ciphertext length */
+        if (ciphertext_len < ctx->kem->length_ciphertext) {
+            return AVA_ERROR_INVALID_PARAM;
+        }
+
+        /* Validate secret key length */
+        if (secret_key_len < ctx->kem->length_secret_key) {
+            return AVA_ERROR_INVALID_PARAM;
+        }
+
+        /* Validate shared secret buffer size */
+        if (shared_secret_len < ctx->kem->length_shared_secret) {
+            return AVA_ERROR_INVALID_PARAM;
+        }
+
+        /* Decapsulate */
+        rc = OQS_KEM_decaps(ctx->kem, shared_secret, ciphertext, secret_key);
+        if (rc != OQS_SUCCESS) {
+            return AVA_ERROR_CRYPTO;
+        }
+
+        return AVA_SUCCESS;
+    }
+
+    /* Signature algorithms don't support decapsulation */
+    if (ctx->sig) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+#else
+    /* Suppress unused parameter warnings when liboqs not available */
+    (void)ciphertext_len;
+    (void)secret_key_len;
+    (void)shared_secret_len;
+#endif
+
+    return AVA_ERROR_NOT_IMPLEMENTED;
+}

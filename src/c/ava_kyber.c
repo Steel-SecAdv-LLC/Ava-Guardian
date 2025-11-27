@@ -128,7 +128,7 @@ static void kyber_free(kyber_context_t* ctx) {
  * @param secret_key_len Length of secret key buffer
  * @return AVA_SUCCESS or error code
  */
-ava_error_t kyber_keypair_generate(
+static ava_error_t kyber_keypair_generate(
     uint8_t* public_key,
     size_t public_key_len,
     uint8_t* secret_key,
@@ -174,7 +174,7 @@ ava_error_t kyber_keypair_generate(
  * @param shared_secret_len Length of shared secret buffer
  * @return AVA_SUCCESS or error code
  */
-ava_error_t kyber_encapsulate(
+static ava_error_t kyber_encapsulate(
     const uint8_t* public_key,
     size_t public_key_len,
     uint8_t* ciphertext,
@@ -234,7 +234,7 @@ ava_error_t kyber_encapsulate(
  * @param shared_secret_len Length of shared secret buffer
  * @return AVA_SUCCESS or error code
  */
-ava_error_t kyber_decapsulate(
+static ava_error_t kyber_decapsulate(
     const uint8_t* ciphertext,
     size_t ciphertext_len,
     const uint8_t* secret_key,
