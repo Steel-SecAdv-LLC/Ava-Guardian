@@ -22,7 +22,7 @@ Complete cryptographic protection system for helical mathematical DNA codes.
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-11-26
+Date: 2025-11-27
 Version: 1.0.0
 Project: Post-quantum cryptographic security system
 
@@ -816,7 +816,9 @@ class DilithiumKeyPair:
        binary LWE." ACISP 2014, LNCS 8544, pp. 322-337.
     """
 
-    private_key: bytes = field(repr=False)  # 4032 bytes for ML-DSA-65 (Dilithium3) - excluded from repr
+    private_key: bytes = field(
+        repr=False
+    )  # 4032 bytes for ML-DSA-65 (Dilithium3) - excluded from repr
     public_key: bytes  # 1952 bytes for Dilithium3
 
 
@@ -1544,7 +1546,9 @@ class KeyManagementSystem:
 
     master_secret: bytes = field(repr=False)  # 32 bytes, NEVER expose - excluded from repr
     hmac_key: bytes = field(repr=False)  # 32 bytes, derived - excluded from repr
-    hkdf_salt: bytes = field(repr=False)  # 32 bytes, random salt for HKDF (RFC 5869) - excluded from repr
+    hkdf_salt: bytes = field(
+        repr=False
+    )  # 32 bytes, random salt for HKDF (RFC 5869) - excluded from repr
     ed25519_keypair: Ed25519KeyPair  # Classical signatures
     dilithium_keypair: Optional[
         DilithiumKeyPair
