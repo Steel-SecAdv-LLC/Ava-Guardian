@@ -598,7 +598,7 @@ See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for complete cryptographic anal
 | Document | Description |
 |----------|-------------|
 | [README.md](README.md) | Quick start and overview |
-| [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) | Detailed build guide for all platforms |
+| [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md) | Comprehensive deployment and build guide |
 | [ENHANCED_FEATURES.md](ENHANCED_FEATURES.md) | In-depth feature documentation |
 | [MONITORING.md](MONITORING.md) | 3R security monitoring guide |
 
@@ -612,7 +612,7 @@ See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for complete cryptographic anal
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture and design |
 | [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) | Complete security analysis |
 | [BENCHMARKS.md](BENCHMARKS.md) | Performance measurements |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Deployment guide |
+| [CRYPTOGRAPHY.md](CRYPTOGRAPHY.md) | Cryptographic algorithm overview |
 
 </details>
 
@@ -622,7 +622,6 @@ See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for complete cryptographic anal
 | Document | Description |
 |----------|-------------|
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
-| [PRE_MERGE_CHECKLIST.md](PRE_MERGE_CHECKLIST.md) | Quality verification checklist |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 
 </details>
