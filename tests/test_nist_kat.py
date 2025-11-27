@@ -1,4 +1,4 @@
- #!/usr/bin/env python3
+#!/usr/bin/env python3
 # Copyright 2025 Steel Security Advisors LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,11 +48,9 @@ Version: 1.0.0
 AI Co-Architects: Eris | Eden | Veritas | X | Caduceus | Dev
 """
 
-import os
-import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Dict, Iterator, List
 
 import pytest
 
@@ -188,9 +186,7 @@ def parse_kat_file(filepath: Path) -> Iterator[Dict[str, str]]:
         yield current_vector
 
 
-def load_kyber_kat_vectors(
-    filepath: Path, max_vectors: int = 10
-) -> List[KyberKATVector]:
+def load_kyber_kat_vectors(filepath: Path, max_vectors: int = 10) -> List[KyberKATVector]:
     """
     Load Kyber/ML-KEM KAT vectors from a .rsp file.
 
@@ -217,16 +213,14 @@ def load_kyber_kat_vectors(
                     ss=bytes.fromhex(raw["ss"]),
                 )
             )
-        except (KeyError, ValueError) as e:
+        except (KeyError, ValueError):
             # Skip malformed vectors
             continue
 
     return vectors
 
 
-def load_dilithium_kat_vectors(
-    filepath: Path, max_vectors: int = 10
-) -> List[DilithiumKATVector]:
+def load_dilithium_kat_vectors(filepath: Path, max_vectors: int = 10) -> List[DilithiumKATVector]:
     """
     Load Dilithium/ML-DSA KAT vectors from a .rsp file.
 
@@ -255,7 +249,7 @@ def load_dilithium_kat_vectors(
                     sm=bytes.fromhex(raw["sm"]),
                 )
             )
-        except (KeyError, ValueError) as e:
+        except (KeyError, ValueError):
             # Skip malformed vectors
             continue
 
@@ -556,9 +550,9 @@ class TestMLDSAKATValidation:
         # Accept both original Dilithium (3293) and final ML-DSA-65 (3309) sizes
         # The difference is due to FIPS 204 standardization changes
         valid_sizes = {kat_sig_size, 3309}  # KAT size and ML-DSA-65 size
-        assert len(signature) in valid_sizes, (
-            f"Signature size {len(signature)} not in expected sizes {valid_sizes}"
-        )
+        assert (
+            len(signature) in valid_sizes
+        ), f"Signature size {len(signature)} not in expected sizes {valid_sizes}"
 
     @pytest.mark.skipif(not DILITHIUM_AVAILABLE, reason="Dilithium backend not available")
     @pytest.mark.skipif(
