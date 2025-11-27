@@ -526,9 +526,9 @@ class TestMLDSAKATValidation:
 
         # Note: liboqs secret key may include public key, so size may differ
         # The important thing is that it's at least as large as the KAT sk
-        assert len(keypair.secret_key) >= len(
+        assert len(keypair.private_key) >= len(
             kat.sk
-        ), f"Secret key too small: {len(keypair.secret_key)} vs KAT {len(kat.sk)}"
+        ), f"Secret key too small: {len(keypair.private_key)} vs KAT {len(kat.sk)}"
 
     @pytest.mark.skipif(not DILITHIUM_AVAILABLE, reason="Dilithium backend not available")
     @pytest.mark.skipif(
@@ -536,20 +536,28 @@ class TestMLDSAKATValidation:
         reason="Dilithium3 KAT vectors not available",
     )
     def test_dilithium3_signature_size_matches_kat(self):
-        """Verify Dilithium3 signature size matches NIST KAT specification."""
+        """Verify Dilithium3 signature size is within expected range.
+
+        Note: The KAT vectors are from the original Dilithium submission (3293 bytes),
+        while liboqs implements the final FIPS 204 ML-DSA standard (3309 bytes).
+        Both are valid implementations of the same algorithm family.
+        """
         vectors = load_dilithium_kat_vectors(ML_DSA_DIR / "dilithium3.rsp", max_vectors=1)
         kat = vectors[0]
 
         # Expected signature size from KAT (sm = sig || msg)
-        expected_sig_size = kat.smlen - kat.mlen
+        kat_sig_size = kat.smlen - kat.mlen
 
         # Generate keypair and sign a message
         keypair = generate_dilithium_keypair()
         message = b"Test message for signature size validation"
-        signature = dilithium_sign(message, keypair.secret_key)
+        signature = dilithium_sign(message, keypair.private_key)
 
-        assert len(signature) == expected_sig_size, (
-            f"Signature size mismatch: {len(signature)} vs KAT {expected_sig_size}"
+        # Accept both original Dilithium (3293) and final ML-DSA-65 (3309) sizes
+        # The difference is due to FIPS 204 standardization changes
+        valid_sizes = {kat_sig_size, 3309}  # KAT size and ML-DSA-65 size
+        assert len(signature) in valid_sizes, (
+            f"Signature size {len(signature)} not in expected sizes {valid_sizes}"
         )
 
     @pytest.mark.skipif(not DILITHIUM_AVAILABLE, reason="Dilithium backend not available")
@@ -569,7 +577,7 @@ class TestMLDSAKATValidation:
             message = kat.msg if kat.msg else b"Empty message test"
 
             # Sign with our keypair
-            signature = dilithium_sign(message, keypair.secret_key)
+            signature = dilithium_sign(message, keypair.private_key)
 
             # Verify signature
             is_valid = dilithium_verify(message, signature, keypair.public_key)
@@ -632,7 +640,7 @@ class TestMLDSAKATValidation:
         # Generate multiple signatures
         signatures = []
         for _ in range(3):
-            sig = dilithium_sign(message, keypair.secret_key)
+            sig = dilithium_sign(message, keypair.private_key)
             signatures.append(sig)
 
         # All signatures should verify
@@ -649,7 +657,7 @@ class TestMLDSAKATValidation:
         keypair2 = generate_dilithium_keypair()
 
         message = b"Test message"
-        signature = dilithium_sign(message, keypair1.secret_key)
+        signature = dilithium_sign(message, keypair1.private_key)
 
         # Should verify with correct key
         assert dilithium_verify(message, signature, keypair1.public_key)
@@ -663,7 +671,7 @@ class TestMLDSAKATValidation:
         keypair = generate_dilithium_keypair()
 
         message = b"Original message"
-        signature = dilithium_sign(message, keypair.secret_key)
+        signature = dilithium_sign(message, keypair.private_key)
 
         # Should verify with original message
         assert dilithium_verify(message, signature, keypair.public_key)
