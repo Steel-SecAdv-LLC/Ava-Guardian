@@ -1315,8 +1315,9 @@ Ava Guardian ♱ provides cryptographic protection for DNA Code (helical mathema
 
 1. ⚠️ **No Third-Party Audit**: This analysis is self-assessed, not independently audited
 2. ⚠️ **New PQC Standards**: ML-DSA-65 and Kyber-1024 are recent NIST standards with limited deployment history
-3. ⚠️ **Implementation Verification**: Constant-time properties need independent verification
-4. ⚠️ **Performance Trade-offs**: Quantum resistance comes with computational overhead
+3. ✅ **Constant-Time Verification**: dudect-style timing analysis harness provided in `tools/constant_time/` (see `CONSTANT_TIME_VERIFICATION.md`)
+4. ✅ **NIST KAT Vectors**: Official NIST Known Answer Test vectors integrated in `tests/kat/` with comprehensive test coverage in `tests/test_nist_kat.py` and `tests/test_pqc_kat.py`
+5. ⚠️ **Performance Trade-offs**: Quantum resistance comes with computational overhead
 
 ### Recommendations for Production Deployment
 
@@ -1341,12 +1342,13 @@ Ava Guardian ♱ provides cryptographic protection for DNA Code (helical mathema
 ### Additional Considerations
 
 1. **Security Audit**: Obtain third-party cryptographic audit
-2. **Constant-Time Verification**: Use tools like ctgrind, dudect for timing leak detection
-3. **Multi-signature**: Implement threshold signatures (k-of-n)
-4. **Revocation**: Add CRL/OCSP for compromised key revocation
-5. **Hardware Integration**: Native HSM support (YubiKey, AWS CloudHSM)
-6. **Performance**: Optimize ML-DSA-65 using AVX2/AVX-512 instructions
-7. **Standards Tracking**: Monitor NIST PQC Round 4 for next-generation algorithms
+2. **Constant-Time Verification**: Run `make test-full` in `tools/constant_time/` for dudect-style timing analysis (see `CONSTANT_TIME_VERIFICATION.md`)
+3. **NIST KAT Validation**: Run `pytest tests/test_nist_kat.py tests/test_pqc_kat.py` to validate against official NIST test vectors
+4. **Multi-signature**: Implement threshold signatures (k-of-n)
+5. **Revocation**: Add CRL/OCSP for compromised key revocation
+6. **Hardware Integration**: Native HSM support (YubiKey, AWS CloudHSM)
+7. **Performance**: Optimize ML-DSA-65 using AVX2/AVX-512 instructions
+8. **Standards Tracking**: Monitor NIST PQC Round 4 for next-generation algorithms
 
 ---
 
