@@ -155,7 +155,7 @@ AG♱ applies six independent cryptographic layers:
 5. **ML-DSA-65 Signature** - Quantum-resistant asymmetric authentication
 6. **RFC 3161 Timestamp** - Third-party proof of existence (optional)
 
-**Combined Security:** Breaking all layers requires ~2^724 classical operations or ~2^644 quantum operations.
+**Security Bound:** Overall security is bounded by the weakest layer (~128-bit classical, ~192-bit quantum when Dilithium is enforced). Defense-in-depth ensures continued protection if any single layer is compromised. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed analysis.
 
 ### Hash Algorithm Note: RFC 3161 Timestamps
 

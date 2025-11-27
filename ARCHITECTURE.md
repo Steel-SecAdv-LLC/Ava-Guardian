@@ -486,12 +486,11 @@ The architecture supports optional HSM integration for master secret storage:
 
 ### Combined Security Analysis
 
-The combined attack cost for breaking all six layers:
+**Security Bound:** Overall security is bounded by the weakest cryptographic layer, not the sum of all layers. The system provides approximately 128-bit classical security (from Ed25519/HMAC) and approximately 192-bit quantum security (from ML-DSA-65/Dilithium) when all layers are enforced.
 
-**Classical Attack Cost**: 2^724 operations (sum of individual layer costs)
-**Quantum Attack Cost**: 2^644 operations (limited by Grover's algorithm bounds)
+**Defense-in-Depth Benefit:** While security is bounded by the weakest layer, the defense-in-depth architecture ensures that even if one layer is compromised (e.g., a future break in Ed25519), other layers continue to provide protection. An attacker must defeat ALL layers to fully compromise the system.
 
-These values represent upper bounds assuming independent layers. Actual security may be higher due to the requirement to break all layers simultaneously.
+See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed security proofs and the formal security bound statement.
 
 ### Security Assumptions
 
