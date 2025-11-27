@@ -9,7 +9,33 @@
 Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 **Version:** 1.0.0  
-**Date:** 2025-11-26
+**Date:** 2025-11-27
+
+---
+
+## Security Profiles
+
+Choose the appropriate verification profile for your use case:
+
+| Profile | Dilithium Required | RFC 3161 Required | Use Case |
+|---------|-------------------|-------------------|----------|
+| **dev** | No | No | Local testing, prototyping |
+| **classical** | No | Optional | Legacy environments, pre-quantum systems |
+| **hybrid** | Yes | Optional | Typical production deployment |
+| **strict** | Yes | Yes | High-assurance, regulatory compliance |
+
+**Example: Strict profile verification**
+```python
+results = verify_crypto_package(dna_codes, helix_params, pkg, hmac_key)
+
+# Strict profile: require all checks
+if not (results["content_hash"] and results["hmac"] and results["ed25519"]
+        and results["dilithium"] is True and results["timestamp"]
+        and results["rfc3161"] is True):
+    raise ValueError("Package failed strict verification profile")
+```
+
+**Note:** The default behavior requires quantum signatures when Dilithium libraries are available (`require_quantum_signatures=None`). Set `require_quantum_signatures=False` only for compatibility testing.
 
 ---
 
