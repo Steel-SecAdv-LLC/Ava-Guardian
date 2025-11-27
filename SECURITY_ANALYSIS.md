@@ -803,7 +803,7 @@ P(break all) = P(L₁) × P(L₂) × P(L₃) × P(L₄) × P(L₅) × P(L₆)
              ≤ 2^-128 × 2^-128 × 2^-88 × 2^-152 × 2^-128 × 2^-100
              ≈ 2^-724
 
-This is computationally infeasible.
+**Important Note:** The above calculation (2^-724) is provided for illustrative purposes only to show the combined difficulty of breaking ALL layers simultaneously. However, this is NOT the effective security level of the system. See the "Per-Layer Security Assessment" section below for the correct security interpretation.
 
 ---
 

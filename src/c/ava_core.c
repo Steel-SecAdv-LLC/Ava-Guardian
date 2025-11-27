@@ -19,11 +19,28 @@
  * @brief Core Ava Guardian ♱ context and lifecycle management
  * @author Andrew E. A., Steel Security Advisors LLC
  * @date 2025-11-24
+ *
+ * LIBOQS INTEGRATION
+ * ==================
+ * This file provides integration with liboqs for post-quantum cryptography.
+ * When AVA_USE_LIBOQS is defined and liboqs is linked, the implementation
+ * uses liboqs for ML-DSA (Dilithium) and Kyber operations.
+ *
+ * Build with liboqs:
+ *   cmake -DAVA_USE_LIBOQS=ON ..
+ *   Link against: -loqs
+ *
+ * Without liboqs, functions return AVA_ERROR_NOT_IMPLEMENTED.
  */
 
 #include "../include/ava_guardian.h"
 #include <stdlib.h>
 #include <string.h>
+
+/* liboqs integration - conditionally include if available */
+#ifdef AVA_USE_LIBOQS
+#include <oqs/oqs.h>
+#endif
 
 /**
  * Ava Guardian ♱ context structure (opaque)
@@ -32,6 +49,10 @@ struct ava_context_t {
     ava_algorithm_t algorithm;
     void* algorithm_ctx;  /* Algorithm-specific context */
     uint32_t magic;       /* Magic number for validation */
+#ifdef AVA_USE_LIBOQS
+    OQS_SIG* sig;         /* liboqs signature context (for Dilithium) */
+    OQS_KEM* kem;         /* liboqs KEM context (for Kyber) */
+#endif
 };
 
 #define AVA_CONTEXT_MAGIC 0x41564147  /* "AVAG" */
@@ -70,7 +91,53 @@ ava_context_t* ava_context_init(ava_algorithm_t algorithm) {
     ctx->magic = AVA_CONTEXT_MAGIC;
     ctx->algorithm_ctx = NULL;
 
-    /* Algorithm-specific initialization will be done in separate modules */
+#ifdef AVA_USE_LIBOQS
+    ctx->sig = NULL;
+    ctx->kem = NULL;
+
+    /* Initialize liboqs objects based on algorithm */
+    switch (algorithm) {
+        case AVA_ALG_ML_DSA_65:
+            ctx->sig = OQS_SIG_new(OQS_SIG_alg_ml_dsa_65);
+            if (!ctx->sig) {
+                free(ctx);
+                return NULL;
+            }
+            break;
+
+        case AVA_ALG_KYBER_1024:
+            ctx->kem = OQS_KEM_new(OQS_KEM_alg_ml_kem_1024);
+            if (!ctx->kem) {
+                free(ctx);
+                return NULL;
+            }
+            break;
+
+        case AVA_ALG_SPHINCS_256F:
+            ctx->sig = OQS_SIG_new(OQS_SIG_alg_sphincs_sha2_256f_simple);
+            if (!ctx->sig) {
+                free(ctx);
+                return NULL;
+            }
+            break;
+
+        case AVA_ALG_ED25519:
+            /* Ed25519 not provided by liboqs - use separate implementation */
+            break;
+
+        case AVA_ALG_HYBRID:
+            /* Hybrid mode: initialize both Dilithium and Ed25519 */
+            ctx->sig = OQS_SIG_new(OQS_SIG_alg_ml_dsa_65);
+            if (!ctx->sig) {
+                free(ctx);
+                return NULL;
+            }
+            break;
+
+        default:
+            break;
+    }
+#endif
 
     return ctx;
 }
@@ -88,9 +155,22 @@ void ava_context_free(ava_context_t* ctx) {
         return;
     }
 
+#ifdef AVA_USE_LIBOQS
+    /* Free liboqs signature context */
+    if (ctx->sig) {
+        OQS_SIG_free(ctx->sig);
+        ctx->sig = NULL;
+    }
+
+    /* Free liboqs KEM context */
+    if (ctx->kem) {
+        OQS_KEM_free(ctx->kem);
+        ctx->kem = NULL;
+    }
+#endif
+
     /* Free algorithm-specific context */
     if (ctx->algorithm_ctx) {
-        /* Algorithm-specific cleanup will be done here */
         free(ctx->algorithm_ctx);
         ctx->algorithm_ctx = NULL;
     }
@@ -152,7 +232,7 @@ static void get_key_sizes(
 }
 
 /**
- * Key generation (stub - will be implemented per-algorithm)
+ * Key generation using liboqs
  */
 ava_error_t ava_keypair_generate(
     ava_context_t* ctx,
@@ -178,12 +258,38 @@ ava_error_t ava_keypair_generate(
         return AVA_ERROR_INVALID_PARAM;
     }
 
-    /* Algorithm-specific implementation will go here */
+#ifdef AVA_USE_LIBOQS
+    OQS_STATUS rc;
+
+    /* Handle signature algorithms */
+    if (ctx->sig) {
+        rc = OQS_SIG_keypair(ctx->sig, public_key, secret_key);
+        if (rc != OQS_SUCCESS) {
+            return AVA_ERROR_CRYPTO;
+        }
+        return AVA_SUCCESS;
+    }
+
+    /* Handle KEM algorithms */
+    if (ctx->kem) {
+        rc = OQS_KEM_keypair(ctx->kem, public_key, secret_key);
+        if (rc != OQS_SUCCESS) {
+            return AVA_ERROR_CRYPTO;
+        }
+        return AVA_SUCCESS;
+    }
+
+    /* Ed25519 not provided by liboqs */
+    if (ctx->algorithm == AVA_ALG_ED25519) {
+        return AVA_ERROR_NOT_IMPLEMENTED;
+    }
+#endif
+
     return AVA_ERROR_NOT_IMPLEMENTED;
 }
 
 /**
- * Sign message (stub - will be implemented per-algorithm)
+ * Sign message using liboqs
  */
 ava_error_t ava_sign(
     ava_context_t* ctx,
@@ -202,16 +308,51 @@ ava_error_t ava_sign(
         return AVA_ERROR_INVALID_PARAM;
     }
 
-    /* Suppress unused parameter warnings for stub implementation */
+#ifdef AVA_USE_LIBOQS
+    OQS_STATUS rc;
+
+    if (ctx->sig) {
+        /* Validate secret key length */
+        if (secret_key_len < ctx->sig->length_secret_key) {
+            return AVA_ERROR_INVALID_PARAM;
+        }
+
+        /* Validate signature buffer size */
+        if (*signature_len < ctx->sig->length_signature) {
+            *signature_len = ctx->sig->length_signature;
+            return AVA_ERROR_INVALID_PARAM;
+        }
+
+        /* Sign the message */
+        rc = OQS_SIG_sign(ctx->sig, signature, signature_len,
+                         message, message_len, secret_key);
+        if (rc != OQS_SUCCESS) {
+            return AVA_ERROR_CRYPTO;
+        }
+        return AVA_SUCCESS;
+    }
+
+    /* KEM doesn't support signing */
+    if (ctx->kem) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    /* Ed25519 not provided by liboqs */
+    if (ctx->algorithm == AVA_ALG_ED25519) {
+        (void)secret_key_len;
+        return AVA_ERROR_NOT_IMPLEMENTED;
+    }
+#else
+    /* Suppress unused parameter warnings when liboqs not available */
     (void)message_len;
     (void)secret_key_len;
+#endif
 
-    /* Algorithm-specific implementation will go here */
     return AVA_ERROR_NOT_IMPLEMENTED;
 }
 
 /**
- * Verify signature (stub - will be implemented per-algorithm)
+ * Verify signature using liboqs
  */
 ava_error_t ava_verify(
     ava_context_t* ctx,
@@ -230,11 +371,42 @@ ava_error_t ava_verify(
         return AVA_ERROR_INVALID_PARAM;
     }
 
-    /* Suppress unused parameter warnings for stub implementation */
+#ifdef AVA_USE_LIBOQS
+    OQS_STATUS rc;
+
+    if (ctx->sig) {
+        /* Validate public key length */
+        if (public_key_len < ctx->sig->length_public_key) {
+            return AVA_ERROR_INVALID_PARAM;
+        }
+
+        /* Verify the signature */
+        rc = OQS_SIG_verify(ctx->sig, message, message_len,
+                           signature, signature_len, public_key);
+        if (rc != OQS_SUCCESS) {
+            return AVA_ERROR_VERIFY_FAILED;
+        }
+        return AVA_SUCCESS;
+    }
+
+    /* KEM doesn't support verification */
+    if (ctx->kem) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    /* Ed25519 not provided by liboqs */
+    if (ctx->algorithm == AVA_ALG_ED25519) {
+        (void)message_len;
+        (void)signature_len;
+        (void)public_key_len;
+        return AVA_ERROR_NOT_IMPLEMENTED;
+    }
+#else
+    /* Suppress unused parameter warnings when liboqs not available */
     (void)message_len;
     (void)signature_len;
     (void)public_key_len;
+#endif
 
-    /* Algorithm-specific implementation will go here */
     return AVA_ERROR_NOT_IMPLEMENTED;
 }
