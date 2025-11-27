@@ -811,6 +811,8 @@ results = verify_multiple_packages(packages, MASTER_DNA_CODES, MASTER_HELIX_PARA
 - [ ] Configure RFC 3161 TSA (FreeTSA or commercial)
 - [ ] Test key generation and signing
 - [ ] Verify all cryptographic operations
+- [ ] Run NIST KAT tests: `pytest tests/test_nist_kat.py tests/test_pqc_kat.py -v`
+- [ ] Run constant-time verification harness on target hardware (see [CONSTANT_TIME_VERIFICATION.md](CONSTANT_TIME_VERIFICATION.md))
 - [ ] Back up master secret (encrypted, offline)
 - [ ] Document key rotation schedule
 

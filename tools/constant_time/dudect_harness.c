@@ -220,7 +220,92 @@ static double test_secure_memzero(int iterations) {
 }
 
 /**
- * Print test result with pass/fail status
+ * Test ava_consttime_lookup for timing leakage
+ *
+ * Class 0: Lookup index in first half of table (index < TABLE_SIZE/2)
+ * Class 1: Lookup index in second half of table (index >= TABLE_SIZE/2)
+ *
+ * A constant-time implementation should take the same time
+ * regardless of which index is accessed (no cache-timing leaks).
+ */
+#define TABLE_SIZE 16
+#define ELEM_SIZE 8
+
+static double test_consttime_lookup(int iterations) {
+    ttest_ctx_t ctx;
+    ttest_init(&ctx);
+
+    uint8_t table[TABLE_SIZE * ELEM_SIZE];
+    uint8_t output[ELEM_SIZE];
+
+    /* Initialize table with random data */
+    random_bytes(table, sizeof(table));
+
+    printf("Testing ava_consttime_lookup (%d iterations)...\n", iterations);
+
+    for (int i = 0; i < iterations; i++) {
+        /* Determine class: 0 = first half, 1 = second half */
+        int class_idx = rand() & 1;
+        size_t index;
+
+        if (class_idx == 0) {
+            index = rand() % (TABLE_SIZE / 2);
+        } else {
+            index = (TABLE_SIZE / 2) + (rand() % (TABLE_SIZE / 2));
+        }
+
+        /* Measure execution time */
+        uint64_t start = get_time_ns();
+        ava_consttime_lookup(table, TABLE_SIZE, ELEM_SIZE, index, output);
+        uint64_t end = get_time_ns();
+
+        /* Update statistics */
+        ttest_update(&ctx, class_idx, (double)(end - start));
+    }
+
+    return ttest_compute(&ctx);
+}
+
+/**
+ * Test ava_consttime_copy for timing leakage
+ *
+ * Class 0: Copy with condition = 0 (no copy)
+ * Class 1: Copy with condition = 1 (copy)
+ *
+ * A constant-time implementation should take the same time
+ * regardless of the condition value.
+ */
+static double test_consttime_copy(int iterations) {
+    ttest_ctx_t ctx;
+    ttest_init(&ctx);
+
+    uint8_t src[BUFFER_SIZE];
+    uint8_t dst[BUFFER_SIZE];
+
+    printf("Testing ava_consttime_copy (%d iterations)...\n", iterations);
+
+    for (int i = 0; i < iterations; i++) {
+        /* Generate random buffers */
+        random_bytes(src, BUFFER_SIZE);
+        random_bytes(dst, BUFFER_SIZE);
+
+        /* Determine class: 0 = no copy, 1 = copy */
+        int class_idx = rand() & 1;
+
+        /* Measure execution time */
+        uint64_t start = get_time_ns();
+        ava_consttime_copy(class_idx, dst, src, BUFFER_SIZE);
+        uint64_t end = get_time_ns();
+
+        /* Update statistics */
+        ttest_update(&ctx, class_idx, (double)(end - start));
+    }
+
+    return ttest_compute(&ctx);
+}
+
+/**
+ * Print test result with pass/fail status and sample counts
  */
 static void print_result(const char *name, double t_value) {
     int passed = fabs(t_value) < T_THRESHOLD;
@@ -254,17 +339,23 @@ int main(int argc, char *argv[]) {
     double t_memcmp = test_consttime_memcmp(iterations);
     double t_swap = test_consttime_swap(iterations);
     double t_memzero = test_secure_memzero(iterations);
+    double t_lookup = test_consttime_lookup(iterations);
+    double t_copy = test_consttime_copy(iterations);
 
     printf("\n=======================================================\n");
-    printf("Results Summary\n");
+    printf("Results Summary (5 constant-time functions)\n");
     printf("=======================================================\n");
-    print_result("ava_consttime_memcmp", t_memcmp);
-    print_result("ava_consttime_swap  ", t_swap);
-    print_result("ava_secure_memzero  ", t_memzero);
+    print_result("ava_consttime_memcmp ", t_memcmp);
+    print_result("ava_consttime_swap   ", t_swap);
+    print_result("ava_secure_memzero   ", t_memzero);
+    print_result("ava_consttime_lookup ", t_lookup);
+    print_result("ava_consttime_copy   ", t_copy);
 
     int all_passed = (fabs(t_memcmp) < T_THRESHOLD) &&
                      (fabs(t_swap) < T_THRESHOLD) &&
-                     (fabs(t_memzero) < T_THRESHOLD);
+                     (fabs(t_memzero) < T_THRESHOLD) &&
+                     (fabs(t_lookup) < T_THRESHOLD) &&
+                     (fabs(t_copy) < T_THRESHOLD);
 
     printf("\n");
     if (all_passed) {

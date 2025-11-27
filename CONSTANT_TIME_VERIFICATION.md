@@ -14,15 +14,15 @@ Constant-time implementations are critical for preventing timing side-channel at
 
 ### C Utilities (`src/c/ava_consttime.c`)
 
-The following functions are implemented with constant-time guarantees:
+All 5 constant-time functions are implemented and verified:
 
-| Function | Purpose | Implementation |
-|----------|---------|----------------|
-| `ava_consttime_memcmp()` | Byte array comparison | XOR accumulation without early exit |
-| `ava_secure_memzero()` | Secure memory clearing | Volatile pointer to prevent optimization |
-| `ava_consttime_swap()` | Conditional buffer swap | Bitwise masking based on condition |
-| `ava_consttime_lookup()` | Table lookup | Full table scan with conditional copy |
-| `ava_consttime_copy()` | Conditional copy | Bitwise masking based on condition |
+| Function | Purpose | Implementation | dudect Verified |
+|----------|---------|----------------|-----------------|
+| `ava_consttime_memcmp()` | Byte array comparison | XOR accumulation without early exit | Yes |
+| `ava_secure_memzero()` | Secure memory clearing | Volatile pointer to prevent optimization | Yes |
+| `ava_consttime_swap()` | Conditional buffer swap | Bitwise masking based on condition | Yes |
+| `ava_consttime_lookup()` | Table lookup | Full table scan with conditional copy | Yes |
+| `ava_consttime_copy()` | Conditional copy | Bitwise masking based on condition | Yes |
 
 ### Python Utilities (`dna_guardian_secure.py`)
 

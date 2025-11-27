@@ -603,6 +603,55 @@ See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for complete cryptographic anal
 
 </details>
 
+<details>
+<summary><strong>Constant-Time Verification</strong></summary>
+
+The constant-time utility functions in `src/c/ava_consttime.c` are verified using a dudect-style timing analysis harness:
+
+```bash
+# Build and run the constant-time verification harness
+cd tools/constant_time && make test
+```
+
+The harness tests all 5 constant-time functions using Welch's t-test:
+
+| Function | Purpose | Test Classes |
+|----------|---------|--------------|
+| `ava_consttime_memcmp` | Byte comparison | Identical vs different buffers |
+| `ava_consttime_swap` | Conditional swap | condition=0 vs condition=1 |
+| `ava_secure_memzero` | Secure zeroing | All-zeros vs all-ones input |
+| `ava_consttime_lookup` | Table lookup | First-half vs second-half index |
+| `ava_consttime_copy` | Conditional copy | condition=0 vs condition=1 |
+
+A t-value with |t| < 4.5 after 10^6 measurements indicates no detectable timing leakage at 99.999% confidence. See [CONSTANT_TIME_VERIFICATION.md](CONSTANT_TIME_VERIFICATION.md) for methodology details.
+
+**Note:** This is statistical timing analysis, not formal verification. Results are environment-sensitive (CPU frequency scaling, interrupts). Run multiple times on target hardware to confirm.
+
+</details>
+
+<details>
+<summary><strong>NIST KAT Validation</strong></summary>
+
+NIST Known Answer Test (KAT) vectors are integrated for ML-DSA (Dilithium) and ML-KEM (Kyber):
+
+```bash
+# Run NIST KAT tests
+pytest tests/test_nist_kat.py tests/test_pqc_kat.py -v
+```
+
+| Algorithm | KAT File | Test Coverage |
+|-----------|----------|---------------|
+| ML-DSA-44 (Dilithium2) | `tests/kat/ml_dsa/dilithium2.rsp` | KeyGen, Sign, Verify |
+| ML-DSA-65 (Dilithium3) | `tests/kat/ml_dsa/dilithium3.rsp` | KeyGen, Sign, Verify |
+| ML-DSA-87 (Dilithium5) | `tests/kat/ml_dsa/dilithium5.rsp` | KeyGen, Sign, Verify |
+| ML-KEM-512 (Kyber512) | `tests/kat/ml_kem/kyber512.rsp` | KeyGen, Encaps, Decaps |
+| ML-KEM-768 (Kyber768) | `tests/kat/ml_kem/kyber768.rsp` | KeyGen, Encaps, Decaps |
+| ML-KEM-1024 (Kyber1024) | `tests/kat/ml_kem/kyber1024.rsp` | KeyGen, Encaps, Decaps |
+
+KAT vectors are sourced from NIST PQC submissions and validate that the cryptographic implementations produce correct outputs for known inputs.
+
+</details>
+
 ---
 
 ## Documentation
