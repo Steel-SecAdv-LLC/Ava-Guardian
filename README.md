@@ -924,6 +924,46 @@ GitHub's dependency graph is enabled for this repository. Once the repository is
 
 ---
 
+STEEL SECURITY ADVISORS LLC LEGAL DISCLAIMER & ATTRIBUTION
+Development Model
+Conceptual Architect: Steel Security Advisors LLC and Andrew E. A. conceived, directed, validated, and supervised the development of Ava Guardian ♱ (AG♱).
+
+AI Co-Architects: More than 99% of the codebase, documentation, mathematical frameworks, and technical implementation was constructed by AI systems: Eris ⯰, Eden ♱, Veritas 💠, X ⚛, Caduceus ⚚, and Dev ⚕.
+
+This project represents a human/AI collaborative construct—a new development paradigm where human vision, requirements, and critical evaluation guide AI-generated implementation.
+
+Professional Background Disclosure
+The human architect does not hold formal credentials in cryptography. The AI contributors, while trained on cryptographic literature, are tools without professional accountability.
+
+What We Did Right
+Standards-based design: Built on NIST FIPS 202/204, RFC 2104/5869/8032/3161—not custom cryptography
+Quantified claims: All performance metrics are measured and reproducible (see BENCHMARKS.md)
+Rigorous testing: 694+ tests with 32 CI checks including security scanning (TruffleHog)
+Regression detection: Tiered benchmark tolerances calibrated for CI environments
+Transparent limitations: Security analysis explicitly distinguishes self-assessed vs. audited claims
+Defense-in-depth: Security bounded by weakest layer (~128-bit classical), not inflated aggregate claims
+Academic grounding: Security proofs reference peer-reviewed literature (Bellare, Krawczyk, Bernstein, et al.)
+What Requires Caution
+No Independent Audit: All security analysis is self-assessed. Production deployment requires review by qualified cryptographers.
+
+AI-Generated Code: May contain subtle implementation errors that appear correct. Constant-time properties and side-channel resistance require independent verification.
+
+New PQC Standards: ML-DSA-65 and Kyber-1024 are recent NIST standards with limited real-world deployment history.
+
+Implementation vs. Specification: Using correct algorithms doesn't guarantee correct implementation.
+
+Recommendation
+Before production use:
+
+Commission independent security audit by qualified cryptographers
+Verify constant-time implementations (ctgrind, dudect)
+Deploy with FIPS 140-2 Level 3+ HSM for master secrets
+Conduct penetration testing
+No Warranty
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. THE AUTHORS AND CONTRIBUTORS DISCLAIM ALL LIABILITY FOR ANY DAMAGES RESULTING FROM ITS USE.
+
+---
+
 <div align="center">
 
 **Ava Guardian ♱ (AG♱) - Protecting people, data, and networks with quantum-resistant cryptography**
