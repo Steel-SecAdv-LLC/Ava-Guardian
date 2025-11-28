@@ -1,0 +1,390 @@
+/**
+ * Copyright 2025 Steel Security Advisors LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @file ava_sha3.c
+ * @brief SHA3-256 and SHAKE implementations using Keccak-f[1600]
+ * @author Andrew E. A., Steel Security Advisors LLC
+ * @date 2025-11-28
+ *
+ * This implements SHA3-256 (FIPS 202) using the Keccak sponge construction.
+ * The implementation is based on the reference specification and optimized
+ * for clarity and correctness over raw performance.
+ *
+ * Security notes:
+ * - Uses 64-bit operations for the state
+ * - Constant-time rotation operations
+ * - No table lookups that could leak timing information
+ */
+
+#include "../include/ava_guardian.h"
+#include <string.h>
+#include <stdint.h>
+
+/* Keccak-f[1600] parameters */
+#define KECCAK_ROUNDS 24
+#define KECCAK_STATE_SIZE 25  /* 5x5 64-bit words = 1600 bits */
+
+/* SHA3-256 parameters */
+#define SHA3_256_RATE 136     /* (1600 - 2*256) / 8 = 136 bytes */
+#define SHA3_256_CAPACITY 64  /* 2*256 / 8 = 64 bytes */
+#define SHA3_256_DIGEST_SIZE 32
+
+/* Round constants for Keccak-f[1600] */
+static const uint64_t keccak_rc[KECCAK_ROUNDS] = {
+    0x0000000000000001ULL, 0x0000000000008082ULL,
+    0x800000000000808aULL, 0x8000000080008000ULL,
+    0x000000000000808bULL, 0x0000000080000001ULL,
+    0x8000000080008081ULL, 0x8000000000008009ULL,
+    0x000000000000008aULL, 0x0000000000000088ULL,
+    0x0000000080008009ULL, 0x000000008000000aULL,
+    0x000000008000808bULL, 0x800000000000008bULL,
+    0x8000000000008089ULL, 0x8000000000008003ULL,
+    0x8000000000008002ULL, 0x8000000000000080ULL,
+    0x000000000000800aULL, 0x800000008000000aULL,
+    0x8000000080008081ULL, 0x8000000000008080ULL,
+    0x0000000080000001ULL, 0x8000000080008008ULL
+};
+
+/* Rotation offsets for rho step */
+static const unsigned int keccak_rho[25] = {
+     0,  1, 62, 28, 27,
+    36, 44,  6, 55, 20,
+     3, 10, 43, 25, 39,
+    41, 45, 15, 21,  8,
+    18,  2, 61, 56, 14
+};
+
+/* Pi step permutation indices */
+static const unsigned int keccak_pi[25] = {
+     0, 10, 20,  5, 15,
+    16,  1, 11, 21,  6,
+     7, 17,  2, 12, 22,
+    23,  8, 18,  3, 13,
+    14, 24,  9, 19,  4
+};
+
+/**
+ * Rotate left operation (constant-time)
+ * Handles n=0 case to avoid undefined behavior (shifting by 64 bits)
+ */
+static inline uint64_t rotl64(uint64_t x, unsigned int n) {
+    n &= 63;  /* Ensure n is in range [0, 63] to avoid UB */
+    return n ? ((x << n) | (x >> (64 - n))) : x;
+}
+
+/**
+ * Keccak-f[1600] permutation
+ */
+static void keccak_f1600(uint64_t state[KECCAK_STATE_SIZE]) {
+    uint64_t C[5], D[5], B[25], temp;
+    unsigned int round, x, y;
+
+    for (round = 0; round < KECCAK_ROUNDS; round++) {
+        /* Theta step */
+        for (x = 0; x < 5; x++) {
+            C[x] = state[x] ^ state[x + 5] ^ state[x + 10] ^ state[x + 15] ^ state[x + 20];
+        }
+        for (x = 0; x < 5; x++) {
+            D[x] = C[(x + 4) % 5] ^ rotl64(C[(x + 1) % 5], 1);
+        }
+        for (y = 0; y < 25; y += 5) {
+            for (x = 0; x < 5; x++) {
+                state[y + x] ^= D[x];
+            }
+        }
+
+        /* Rho and Pi steps combined */
+        for (x = 0; x < 25; x++) {
+            B[keccak_pi[x]] = rotl64(state[x], keccak_rho[x]);
+        }
+
+        /* Chi step */
+        for (y = 0; y < 25; y += 5) {
+            for (x = 0; x < 5; x++) {
+                state[y + x] = B[y + x] ^ ((~B[y + (x + 1) % 5]) & B[y + (x + 2) % 5]);
+            }
+        }
+
+        /* Iota step */
+        state[0] ^= keccak_rc[round];
+    }
+}
+
+/**
+ * Load 64-bit little-endian value
+ */
+static inline uint64_t load64_le(const uint8_t *p) {
+    return ((uint64_t)p[0])
+         | ((uint64_t)p[1] << 8)
+         | ((uint64_t)p[2] << 16)
+         | ((uint64_t)p[3] << 24)
+         | ((uint64_t)p[4] << 32)
+         | ((uint64_t)p[5] << 40)
+         | ((uint64_t)p[6] << 48)
+         | ((uint64_t)p[7] << 56);
+}
+
+/**
+ * Store 64-bit little-endian value
+ */
+static inline void store64_le(uint8_t *p, uint64_t x) {
+    p[0] = (uint8_t)(x);
+    p[1] = (uint8_t)(x >> 8);
+    p[2] = (uint8_t)(x >> 16);
+    p[3] = (uint8_t)(x >> 24);
+    p[4] = (uint8_t)(x >> 32);
+    p[5] = (uint8_t)(x >> 40);
+    p[6] = (uint8_t)(x >> 48);
+    p[7] = (uint8_t)(x >> 56);
+}
+
+/**
+ * Absorb data into Keccak state
+ */
+static void keccak_absorb(
+    uint64_t state[KECCAK_STATE_SIZE],
+    const uint8_t *data,
+    size_t len,
+    size_t rate
+) {
+    size_t rate_words = rate / 8;
+    size_t i;
+
+    while (len >= rate) {
+        for (i = 0; i < rate_words; i++) {
+            state[i] ^= load64_le(data + i * 8);
+        }
+        keccak_f1600(state);
+        data += rate;
+        len -= rate;
+    }
+}
+
+/**
+ * SHA3-256 hash function
+ *
+ * Computes the SHA3-256 hash of the input data.
+ * Implements FIPS 202 SHA3-256.
+ *
+ * @param input Input data to hash
+ * @param input_len Length of input in bytes
+ * @param output Output buffer (must be 32 bytes)
+ * @return AVA_SUCCESS or error code
+ */
+ava_error_t ava_sha3_256(
+    const uint8_t* input,
+    size_t input_len,
+    uint8_t* output
+) {
+    uint64_t state[KECCAK_STATE_SIZE];
+    uint8_t block[SHA3_256_RATE];
+    size_t remaining, block_size, i;
+
+    if (!input && input_len > 0) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+    if (!output) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    /* Initialize state to zero */
+    memset(state, 0, sizeof(state));
+
+    /* Absorb full blocks */
+    keccak_absorb(state, input, input_len, SHA3_256_RATE);
+
+    /* Handle remaining bytes with padding */
+    remaining = input_len % SHA3_256_RATE;
+    memset(block, 0, sizeof(block));
+    if (remaining > 0) {
+        memcpy(block, input + (input_len - remaining), remaining);
+    }
+
+    /* SHA3 padding: 0x06...0x80 */
+    block[remaining] = 0x06;
+    block[SHA3_256_RATE - 1] |= 0x80;
+
+    /* Absorb final padded block */
+    for (i = 0; i < SHA3_256_RATE / 8; i++) {
+        state[i] ^= load64_le(block + i * 8);
+    }
+    keccak_f1600(state);
+
+    /* Squeeze output */
+    for (i = 0; i < SHA3_256_DIGEST_SIZE / 8; i++) {
+        store64_le(output + i * 8, state[i]);
+    }
+
+    /* Scrub sensitive data */
+    ava_secure_memzero(state, sizeof(state));
+    ava_secure_memzero(block, sizeof(block));
+
+    return AVA_SUCCESS;
+}
+
+/**
+ * SHAKE128 XOF (extendable output function)
+ *
+ * Used internally for key derivation and randomness expansion.
+ *
+ * @param input Input data
+ * @param input_len Length of input
+ * @param output Output buffer
+ * @param output_len Desired output length
+ * @return AVA_SUCCESS or error code
+ */
+ava_error_t ava_shake128(
+    const uint8_t* input,
+    size_t input_len,
+    uint8_t* output,
+    size_t output_len
+) {
+    uint64_t state[KECCAK_STATE_SIZE];
+    uint8_t block[168];  /* SHAKE128 rate = 168 */
+    size_t remaining, i, out_idx;
+    const size_t rate = 168;
+
+    if (!input && input_len > 0) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+    if (!output) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    /* Initialize state */
+    memset(state, 0, sizeof(state));
+
+    /* Absorb full blocks */
+    keccak_absorb(state, input, input_len, rate);
+
+    /* Handle remaining with SHAKE padding (0x1F...0x80) */
+    remaining = input_len % rate;
+    memset(block, 0, sizeof(block));
+    if (remaining > 0) {
+        memcpy(block, input + (input_len - remaining), remaining);
+    }
+    block[remaining] = 0x1F;
+    block[rate - 1] |= 0x80;
+
+    for (i = 0; i < rate / 8; i++) {
+        state[i] ^= load64_le(block + i * 8);
+    }
+    keccak_f1600(state);
+
+    /* Squeeze output */
+    out_idx = 0;
+    while (output_len > 0) {
+        size_t squeeze_len = (output_len < rate) ? output_len : rate;
+
+        /* Extract from state */
+        for (i = 0; i < squeeze_len / 8; i++) {
+            store64_le(output + out_idx + i * 8, state[i]);
+        }
+        /* Handle partial word */
+        for (i = (squeeze_len / 8) * 8; i < squeeze_len; i++) {
+            output[out_idx + i] = (uint8_t)(state[i / 8] >> ((i % 8) * 8));
+        }
+
+        out_idx += squeeze_len;
+        output_len -= squeeze_len;
+
+        if (output_len > 0) {
+            keccak_f1600(state);
+        }
+    }
+
+    /* Scrub sensitive data */
+    ava_secure_memzero(state, sizeof(state));
+    ava_secure_memzero(block, sizeof(block));
+
+    return AVA_SUCCESS;
+}
+
+/**
+ * SHAKE256 XOF (extendable output function)
+ *
+ * Used for key derivation requiring 256-bit security.
+ *
+ * @param input Input data
+ * @param input_len Length of input
+ * @param output Output buffer
+ * @param output_len Desired output length
+ * @return AVA_SUCCESS or error code
+ */
+ava_error_t ava_shake256(
+    const uint8_t* input,
+    size_t input_len,
+    uint8_t* output,
+    size_t output_len
+) {
+    uint64_t state[KECCAK_STATE_SIZE];
+    uint8_t block[136];  /* SHAKE256 rate = 136 */
+    size_t remaining, i, out_idx;
+    const size_t rate = 136;
+
+    if (!input && input_len > 0) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+    if (!output) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    /* Initialize state */
+    memset(state, 0, sizeof(state));
+
+    /* Absorb full blocks */
+    keccak_absorb(state, input, input_len, rate);
+
+    /* Handle remaining with SHAKE padding */
+    remaining = input_len % rate;
+    memset(block, 0, sizeof(block));
+    if (remaining > 0) {
+        memcpy(block, input + (input_len - remaining), remaining);
+    }
+    block[remaining] = 0x1F;
+    block[rate - 1] |= 0x80;
+
+    for (i = 0; i < rate / 8; i++) {
+        state[i] ^= load64_le(block + i * 8);
+    }
+    keccak_f1600(state);
+
+    /* Squeeze output */
+    out_idx = 0;
+    while (output_len > 0) {
+        size_t squeeze_len = (output_len < rate) ? output_len : rate;
+
+        for (i = 0; i < squeeze_len / 8; i++) {
+            store64_le(output + out_idx + i * 8, state[i]);
+        }
+        for (i = (squeeze_len / 8) * 8; i < squeeze_len; i++) {
+            output[out_idx + i] = (uint8_t)(state[i / 8] >> ((i % 8) * 8));
+        }
+
+        out_idx += squeeze_len;
+        output_len -= squeeze_len;
+
+        if (output_len > 0) {
+            keccak_f1600(state);
+        }
+    }
+
+    ava_secure_memzero(state, sizeof(state));
+    ava_secure_memzero(block, sizeof(block));
+
+    return AVA_SUCCESS;
+}

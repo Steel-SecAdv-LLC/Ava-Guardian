@@ -17,11 +17,11 @@
               |   Cython-Optimized     |   3R Anomaly Monitor   |   Cross-Platform           |
               |   HD Key Derivation    |   Algorithm-Agnostic   |   NIST PQC Standards       |
               |                                                                              |
-              |   C Layer (liboqs)     |   Cython Layer         |   Python API               |
+              |   C Layer (Native)     |   Cython Layer         |   Python API               |
               |   ─────────────────    |   ─────────────────    |   ─────────────────        |
-              |   liboqs Bindings      |   18-37x Speedup       |   Algorithm Agnostic       |
-              |   Memory Helpers       |   NumPy Integration    |   Key Management           |
-              |   (Stubs w/o liboqs)   |   Math Engine          |   3R Monitoring            |
+              |   SHA3/HKDF/Ed25519    |   18-37x Speedup       |   Algorithm Agnostic       |
+              |   Kyber NTT Ops        |   NumPy Integration    |   Key Management           |
+              |   liboqs PQC Bindings  |   Math Engine          |   3R Monitoring            |
               |                                                                              |
               |                   Built for a civilized evolution.                           |
               +==============================================================================+
@@ -52,7 +52,7 @@ Novel in assimilation, the system combines cutting-edge NIST-approved post-quant
 > - Independent security review by qualified cryptographers
 > - Constant-time implementation verification for side-channel resistance
 >
-> **Status:** Experimental | Community-tested | Not externally audited  
+> **Status:** Experimental | Community-tested | Not externally audited
 > **Last Updated:** 2025-11-27
 > **Audit Status:** Community-tested, not externally audited. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for self-assessment details.
 >
@@ -153,7 +153,7 @@ The signature innovation providing real-time cryptographic operation analysis un
 
 Optimized for both security and performance:
 
-- **C Layer**: liboqs bindings for PQC operations; constant-time utility functions; native implementations are stubs without liboqs (see [Implementation Status Matrix](#implementation-status-matrix))
+- **C Layer**: Native SHA3-256, HKDF-SHA3-256, Ed25519 implementations; Kyber NTT polynomial operations; liboqs bindings for full PQC (see [Implementation Status Matrix](#implementation-status-matrix))
 - **Cython Layer**: Optimized mathematical operations (benchmarked at 27-37x vs pure Python)
 - **Python API**: High-level, user-friendly interface for rapid development (primary production API)
 
@@ -197,19 +197,27 @@ Future-proof cryptography:
 
 | Algorithm | C API Status | Python API Status | Integration |
 |-----------|--------------|-------------------|-------------|
-| ML-DSA-65 | Stub | Full | Integrated |
-| Kyber-1024 | Stub | Full | Backend only |
-| SPHINCS+-256f | Stub | Full | Backend only |
-| Ed25519 | Stub | Full | Integrated |
-| Hybrid (Ed25519 + ML-DSA-65) | Stub | Full | Integrated |
+| SHA3-256 | **Full** | Full | Core primitive |
+| HKDF-SHA3-256 | **Full** | Full | Key derivation |
+| Ed25519 | **Experimental** | Full | Integrated |
+| ML-DSA-65 | Stub (liboqs) | Full | Integrated |
+| Kyber-1024 | Partial (NTT) | Full | Backend only |
+| SPHINCS+-256f | Stub (liboqs) | Full | Backend only |
+| Hybrid (Ed25519 + ML-DSA-65) | N/A | Full | Integrated |
 
 **Legend:**
-- **Stub**: C API function declared but returns `AVA_ERROR_NOT_IMPLEMENTED`. Reserved for future constant-time implementation.
-- **Full**: Complete Python implementation with all cryptographic operations.
-- **Integrated**: Available through `create_crypto_package()` and main workflow.
-- **Backend only**: Available via provider classes (`KyberProvider`, `SphincsProvider`) but not yet in main package workflow.
+- **Full**: Complete native C implementation with NIST KAT validation.
+- **Experimental**: Implementation complete but requires field arithmetic optimization. Use Python API for production.
+- **Partial (NTT)**: Core polynomial operations (NTT, inverse NTT, compression) implemented; full KEM requires liboqs.
+- **Stub (liboqs)**: Returns `AVA_ERROR_NOT_IMPLEMENTED` without liboqs. Enable with `-DAVA_USE_LIBOQS=ON`.
 
-> **Note:** The Python API is secure and tested. C API stubs provide interface stability for future native implementations. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed security comparison.
+**C Library Implementations (v1.0.0):**
+- `ava_sha3.c`: SHA3-256, SHAKE128, SHAKE256 (Keccak-f[1600] sponge construction)
+- `ava_hkdf.c`: HKDF-SHA3-256 with HMAC-SHA3-256 (RFC 5869 compliant)
+- `ava_ed25519.c`: Ed25519 keygen/sign/verify (SHA-512, field arithmetic for GF(2^255-19))
+- `ava_kyber.c`: NTT, inverse NTT, Montgomery reduction, polynomial compression
+
+> **Note:** The Python API remains the recommended production interface. C implementations provide high-performance alternatives where applicable. See [BENCHMARK_RESULTS.md](BENCHMARK_RESULTS.md) for C vs Python performance comparison.
 
 **PQC Backend Security Considerations:**
 
@@ -510,7 +518,7 @@ print(f"Security status: {report['status']}")
 print(f"Anomalies detected: {report['total_alerts']}")
 ```
 
-> **C API Note:** C API functions in `include/ava_guardian.h` are currently stubs reserved for future implementation. Use the Python API for production deployments. See `include/ava_guardian.h` for the complete interface specification.
+> **C API Note:** Native C implementations are available for SHA3-256, HKDF, Ed25519 (experimental), and Kyber NTT operations. For ML-DSA-65 and full Kyber, build with `-DAVA_USE_LIBOQS=ON`. The Python API remains recommended for production deployments. See `include/ava_guardian.h` for the complete interface specification.
 
 </details>
 

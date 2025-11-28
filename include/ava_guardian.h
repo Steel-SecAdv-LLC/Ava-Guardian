@@ -127,8 +127,9 @@ void ava_context_free(ava_context_t* ctx);
 /**
  * @brief Generate a new keypair (constant-time)
  *
- * @note STUB: Reserved for future implementation. Currently returns
- *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ * Generates a cryptographic keypair for the algorithm specified in the context.
+ * Supports ML-DSA-65, Kyber-1024, SPHINCS+-256f, and hybrid modes when built
+ * with AVA_USE_LIBOQS. Ed25519 uses the native implementation.
  *
  * @param ctx Initialized context
  * @param public_key Output buffer for public key
@@ -152,8 +153,8 @@ ava_error_t ava_keypair_generate(
 /**
  * @brief Sign a message (constant-time)
  *
- * @note STUB: Reserved for future implementation. Currently returns
- *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ * Signs a message using the algorithm specified in the context.
+ * Supports ML-DSA-65, SPHINCS+-256f when built with AVA_USE_LIBOQS.
  *
  * @param ctx Initialized context
  * @param message Message to sign
@@ -177,8 +178,8 @@ ava_error_t ava_sign(
 /**
  * @brief Verify a signature (constant-time)
  *
- * @note STUB: Reserved for future implementation. Currently returns
- *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ * Verifies a signature using the algorithm specified in the context.
+ * Supports ML-DSA-65, SPHINCS+-256f when built with AVA_USE_LIBOQS.
  *
  * @param ctx Initialized context
  * @param message Message to verify
@@ -206,8 +207,9 @@ ava_error_t ava_verify(
 /**
  * @brief Encapsulate a shared secret
  *
- * @note STUB: Reserved for future implementation. Currently returns
- *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ * Performs KEM encapsulation using Kyber-1024 (ML-KEM-1024).
+ * Generates a random shared secret and ciphertext using the recipient's public key.
+ * Requires AVA_USE_LIBOQS to be defined.
  *
  * @param ctx Initialized context (must be Kyber-1024)
  * @param public_key Recipient's public key
@@ -231,8 +233,10 @@ ava_error_t ava_kem_encapsulate(
 /**
  * @brief Decapsulate a shared secret
  *
- * @note STUB: Reserved for future implementation. Currently returns
- *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ * Performs KEM decapsulation using Kyber-1024 (ML-KEM-1024).
+ * Recovers the shared secret from ciphertext using the recipient's secret key.
+ * Uses implicit rejection for IND-CCA2 security.
+ * Requires AVA_USE_LIBOQS to be defined.
  *
  * @param ctx Initialized context (must be Kyber-1024)
  * @param ciphertext Ciphertext to decapsulate
@@ -312,10 +316,10 @@ void ava_consttime_copy(int condition, void* dst, const void* src, size_t len);
  * ============================================================================ */
 
 /**
- * @brief SHA3-256 hash (constant-time)
+ * @brief SHA3-256 hash (FIPS 202)
  *
- * @note STUB: Reserved for future implementation. Currently returns
- *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ * Computes the SHA3-256 cryptographic hash of the input data.
+ * Uses the Keccak-f[1600] sponge construction with rate 136 and capacity 64.
  *
  * @param input Input data
  * @param input_len Length of input
@@ -329,16 +333,17 @@ ava_error_t ava_sha3_256(
 );
 
 /**
- * @brief HKDF key derivation
+ * @brief HKDF key derivation (RFC 5869)
  *
- * @note STUB: Reserved for future implementation. Currently returns
- *       AVA_ERROR_NOT_IMPLEMENTED. Use Python API for production.
+ * Derives key material using HKDF with HMAC-SHA3-256.
+ * Implements Extract-then-Expand paradigm for secure key derivation.
+ * Maximum output length: 255 * 32 = 8160 bytes.
  *
- * @param salt Salt value
+ * @param salt Salt value (can be NULL for zero-length salt)
  * @param salt_len Length of salt
  * @param ikm Input key material
  * @param ikm_len Length of IKM
- * @param info Context information
+ * @param info Context information (can be NULL)
  * @param info_len Length of info
  * @param okm Output key material
  * @param okm_len Desired length of OKM
@@ -353,6 +358,61 @@ ava_error_t ava_hkdf(
     size_t info_len,
     uint8_t* okm,
     size_t okm_len
+);
+
+/* ============================================================================
+ * ED25519 STANDALONE API
+ * ============================================================================ */
+
+/**
+ * @brief Generate Ed25519 keypair
+ *
+ * Generates an Ed25519 keypair. The caller must provide 32 bytes of random
+ * seed data in secret_key[0..31] before calling. The function will compute
+ * the public key and store it in both public_key and secret_key[32..63].
+ *
+ * @param public_key Output: 32-byte public key
+ * @param secret_key Input/Output: 64-byte buffer (seed in, seed||pk out)
+ * @return AVA_SUCCESS or error code
+ */
+ava_error_t ava_ed25519_keypair(uint8_t public_key[32], uint8_t secret_key[64]);
+
+/**
+ * @brief Sign a message with Ed25519
+ *
+ * Creates an Ed25519 signature for a message using the secret key.
+ * Implements RFC 8032 Ed25519 (pure EdDSA).
+ *
+ * @param signature Output: 64-byte signature
+ * @param message Message to sign
+ * @param message_len Length of message
+ * @param secret_key 64-byte secret key (seed || public_key)
+ * @return AVA_SUCCESS or error code
+ */
+ava_error_t ava_ed25519_sign(
+    uint8_t signature[64],
+    const uint8_t *message,
+    size_t message_len,
+    const uint8_t secret_key[64]
+);
+
+/**
+ * @brief Verify an Ed25519 signature
+ *
+ * Verifies an Ed25519 signature on a message.
+ * Implements RFC 8032 Ed25519 verification.
+ *
+ * @param signature 64-byte signature
+ * @param message Message to verify
+ * @param message_len Length of message
+ * @param public_key 32-byte public key
+ * @return AVA_SUCCESS if valid, AVA_ERROR_VERIFY_FAILED if invalid
+ */
+ava_error_t ava_ed25519_verify(
+    const uint8_t signature[64],
+    const uint8_t *message,
+    size_t message_len,
+    const uint8_t public_key[32]
 );
 
 /* ============================================================================

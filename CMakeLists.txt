@@ -88,6 +88,9 @@ set(AVA_SOURCES
     src/c/ava_core.c
     src/c/ava_consttime.c
     src/c/ava_kyber.c
+    src/c/ava_sha3.c
+    src/c/ava_hkdf.c
+    src/c/ava_ed25519.c
 )
 
 # Find dependencies

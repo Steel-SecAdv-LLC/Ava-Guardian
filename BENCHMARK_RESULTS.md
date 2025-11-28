@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| Document Version | 2.0.0 |
+| Document Version | 1.1.0 |
 | Test Date | 2025-11-28 |
 | Classification | Public |
 | Maintainer | Steel Security Advisors LLC |
@@ -267,6 +267,53 @@ Ava Guardian **is competitive but not fastest** for hybrid operations:
 **Raw Data:**
 - `benchmarks/comparative_benchmark_results.json` - Complete results
 - `benchmarks/comparative_benchmark.py` - Reproducible test harness
+
+---
+
+## C Library Performance Benchmarks
+
+The native C library provides high-performance implementations of cryptographic primitives. Benchmarks below are from direct C execution (10,000 iterations + 100 warmup).
+
+### SHA3-256 (Keccak-f[1600])
+
+| Input Size | Throughput | Latency |
+|------------|------------|---------|
+| 13 bytes | **1,111,144 ops/sec** | 0.900 µs/op |
+| 1 KB | **153,494 ops/sec** | 6.515 µs/op |
+
+### HKDF-SHA3-256
+
+| Output Size | Throughput | Latency |
+|-------------|------------|---------|
+| 32 bytes | **133,327 ops/sec** | 7.500 µs/op |
+| 64 bytes | **89,914 ops/sec** | 11.122 µs/op |
+
+### Constant-Time Utilities
+
+| Operation | Throughput | Latency |
+|-----------|------------|---------|
+| consttime_memcmp (512 bytes) | **3,421,027 ops/sec** | 0.292 µs/op |
+| secure_memzero (64 bytes) | **80,691,364 ops/sec** | 0.012 µs/op |
+
+### Ed25519 (Experimental)
+
+| Operation | Throughput | Latency |
+|-----------|------------|---------|
+| Ed25519 Sign (32-byte msg) | **7,505 ops/sec** | 133.238 µs/op |
+
+> **Note:** The native C Ed25519 implementation is experimental. Field arithmetic requires further optimization. For production, use the Python API which leverages the cryptography library.
+
+### C vs Python Performance Comparison
+
+| Operation | C Library | Python API | C Speedup |
+|-----------|-----------|------------|-----------|
+| SHA3-256 (short) | 1,111,144 ops/sec | 292,790 ops/sec | **3.8x** |
+| HKDF (32B) | 133,327 ops/sec | 21,443 ops/sec | **6.2x** |
+| Ed25519 Sign | 7,505 ops/sec | 10,453 ops/sec | 0.72x (Python faster*) |
+
+*Python Ed25519 uses the optimized cryptography/OpenSSL library. C implementation is experimental.
+
+---
 
 **Generated:** 2025-11-28
 **Copyright:** 2025 Steel Security Advisors LLC
