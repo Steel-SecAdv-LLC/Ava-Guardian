@@ -302,31 +302,45 @@ Future-proof cryptography:
 <details>
 <summary><strong>Cryptographic Operation Benchmarks</strong></summary>
 
-### Signature Operations
+### Hybrid Operations (Ed25519 + ML-DSA-65)
+
+| Operation | Ava Guardian | OpenSSL+liboqs | Performance |
+|-----------|--------------|----------------|-------------|
+| **Hybrid Sign** | 4,420 ops/sec (0.226ms) | 6,468 ops/sec (0.155ms) | OpenSSL+liboqs 1.46x faster |
+| **Hybrid Verify** | **6,054 ops/sec** (0.165ms) | 5,776 ops/sec (0.173ms) | Ava Guardian **1.05x faster** |
+
+**Key Finding:** Ava Guardian is 5% faster for hybrid verification, but OpenSSL+liboqs is 46% faster for hybrid signing.
+
+### ML-DSA-65 (Post-Quantum) Operations
+
+| Operation | Ava Guardian | liboqs-python | Performance |
+|-----------|--------------|---------------|-------------|
+| **Sign** | 9,150 ops/sec (0.109ms) | 9,234 ops/sec (0.108ms) | **99.1% of liboqs** |
+| **Verify** | 27,306 ops/sec (0.037ms) | 29,478 ops/sec (0.034ms) | 92.6% of liboqs |
+
+**Key Finding:** ML-DSA-65 signing performance is **within 1% of pure liboqs** - essentially identical.
+
+### Full 6-Layer Package Performance
+
+Complete security package with all defense layers:
 
 | Operation | Mean Time | Throughput |
 |-----------|-----------|------------|
-| Ed25519 Sign | 0.07ms | 13,418 ops/sec |
-| Ed25519 Verify | 0.12ms | 8,283 ops/sec |
-| Dilithium Sign | 0.14ms | 7,104 ops/sec |
-| Dilithium Verify | 0.06ms | 15,406 ops/sec |
+| Package Create (6 layers) | 0.278ms | 3,595 ops/sec |
+| Package Verify (6 layers) | 0.199ms | 5,029 ops/sec |
 
-### Package Operations
-
-| Operation | Mean Time | Throughput |
-|-----------|-----------|------------|
-| Package Create | 0.32ms | 3,132 ops/sec |
-| Package Verify | 0.24ms | 4,091 ops/sec |
+**6 Layers:** SHA3-256, HMAC-SHA3-256, Ed25519, ML-DSA-65, HKDF, RFC 3161 (optional)
 
 ### Core Cryptographic Primitives
 
 | Operation | Mean Time | Throughput |
 |-----------|-----------|------------|
-| SHA3-256 | 0.001ms | 1,037,993 ops/sec |
-| HMAC Auth | 0.004ms | 245,658 ops/sec |
-| HMAC Verify | 0.004ms | 240,082 ops/sec |
+| SHA3-256 | 0.003ms | 292,790 ops/sec |
+| HMAC-SHA3-256 | 0.006ms | 159,463 ops/sec |
+| Ed25519 Sign | 0.100ms | 10,027 ops/sec |
+| Ed25519 Verify | 0.124ms | 8,078 ops/sec |
 
-*Benchmarks run on Linux x86_64, Python 3.12, 8 CPU cores, 31GB RAM*
+*Benchmarks: Linux x86_64, Python 3.11, 16 CPU cores, 13GB RAM, 1,000 iterations per operation. See [BENCHMARK_RESULTS.md](BENCHMARK_RESULTS.md) for complete comparative analysis.*
 
 </details>
 
