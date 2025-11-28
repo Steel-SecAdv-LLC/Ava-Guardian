@@ -332,6 +332,52 @@ ava_error_t ava_sha3_256(
     uint8_t* output
 );
 
+/* ============================================================================
+ * STREAMING SHA3-256 API (init/update/final)
+ * Enables hashing of large data streams without loading everything into memory
+ * ============================================================================ */
+
+/**
+ * @brief SHA3-256 streaming context
+ */
+typedef struct {
+    uint64_t state[25];     /**< Keccak state (1600 bits) */
+    uint8_t buffer[136];    /**< Rate buffer (136 bytes for SHA3-256) */
+    size_t buffer_len;      /**< Current bytes in buffer */
+    int finalized;          /**< Set to 1 after final() called */
+} ava_sha3_ctx;
+
+/**
+ * @brief Initialize SHA3-256 streaming context
+ *
+ * @param ctx Context to initialize
+ * @return AVA_SUCCESS or error code
+ */
+ava_error_t ava_sha3_init(ava_sha3_ctx* ctx);
+
+/**
+ * @brief Update SHA3-256 with additional data
+ *
+ * Can be called multiple times to process data in chunks.
+ *
+ * @param ctx Initialized context
+ * @param data Data to absorb
+ * @param len Length of data in bytes
+ * @return AVA_SUCCESS or error code
+ */
+ava_error_t ava_sha3_update(ava_sha3_ctx* ctx, const uint8_t* data, size_t len);
+
+/**
+ * @brief Finalize SHA3-256 and output digest
+ *
+ * After calling this, the context cannot be used again without re-initializing.
+ *
+ * @param ctx Context to finalize
+ * @param output Output buffer (32 bytes)
+ * @return AVA_SUCCESS or error code
+ */
+ava_error_t ava_sha3_final(ava_sha3_ctx* ctx, uint8_t* output);
+
 /**
  * @brief HKDF key derivation (RFC 5869)
  *

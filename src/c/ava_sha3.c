@@ -388,3 +388,126 @@ ava_error_t ava_shake256(
 
     return AVA_SUCCESS;
 }
+
+/* ============================================================================
+ * STREAMING SHA3-256 API
+ * Enables incremental hashing for large data or streaming scenarios
+ * ============================================================================ */
+
+/**
+ * Initialize SHA3-256 streaming context
+ */
+ava_error_t ava_sha3_init(ava_sha3_ctx* ctx) {
+    if (!ctx) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    memset(ctx->state, 0, sizeof(ctx->state));
+    memset(ctx->buffer, 0, sizeof(ctx->buffer));
+    ctx->buffer_len = 0;
+    ctx->finalized = 0;
+
+    return AVA_SUCCESS;
+}
+
+/**
+ * Update SHA3-256 with additional data
+ */
+ava_error_t ava_sha3_update(ava_sha3_ctx* ctx, const uint8_t* data, size_t len) {
+    size_t i;
+
+    if (!ctx) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+    if (ctx->finalized) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+    if (!data && len > 0) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+    if (len == 0) {
+        return AVA_SUCCESS;
+    }
+
+    /* If we have buffered data, try to fill the buffer first */
+    if (ctx->buffer_len > 0) {
+        size_t space = SHA3_256_RATE - ctx->buffer_len;
+        size_t to_copy = (len < space) ? len : space;
+
+        memcpy(ctx->buffer + ctx->buffer_len, data, to_copy);
+        ctx->buffer_len += to_copy;
+        data += to_copy;
+        len -= to_copy;
+
+        /* If buffer is full, absorb it */
+        if (ctx->buffer_len == SHA3_256_RATE) {
+            for (i = 0; i < SHA3_256_RATE / 8; i++) {
+                ctx->state[i] ^= load64_le(ctx->buffer + i * 8);
+            }
+            keccak_f1600(ctx->state);
+            ctx->buffer_len = 0;
+        }
+    }
+
+    /* Process full blocks directly */
+    while (len >= SHA3_256_RATE) {
+        for (i = 0; i < SHA3_256_RATE / 8; i++) {
+            ctx->state[i] ^= load64_le(data + i * 8);
+        }
+        keccak_f1600(ctx->state);
+        data += SHA3_256_RATE;
+        len -= SHA3_256_RATE;
+    }
+
+    /* Buffer remaining data */
+    if (len > 0) {
+        memcpy(ctx->buffer, data, len);
+        ctx->buffer_len = len;
+    }
+
+    return AVA_SUCCESS;
+}
+
+/**
+ * Finalize SHA3-256 and output digest
+ */
+ava_error_t ava_sha3_final(ava_sha3_ctx* ctx, uint8_t* output) {
+    uint8_t block[SHA3_256_RATE];
+    size_t i;
+
+    if (!ctx || !output) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+    if (ctx->finalized) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    /* Prepare final block with padding */
+    memset(block, 0, sizeof(block));
+    if (ctx->buffer_len > 0) {
+        memcpy(block, ctx->buffer, ctx->buffer_len);
+    }
+
+    /* SHA3 padding: 0x06...0x80 */
+    block[ctx->buffer_len] = 0x06;
+    block[SHA3_256_RATE - 1] |= 0x80;
+
+    /* Absorb final padded block */
+    for (i = 0; i < SHA3_256_RATE / 8; i++) {
+        ctx->state[i] ^= load64_le(block + i * 8);
+    }
+    keccak_f1600(ctx->state);
+
+    /* Squeeze output (32 bytes = 4 words) */
+    for (i = 0; i < SHA3_256_DIGEST_SIZE / 8; i++) {
+        store64_le(output + i * 8, ctx->state[i]);
+    }
+
+    /* Mark as finalized and scrub sensitive data */
+    ctx->finalized = 1;
+    ava_secure_memzero(ctx->state, sizeof(ctx->state));
+    ava_secure_memzero(ctx->buffer, sizeof(ctx->buffer));
+    ava_secure_memzero(block, sizeof(block));
+
+    return AVA_SUCCESS;
+}

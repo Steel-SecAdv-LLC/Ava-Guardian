@@ -74,6 +74,17 @@ static void bench_ed25519_sign(void) {
     ava_ed25519_sign(sig, test_message, 32, test_key);
 }
 
+static void bench_sha3_streaming(void) {
+    ava_sha3_ctx ctx;
+    ava_sha3_init(&ctx);
+    /* Simulate streaming: 4 chunks of 256 bytes each */
+    ava_sha3_update(&ctx, test_message, 256);
+    ava_sha3_update(&ctx, test_message + 256, 256);
+    ava_sha3_update(&ctx, test_message + 512, 256);
+    ava_sha3_update(&ctx, test_message + 768, 256);
+    ava_sha3_final(&ctx, test_output);
+}
+
 int main(void) {
     /* Initialize test data */
     memset(test_message, 0xAA, sizeof(test_message));
@@ -93,6 +104,7 @@ int main(void) {
     printf("SHA3-256 (Keccak-f[1600]):\n");
     benchmark_operation(bench_sha3_256_short, "SHA3-256 (13 bytes)");
     benchmark_operation(bench_sha3_256_1kb, "SHA3-256 (1 KB)");
+    benchmark_operation(bench_sha3_streaming, "SHA3-256 streaming (1 KB)");
 
     printf("\nHKDF-SHA3-256:\n");
     benchmark_operation(bench_hkdf_32, "HKDF (32-byte output)");
