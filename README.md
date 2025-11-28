@@ -1068,7 +1068,7 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. THE AUTHORS AND 
 
 **Ava Guardian ♱ (AG♱) - Protecting people, data, and networks with quantum-resistant cryptography**
 
-*Built with precision. Secured with mathematics. Protected by innovation.*
+*Architected with inherent radical honesty, unconventional methodology, protective servitude, and ethical immutability.*
 
 <img src="assets/ama_logo.png" alt="AMA" height="24">
 
