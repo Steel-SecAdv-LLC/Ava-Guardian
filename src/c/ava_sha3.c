@@ -79,9 +79,11 @@ static const unsigned int keccak_pi[25] = {
 
 /**
  * Rotate left operation (constant-time)
+ * Handles n=0 case to avoid undefined behavior (shifting by 64 bits)
  */
 static inline uint64_t rotl64(uint64_t x, unsigned int n) {
-    return (x << n) | (x >> (64 - n));
+    n &= 63;  /* Ensure n is in range [0, 63] to avoid UB */
+    return n ? ((x << n) | (x >> (64 - n))) : x;
 }
 
 /**
