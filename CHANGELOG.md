@@ -64,12 +64,18 @@ Added native C implementations of core cryptographic primitives including SHA3-2
 
 *Python Ed25519 uses the optimized cryptography/OpenSSL library. C implementation is experimental.
 
+#### Bug Fixes
+
+- **ava_sha3.c:** Fixed undefined behavior in `rotl64()` when rotation amount n=0. Shifting a 64-bit value by 64 bits is UB in C; this caused test failures on clang while passing on gcc. Fixed by masking n to [0,63] range and handling n=0 explicitly.
+- **ava_ed25519.c:** Added missing `#include <stdlib.h>` which caused build failures on macOS with clang due to implicit function declarations for malloc/free being errors in C99+.
+
 #### Security Notes
 
 - SHA3-256 and HKDF implementations are production-ready with NIST KAT validation
 - Ed25519 C implementation is marked **experimental** - field arithmetic requires further optimization
 - For production Ed25519 operations, continue using the Python API with cryptography library
 - All implementations include secure memory zeroing of sensitive data
+- Cross-compiler compatibility verified (gcc and clang on Ubuntu and macOS)
 
 ---
 
