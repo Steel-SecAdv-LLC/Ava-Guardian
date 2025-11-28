@@ -5,7 +5,7 @@
 | Property | Value |
 |----------|-------|
 | Document Version | 1.0.0 |
-| Last Updated | 2025-11-26 |
+| Last Updated | 2025-11-27 |
 | Classification | Public |
 | Maintainer | Steel Security Advisors LLC |
 
@@ -120,14 +120,20 @@ The following constraints govern architectural decisions:
 
 ### Cryptographic Primitive Selection
 
-| Primitive | Algorithm | Standard | Security Level |
-|-----------|-----------|----------|----------------|
-| Hash Function | SHA3-256 | NIST FIPS 202 | 128-bit collision resistance |
-| Message Authentication | HMAC-SHA3-256 | RFC 2104 + FIPS 202 | 256-bit key, 128-bit security |
-| Classical Signature | Ed25519 | RFC 8032 | 128-bit classical security |
-| Quantum-Resistant Signature | ML-DSA-65 (Dilithium) | NIST FIPS 204 | 192-bit quantum security |
-| Key Derivation | HKDF-SHA3-256 | RFC 5869 | 256-bit derived keys |
-| Timestamping | RFC 3161 TSA | RFC 3161 | Third-party attestation |
+| Primitive | Algorithm | Standard | Security Level | C Implementation |
+|-----------|-----------|----------|----------------|------------------|
+| Hash Function | SHA3-256 | NIST FIPS 202 | 128-bit collision resistance | **Full** (ava_sha3.c) |
+| Message Authentication | HMAC-SHA3-256 | RFC 2104 + FIPS 202 | 256-bit key, 128-bit security | **Full** (ava_hkdf.c) |
+| Classical Signature | Ed25519 | RFC 8032 | 128-bit classical security | **Experimental** (ava_ed25519.c) |
+| Quantum-Resistant Signature | ML-DSA-65 (Dilithium) | NIST FIPS 204 | 192-bit quantum security | Stub (requires liboqs) |
+| Key Derivation | HKDF-SHA3-256 | RFC 5869 | 256-bit derived keys | **Full** (ava_hkdf.c) |
+| Timestamping | RFC 3161 TSA | RFC 3161 | Third-party attestation | Python API only |
+
+**C Library Source Files (v1.0.0):**
+- `src/c/ava_sha3.c` - SHA3-256, SHAKE128, SHAKE256 (Keccak-f[1600] sponge, 388 lines)
+- `src/c/ava_hkdf.c` - HKDF-SHA3-256 with HMAC-SHA3-256 (RFC 5869, 313 lines)
+- `src/c/ava_ed25519.c` - Ed25519 keygen/sign/verify (SHA-512, field arithmetic, 1,150 lines)
+- `src/c/ava_kyber.c` - NTT, inverse NTT, polynomial compression (260+ lines)
 
 ### Cryptographic Layer Stack
 
