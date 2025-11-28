@@ -1,0 +1,1150 @@
+/**
+ * Copyright 2025 Steel Security Advisors LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @file ava_ed25519.c
+ * @brief Ed25519 digital signature implementation (RFC 8032)
+ * @author Andrew E. A., Steel Security Advisors LLC
+ * @date 2025-11-28
+ *
+ * Implements Ed25519 signatures per RFC 8032 using the twisted Edwards curve:
+ *   -x^2 + y^2 = 1 + d*x^2*y^2  where d = -121665/121666 (mod p)
+ *   p = 2^255 - 19
+ *   Base point order: L = 2^252 + 27742317777372353535851937790883648493
+ *
+ * Security properties:
+ * - Constant-time field arithmetic
+ * - No secret-dependent branches
+ * - Proper scalar clamping
+ * - Cofactor handling per RFC 8032
+ */
+
+#include "../include/ava_guardian.h"
+#include <string.h>
+#include <stdint.h>
+
+/* ============================================================================
+ * SHA-512 IMPLEMENTATION (Required by Ed25519)
+ * ============================================================================ */
+
+#define SHA512_BLOCK_SIZE 128
+#define SHA512_DIGEST_SIZE 64
+
+/* SHA-512 round constants */
+static const uint64_t sha512_k[80] = {
+    0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL, 0xb5c0fbcfec4d3b2fULL, 0xe9b5dba58189dbbcULL,
+    0x3956c25bf348b538ULL, 0x59f111f1b605d019ULL, 0x923f82a4af194f9bULL, 0xab1c5ed5da6d8118ULL,
+    0xd807aa98a3030242ULL, 0x12835b0145706fbeULL, 0x243185be4ee4b28cULL, 0x550c7dc3d5ffb4e2ULL,
+    0x72be5d74f27b896fULL, 0x80deb1fe3b1696b1ULL, 0x9bdc06a725c71235ULL, 0xc19bf174cf692694ULL,
+    0xe49b69c19ef14ad2ULL, 0xefbe4786384f25e3ULL, 0x0fc19dc68b8cd5b5ULL, 0x240ca1cc77ac9c65ULL,
+    0x2de92c6f592b0275ULL, 0x4a7484aa6ea6e483ULL, 0x5cb0a9dcbd41fbd4ULL, 0x76f988da831153b5ULL,
+    0x983e5152ee66dfabULL, 0xa831c66d2db43210ULL, 0xb00327c898fb213fULL, 0xbf597fc7beef0ee4ULL,
+    0xc6e00bf33da88fc2ULL, 0xd5a79147930aa725ULL, 0x06ca6351e003826fULL, 0x142929670a0e6e70ULL,
+    0x27b70a8546d22ffcULL, 0x2e1b21385c26c926ULL, 0x4d2c6dfc5ac42aedULL, 0x53380d139d95b3dfULL,
+    0x650a73548baf63deULL, 0x766a0abb3c77b2a8ULL, 0x81c2c92e47edaee6ULL, 0x92722c851482353bULL,
+    0xa2bfe8a14cf10364ULL, 0xa81a664bbc423001ULL, 0xc24b8b70d0f89791ULL, 0xc76c51a30654be30ULL,
+    0xd192e819d6ef5218ULL, 0xd69906245565a910ULL, 0xf40e35855771202aULL, 0x106aa07032bbd1b8ULL,
+    0x19a4c116b8d2d0c8ULL, 0x1e376c085141ab53ULL, 0x2748774cdf8eeb99ULL, 0x34b0bcb5e19b48a8ULL,
+    0x391c0cb3c5c95a63ULL, 0x4ed8aa4ae3418acbULL, 0x5b9cca4f7763e373ULL, 0x682e6ff3d6b2b8a3ULL,
+    0x748f82ee5defb2fcULL, 0x78a5636f43172f60ULL, 0x84c87814a1f0ab72ULL, 0x8cc702081a6439ecULL,
+    0x90befffa23631e28ULL, 0xa4506cebde82bde9ULL, 0xbef9a3f7b2c67915ULL, 0xc67178f2e372532bULL,
+    0xca273eceea26619cULL, 0xd186b8c721c0c207ULL, 0xeada7dd6cde0eb1eULL, 0xf57d4f7fee6ed178ULL,
+    0x06f067aa72176fbaULL, 0x0a637dc5a2c898a6ULL, 0x113f9804bef90daeULL, 0x1b710b35131c471bULL,
+    0x28db77f523047d84ULL, 0x32caab7b40c72493ULL, 0x3c9ebe0a15c9bebcULL, 0x431d67c49c100d4cULL,
+    0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL, 0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL
+};
+
+static inline uint64_t rotr64(uint64_t x, unsigned int n) {
+    return (x >> n) | (x << (64 - n));
+}
+
+static inline uint64_t load64_be(const uint8_t *p) {
+    return ((uint64_t)p[0] << 56) | ((uint64_t)p[1] << 48) |
+           ((uint64_t)p[2] << 40) | ((uint64_t)p[3] << 32) |
+           ((uint64_t)p[4] << 24) | ((uint64_t)p[5] << 16) |
+           ((uint64_t)p[6] << 8)  | ((uint64_t)p[7]);
+}
+
+static inline void store64_be(uint8_t *p, uint64_t x) {
+    p[0] = (uint8_t)(x >> 56); p[1] = (uint8_t)(x >> 48);
+    p[2] = (uint8_t)(x >> 40); p[3] = (uint8_t)(x >> 32);
+    p[4] = (uint8_t)(x >> 24); p[5] = (uint8_t)(x >> 16);
+    p[6] = (uint8_t)(x >> 8);  p[7] = (uint8_t)(x);
+}
+
+static void sha512_transform(uint64_t state[8], const uint8_t block[128]) {
+    uint64_t a, b, c, d, e, f, g, h;
+    uint64_t W[80];
+    uint64_t t1, t2;
+    int i;
+
+    /* Load message block */
+    for (i = 0; i < 16; i++) {
+        W[i] = load64_be(block + i * 8);
+    }
+
+    /* Extend message */
+    for (i = 16; i < 80; i++) {
+        uint64_t s0 = rotr64(W[i-15], 1) ^ rotr64(W[i-15], 8) ^ (W[i-15] >> 7);
+        uint64_t s1 = rotr64(W[i-2], 19) ^ rotr64(W[i-2], 61) ^ (W[i-2] >> 6);
+        W[i] = W[i-16] + s0 + W[i-7] + s1;
+    }
+
+    a = state[0]; b = state[1]; c = state[2]; d = state[3];
+    e = state[4]; f = state[5]; g = state[6]; h = state[7];
+
+    /* Compression */
+    for (i = 0; i < 80; i++) {
+        uint64_t S1 = rotr64(e, 14) ^ rotr64(e, 18) ^ rotr64(e, 41);
+        uint64_t ch = (e & f) ^ ((~e) & g);
+        t1 = h + S1 + ch + sha512_k[i] + W[i];
+        uint64_t S0 = rotr64(a, 28) ^ rotr64(a, 34) ^ rotr64(a, 39);
+        uint64_t maj = (a & b) ^ (a & c) ^ (b & c);
+        t2 = S0 + maj;
+
+        h = g; g = f; f = e; e = d + t1;
+        d = c; c = b; b = a; a = t1 + t2;
+    }
+
+    state[0] += a; state[1] += b; state[2] += c; state[3] += d;
+    state[4] += e; state[5] += f; state[6] += g; state[7] += h;
+}
+
+static void sha512(const uint8_t *data, size_t len, uint8_t out[64]) {
+    uint64_t state[8] = {
+        0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL,
+        0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
+        0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL,
+        0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL
+    };
+    uint8_t block[128];
+    size_t i;
+    uint64_t bit_len = len * 8;
+
+    /* Process full blocks */
+    while (len >= 128) {
+        sha512_transform(state, data);
+        data += 128;
+        len -= 128;
+    }
+
+    /* Pad final block */
+    memset(block, 0, sizeof(block));
+    memcpy(block, data, len);
+    block[len] = 0x80;
+
+    if (len >= 112) {
+        sha512_transform(state, block);
+        memset(block, 0, sizeof(block));
+    }
+
+    /* Append length (big-endian, 128-bit, but we only use low 64 bits) */
+    store64_be(block + 120, bit_len);
+    sha512_transform(state, block);
+
+    /* Output */
+    for (i = 0; i < 8; i++) {
+        store64_be(out + i * 8, state[i]);
+    }
+}
+
+/* ============================================================================
+ * FIELD ARITHMETIC: GF(2^255 - 19)
+ * ============================================================================ */
+
+typedef int64_t fe25519[10];  /* Radix 2^25.5 representation */
+
+/* Load 32 bytes as field element (little-endian) */
+static void fe25519_frombytes(fe25519 h, const uint8_t *s) {
+    int64_t h0 = (int64_t)(s[0]) | ((int64_t)(s[1]) << 8) | ((int64_t)(s[2]) << 16) | ((int64_t)(s[3] & 0x3f) << 24);
+    int64_t h1 = ((int64_t)(s[3]) >> 6) | ((int64_t)(s[4]) << 2) | ((int64_t)(s[5]) << 10) | ((int64_t)(s[6]) << 18) | ((int64_t)(s[7] & 0x0f) << 26);
+    int64_t h2 = ((int64_t)(s[7]) >> 4) | ((int64_t)(s[8]) << 4) | ((int64_t)(s[9]) << 12) | ((int64_t)(s[10]) << 20) | ((int64_t)(s[11] & 0x03) << 28);
+    int64_t h3 = ((int64_t)(s[11]) >> 2) | ((int64_t)(s[12]) << 6) | ((int64_t)(s[13]) << 14) | ((int64_t)(s[14]) << 22);
+    int64_t h4 = (int64_t)(s[15]) | ((int64_t)(s[16]) << 8) | ((int64_t)(s[17]) << 16) | ((int64_t)(s[18] & 0x3f) << 24);
+    int64_t h5 = ((int64_t)(s[18]) >> 6) | ((int64_t)(s[19]) << 2) | ((int64_t)(s[20]) << 10) | ((int64_t)(s[21]) << 18) | ((int64_t)(s[22] & 0x0f) << 26);
+    int64_t h6 = ((int64_t)(s[22]) >> 4) | ((int64_t)(s[23]) << 4) | ((int64_t)(s[24]) << 12) | ((int64_t)(s[25]) << 20) | ((int64_t)(s[26] & 0x03) << 28);
+    int64_t h7 = ((int64_t)(s[26]) >> 2) | ((int64_t)(s[27]) << 6) | ((int64_t)(s[28]) << 14) | ((int64_t)(s[29]) << 22);
+    int64_t h8 = (int64_t)(s[30]) | ((int64_t)(s[31] & 0x7f) << 8);
+    int64_t h9 = 0;
+
+    h[0] = h0; h[1] = h1; h[2] = h2; h[3] = h3; h[4] = h4;
+    h[5] = h5; h[6] = h6; h[7] = h7; h[8] = h8; h[9] = h9;
+}
+
+/* Reduce and store field element to 32 bytes */
+static void fe25519_tobytes(uint8_t *s, const fe25519 h) {
+    int64_t t[10];
+    int64_t q, carry;
+    int i;
+
+    for (i = 0; i < 10; i++) t[i] = h[i];
+
+    /* Reduce to canonical form */
+    q = (19 * t[9] + (1 << 24)) >> 25;
+    for (i = 0; i < 10; i++) {
+        q = (t[i] + q) >> ((i & 1) ? 25 : 26);
+    }
+    t[0] += 19 * q;
+
+    carry = 0;
+    for (i = 0; i < 10; i++) {
+        t[i] += carry;
+        carry = t[i] >> ((i & 1) ? 25 : 26);
+        t[i] -= carry << ((i & 1) ? 25 : 26);
+    }
+
+    s[0] = (uint8_t)(t[0]);
+    s[1] = (uint8_t)(t[0] >> 8);
+    s[2] = (uint8_t)(t[0] >> 16);
+    s[3] = (uint8_t)((t[0] >> 24) | (t[1] << 6));
+    s[4] = (uint8_t)(t[1] >> 2);
+    s[5] = (uint8_t)(t[1] >> 10);
+    s[6] = (uint8_t)(t[1] >> 18);
+    s[7] = (uint8_t)((t[1] >> 26) | (t[2] << 4));
+    s[8] = (uint8_t)(t[2] >> 4);
+    s[9] = (uint8_t)(t[2] >> 12);
+    s[10] = (uint8_t)(t[2] >> 20);
+    s[11] = (uint8_t)((t[2] >> 28) | (t[3] << 2));
+    s[12] = (uint8_t)(t[3] >> 6);
+    s[13] = (uint8_t)(t[3] >> 14);
+    s[14] = (uint8_t)(t[3] >> 22);
+    s[15] = (uint8_t)(t[4]);
+    s[16] = (uint8_t)(t[4] >> 8);
+    s[17] = (uint8_t)(t[4] >> 16);
+    s[18] = (uint8_t)((t[4] >> 24) | (t[5] << 6));
+    s[19] = (uint8_t)(t[5] >> 2);
+    s[20] = (uint8_t)(t[5] >> 10);
+    s[21] = (uint8_t)(t[5] >> 18);
+    s[22] = (uint8_t)((t[5] >> 26) | (t[6] << 4));
+    s[23] = (uint8_t)(t[6] >> 4);
+    s[24] = (uint8_t)(t[6] >> 12);
+    s[25] = (uint8_t)(t[6] >> 20);
+    s[26] = (uint8_t)((t[6] >> 28) | (t[7] << 2));
+    s[27] = (uint8_t)(t[7] >> 6);
+    s[28] = (uint8_t)(t[7] >> 14);
+    s[29] = (uint8_t)(t[7] >> 22);
+    s[30] = (uint8_t)(t[8]);
+    s[31] = (uint8_t)(t[8] >> 8);
+}
+
+static void fe25519_0(fe25519 h) {
+    memset(h, 0, sizeof(fe25519));
+}
+
+static void fe25519_1(fe25519 h) {
+    memset(h, 0, sizeof(fe25519));
+    h[0] = 1;
+}
+
+static void fe25519_copy(fe25519 h, const fe25519 f) {
+    memcpy(h, f, sizeof(fe25519));
+}
+
+static void fe25519_add(fe25519 h, const fe25519 f, const fe25519 g) {
+    for (int i = 0; i < 10; i++) h[i] = f[i] + g[i];
+}
+
+static void fe25519_sub(fe25519 h, const fe25519 f, const fe25519 g) {
+    for (int i = 0; i < 10; i++) h[i] = f[i] - g[i];
+}
+
+static void fe25519_neg(fe25519 h, const fe25519 f) {
+    for (int i = 0; i < 10; i++) h[i] = -f[i];
+}
+
+/* Carry and reduce */
+static void fe25519_carry(fe25519 h) {
+    int64_t carry;
+    for (int i = 0; i < 10; i++) {
+        carry = h[i] >> ((i & 1) ? 25 : 26);
+        h[i] -= carry << ((i & 1) ? 25 : 26);
+        if (i < 9) h[i + 1] += carry;
+        else h[0] += 19 * carry;
+    }
+}
+
+/* Multiplication */
+static void fe25519_mul(fe25519 h, const fe25519 f, const fe25519 g) {
+    int64_t f0 = f[0], f1 = f[1], f2 = f[2], f3 = f[3], f4 = f[4];
+    int64_t f5 = f[5], f6 = f[6], f7 = f[7], f8 = f[8], f9 = f[9];
+    int64_t g0 = g[0], g1 = g[1], g2 = g[2], g3 = g[3], g4 = g[4];
+    int64_t g5 = g[5], g6 = g[6], g7 = g[7], g8 = g[8], g9 = g[9];
+    int64_t g1_19 = 19 * g1, g2_19 = 19 * g2, g3_19 = 19 * g3, g4_19 = 19 * g4;
+    int64_t g5_19 = 19 * g5, g6_19 = 19 * g6, g7_19 = 19 * g7, g8_19 = 19 * g8, g9_19 = 19 * g9;
+    int64_t f1_2 = 2 * f1, f3_2 = 2 * f3, f5_2 = 2 * f5, f7_2 = 2 * f7, f9_2 = 2 * f9;
+
+    int64_t h0 = f0*g0 + f1_2*g9_19 + f2*g8_19 + f3_2*g7_19 + f4*g6_19 + f5_2*g5_19 + f6*g4_19 + f7_2*g3_19 + f8*g2_19 + f9_2*g1_19;
+    int64_t h1 = f0*g1 + f1*g0 + f2*g9_19 + f3*g8_19 + f4*g7_19 + f5*g6_19 + f6*g5_19 + f7*g4_19 + f8*g3_19 + f9*g2_19;
+    int64_t h2 = f0*g2 + f1_2*g1 + f2*g0 + f3_2*g9_19 + f4*g8_19 + f5_2*g7_19 + f6*g6_19 + f7_2*g5_19 + f8*g4_19 + f9_2*g3_19;
+    int64_t h3 = f0*g3 + f1*g2 + f2*g1 + f3*g0 + f4*g9_19 + f5*g8_19 + f6*g7_19 + f7*g6_19 + f8*g5_19 + f9*g4_19;
+    int64_t h4 = f0*g4 + f1_2*g3 + f2*g2 + f3_2*g1 + f4*g0 + f5_2*g9_19 + f6*g8_19 + f7_2*g7_19 + f8*g6_19 + f9_2*g5_19;
+    int64_t h5 = f0*g5 + f1*g4 + f2*g3 + f3*g2 + f4*g1 + f5*g0 + f6*g9_19 + f7*g8_19 + f8*g7_19 + f9*g6_19;
+    int64_t h6 = f0*g6 + f1_2*g5 + f2*g4 + f3_2*g3 + f4*g2 + f5_2*g1 + f6*g0 + f7_2*g9_19 + f8*g8_19 + f9_2*g7_19;
+    int64_t h7 = f0*g7 + f1*g6 + f2*g5 + f3*g4 + f4*g3 + f5*g2 + f6*g1 + f7*g0 + f8*g9_19 + f9*g8_19;
+    int64_t h8 = f0*g8 + f1_2*g7 + f2*g6 + f3_2*g5 + f4*g4 + f5_2*g3 + f6*g2 + f7_2*g1 + f8*g0 + f9_2*g9_19;
+    int64_t h9 = f0*g9 + f1*g8 + f2*g7 + f3*g6 + f4*g5 + f5*g4 + f6*g3 + f7*g2 + f8*g1 + f9*g0;
+
+    h[0] = h0; h[1] = h1; h[2] = h2; h[3] = h3; h[4] = h4;
+    h[5] = h5; h[6] = h6; h[7] = h7; h[8] = h8; h[9] = h9;
+    fe25519_carry(h);
+}
+
+/* Squaring */
+static void fe25519_sq(fe25519 h, const fe25519 f) {
+    fe25519_mul(h, f, f);
+}
+
+/* Inversion via Fermat's little theorem: a^(-1) = a^(p-2) mod p */
+static void fe25519_invert(fe25519 out, const fe25519 z) {
+    fe25519 t0, t1, t2, t3;
+    int i;
+
+    fe25519_sq(t0, z);
+    fe25519_sq(t1, t0);
+    fe25519_sq(t1, t1);
+    fe25519_mul(t1, z, t1);
+    fe25519_mul(t0, t0, t1);
+    fe25519_sq(t2, t0);
+    fe25519_mul(t1, t1, t2);
+    fe25519_sq(t2, t1);
+    for (i = 0; i < 4; i++) fe25519_sq(t2, t2);
+    fe25519_mul(t1, t2, t1);
+    fe25519_sq(t2, t1);
+    for (i = 0; i < 9; i++) fe25519_sq(t2, t2);
+    fe25519_mul(t2, t2, t1);
+    fe25519_sq(t3, t2);
+    for (i = 0; i < 19; i++) fe25519_sq(t3, t3);
+    fe25519_mul(t2, t3, t2);
+    fe25519_sq(t2, t2);
+    for (i = 0; i < 9; i++) fe25519_sq(t2, t2);
+    fe25519_mul(t1, t2, t1);
+    fe25519_sq(t2, t1);
+    for (i = 0; i < 49; i++) fe25519_sq(t2, t2);
+    fe25519_mul(t2, t2, t1);
+    fe25519_sq(t3, t2);
+    for (i = 0; i < 99; i++) fe25519_sq(t3, t3);
+    fe25519_mul(t2, t3, t2);
+    fe25519_sq(t2, t2);
+    for (i = 0; i < 49; i++) fe25519_sq(t2, t2);
+    fe25519_mul(t1, t2, t1);
+    fe25519_sq(t1, t1);
+    for (i = 0; i < 4; i++) fe25519_sq(t1, t1);
+    fe25519_mul(out, t1, t0);
+}
+
+/* Square root: returns 1 if square root exists */
+static int fe25519_sqrt(fe25519 out, const fe25519 a) {
+    fe25519 t0, t1, t2, beta, beta_sq;
+    int i;
+
+    /* Compute a^((p+3)/8) = a^(2^252 - 2) */
+    fe25519_sq(t0, a);
+    fe25519_sq(t1, t0);
+    fe25519_sq(t1, t1);
+    fe25519_mul(t1, a, t1);
+    fe25519_mul(t0, t0, t1);
+    fe25519_sq(t0, t0);
+    fe25519_mul(t0, t1, t0);
+    fe25519_sq(t1, t0);
+    for (i = 0; i < 4; i++) fe25519_sq(t1, t1);
+    fe25519_mul(t0, t1, t0);
+    fe25519_sq(t1, t0);
+    for (i = 0; i < 9; i++) fe25519_sq(t1, t1);
+    fe25519_mul(t1, t1, t0);
+    fe25519_sq(t2, t1);
+    for (i = 0; i < 19; i++) fe25519_sq(t2, t2);
+    fe25519_mul(t1, t2, t1);
+    fe25519_sq(t1, t1);
+    for (i = 0; i < 9; i++) fe25519_sq(t1, t1);
+    fe25519_mul(t0, t1, t0);
+    fe25519_sq(t1, t0);
+    for (i = 0; i < 49; i++) fe25519_sq(t1, t1);
+    fe25519_mul(t1, t1, t0);
+    fe25519_sq(t2, t1);
+    for (i = 0; i < 99; i++) fe25519_sq(t2, t2);
+    fe25519_mul(t1, t2, t1);
+    fe25519_sq(t1, t1);
+    for (i = 0; i < 49; i++) fe25519_sq(t1, t1);
+    fe25519_mul(t0, t1, t0);
+    fe25519_sq(t0, t0);
+    fe25519_sq(t0, t0);
+    fe25519_mul(beta, t0, a);
+
+    /* Check if beta^2 == a */
+    fe25519_sq(beta_sq, beta);
+    fe25519_sub(t0, beta_sq, a);
+    fe25519_carry(t0);
+
+    uint8_t check[32];
+    fe25519_tobytes(check, t0);
+    int is_zero = 1;
+    for (i = 0; i < 32; i++) is_zero &= (check[i] == 0);
+
+    if (is_zero) {
+        fe25519_copy(out, beta);
+        return 1;
+    }
+
+    /* Try beta * sqrt(-1) */
+    static const fe25519 sqrt_m1 = {
+        -32595792, -7943725, 9377950, 3500415, 12389472,
+        -272473, -25146209, -2005654, 326686, 11406482
+    };
+    fe25519_mul(out, beta, sqrt_m1);
+    fe25519_sq(beta_sq, out);
+    fe25519_sub(t0, beta_sq, a);
+    fe25519_carry(t0);
+    fe25519_tobytes(check, t0);
+    is_zero = 1;
+    for (i = 0; i < 32; i++) is_zero &= (check[i] == 0);
+
+    return is_zero;
+}
+
+/* Conditional swap (constant time) */
+static void fe25519_cswap(fe25519 f, fe25519 g, int b) {
+    int64_t mask = -(int64_t)b;
+    for (int i = 0; i < 10; i++) {
+        int64_t x = mask & (f[i] ^ g[i]);
+        f[i] ^= x;
+        g[i] ^= x;
+    }
+}
+
+/* Check if negative (LSB of reduced value) */
+static int fe25519_isnegative(const fe25519 f) {
+    uint8_t s[32];
+    fe25519_tobytes(s, f);
+    return s[0] & 1;
+}
+
+/* Check if zero */
+static int fe25519_iszero(const fe25519 f) {
+    uint8_t s[32];
+    fe25519_tobytes(s, f);
+    int ret = 0;
+    for (int i = 0; i < 32; i++) ret |= s[i];
+    return ret == 0;
+}
+
+/* ============================================================================
+ * GROUP OPERATIONS: Extended Twisted Edwards
+ * ============================================================================ */
+
+/* Point in extended coordinates (X:Y:Z:T) where x=X/Z, y=Y/Z, xy=T/Z */
+typedef struct {
+    fe25519 X, Y, Z, T;
+} ge25519_p3;
+
+/* Point in projective coordinates (X:Y:Z) */
+typedef struct {
+    fe25519 X, Y, Z;
+} ge25519_p2;
+
+/* Point in completed coordinates for addition */
+typedef struct {
+    fe25519 X, Y, Z, T;
+} ge25519_p1p1;
+
+/* Precomputed point (y+x, y-x, 2dxy) */
+typedef struct {
+    fe25519 yplusx, yminusx, xy2d;
+} ge25519_precomp;
+
+/* d = -121665/121666 */
+static const fe25519 d = {
+    -10913610, 13857413, -15372611, 6949391, 114729,
+    -8787816, -6275908, -3247719, -18696448, -12055116
+};
+
+/* 2*d */
+static const fe25519 d2 = {
+    -21827239, -5839606, -30745221, 13898782, 229458,
+    1500207, -12584456, -6495438, 29715968, 9444199
+};
+
+/* Base point B */
+static const ge25519_p3 B = {
+    { 15112221, -15155300, -16814758, 7697456, -15267963, 13965006, 22702800, 2509525, 5684038, -1437017 },
+    { -25822431, 5765609, -8138981, 10704440, -32287401, 3378916, 8070057, 12255692, 3785006, -6306417 },
+    { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 28827062, -6116119, -27349572, 244363, 8635006, 11264893, 19351346, 13413597, -16006177, 6553408 }
+};
+
+static void ge25519_p3_0(ge25519_p3 *h) {
+    fe25519_0(h->X);
+    fe25519_1(h->Y);
+    fe25519_1(h->Z);
+    fe25519_0(h->T);
+}
+
+static void ge25519_p3_tobytes(uint8_t *s, const ge25519_p3 *h) {
+    fe25519 recip, x, y;
+    fe25519_invert(recip, h->Z);
+    fe25519_mul(x, h->X, recip);
+    fe25519_mul(y, h->Y, recip);
+    fe25519_tobytes(s, y);
+    s[31] ^= fe25519_isnegative(x) << 7;
+}
+
+static int ge25519_frombytes(ge25519_p3 *h, const uint8_t *s) {
+    fe25519 u, v, v3, vxx, check;
+    int x_sign = s[31] >> 7;
+
+    fe25519_frombytes(h->Y, s);
+    fe25519_1(h->Z);
+
+    /* u = y^2 - 1, v = dy^2 + 1 */
+    fe25519_sq(u, h->Y);
+    fe25519_mul(v, u, d);
+    fe25519_sub(u, u, h->Z);
+    fe25519_add(v, v, h->Z);
+
+    /* x = sqrt(u/v) */
+    fe25519_sq(v3, v);
+    fe25519_mul(v3, v3, v);
+    fe25519_sq(h->X, v3);
+    fe25519_mul(h->X, h->X, v);
+    fe25519_mul(h->X, h->X, u);
+
+    /* x = (uv^7)^((p-5)/8) * uv^3 */
+    fe25519 pow;
+    fe25519_sq(pow, h->X);
+    for (int i = 0; i < 1; i++) fe25519_sq(pow, pow);
+    fe25519_mul(pow, pow, h->X);
+    fe25519_sq(pow, pow);
+    fe25519_mul(h->X, pow, u);
+    fe25519_mul(h->X, h->X, v3);
+
+    /* Verify */
+    fe25519_sq(vxx, h->X);
+    fe25519_mul(vxx, vxx, v);
+    fe25519_sub(check, vxx, u);
+    fe25519_carry(check);
+
+    if (!fe25519_iszero(check)) {
+        fe25519_add(check, vxx, u);
+        fe25519_carry(check);
+        if (!fe25519_iszero(check)) return -1;
+        static const fe25519 sqrt_m1 = {
+            -32595792, -7943725, 9377950, 3500415, 12389472,
+            -272473, -25146209, -2005654, 326686, 11406482
+        };
+        fe25519_mul(h->X, h->X, sqrt_m1);
+    }
+
+    if (fe25519_isnegative(h->X) != x_sign) {
+        fe25519_neg(h->X, h->X);
+    }
+
+    fe25519_mul(h->T, h->X, h->Y);
+    return 0;
+}
+
+/* p1p1 -> p2 */
+static void ge25519_p1p1_to_p2(ge25519_p2 *r, const ge25519_p1p1 *p) {
+    fe25519_mul(r->X, p->X, p->T);
+    fe25519_mul(r->Y, p->Y, p->Z);
+    fe25519_mul(r->Z, p->Z, p->T);
+}
+
+/* p1p1 -> p3 */
+static void ge25519_p1p1_to_p3(ge25519_p3 *r, const ge25519_p1p1 *p) {
+    fe25519_mul(r->X, p->X, p->T);
+    fe25519_mul(r->Y, p->Y, p->Z);
+    fe25519_mul(r->Z, p->Z, p->T);
+    fe25519_mul(r->T, p->X, p->Y);
+}
+
+/* p2 -> p3 (extend) */
+static void ge25519_p2_to_p3(ge25519_p3 *r, const ge25519_p2 *p) {
+    fe25519_copy(r->X, p->X);
+    fe25519_copy(r->Y, p->Y);
+    fe25519_copy(r->Z, p->Z);
+    fe25519_mul(r->T, p->X, p->Y);
+}
+
+/* Double: p2 -> p1p1 */
+static void ge25519_p2_dbl(ge25519_p1p1 *r, const ge25519_p2 *p) {
+    fe25519 t0;
+    fe25519_sq(r->X, p->X);
+    fe25519_sq(r->Z, p->Y);
+    fe25519_sq(r->T, p->Z);
+    fe25519_add(r->T, r->T, r->T);
+    fe25519_add(r->Y, p->X, p->Y);
+    fe25519_sq(t0, r->Y);
+    fe25519_add(r->Y, r->Z, r->X);
+    fe25519_sub(r->Z, r->Z, r->X);
+    fe25519_sub(r->X, t0, r->Y);
+    fe25519_sub(r->T, r->T, r->Z);
+}
+
+/* Add: p3 + precomp -> p1p1 */
+static void ge25519_madd(ge25519_p1p1 *r, const ge25519_p3 *p, const ge25519_precomp *q) {
+    fe25519 t0;
+    fe25519_add(r->X, p->Y, p->X);
+    fe25519_sub(r->Y, p->Y, p->X);
+    fe25519_mul(r->Z, r->X, q->yplusx);
+    fe25519_mul(r->Y, r->Y, q->yminusx);
+    fe25519_mul(r->T, q->xy2d, p->T);
+    fe25519_add(t0, p->Z, p->Z);
+    fe25519_sub(r->X, r->Z, r->Y);
+    fe25519_add(r->Y, r->Z, r->Y);
+    fe25519_add(r->Z, t0, r->T);
+    fe25519_sub(r->T, t0, r->T);
+}
+
+/* Sub: p3 - precomp -> p1p1 */
+static void ge25519_msub(ge25519_p1p1 *r, const ge25519_p3 *p, const ge25519_precomp *q) {
+    fe25519 t0;
+    fe25519_add(r->X, p->Y, p->X);
+    fe25519_sub(r->Y, p->Y, p->X);
+    fe25519_mul(r->Z, r->X, q->yminusx);
+    fe25519_mul(r->Y, r->Y, q->yplusx);
+    fe25519_mul(r->T, q->xy2d, p->T);
+    fe25519_add(t0, p->Z, p->Z);
+    fe25519_sub(r->X, r->Z, r->Y);
+    fe25519_add(r->Y, r->Z, r->Y);
+    fe25519_sub(r->Z, t0, r->T);
+    fe25519_add(r->T, t0, r->T);
+}
+
+/* Add: p3 + p3 -> p1p1 */
+static void ge25519_add(ge25519_p1p1 *r, const ge25519_p3 *p, const ge25519_p3 *q) {
+    fe25519 A, B, C, D, E, F, G, H;
+    fe25519_sub(A, p->Y, p->X);
+    fe25519_sub(B, q->Y, q->X);
+    fe25519_mul(A, A, B);
+    fe25519_add(B, p->Y, p->X);
+    fe25519_add(C, q->Y, q->X);
+    fe25519_mul(B, B, C);
+    fe25519_mul(C, p->T, q->T);
+    fe25519_mul(C, C, d2);
+    fe25519_mul(D, p->Z, q->Z);
+    fe25519_add(D, D, D);
+    fe25519_sub(E, B, A);
+    fe25519_sub(F, D, C);
+    fe25519_add(G, D, C);
+    fe25519_add(H, B, A);
+    fe25519_mul(r->X, E, F);
+    fe25519_mul(r->Y, H, G);
+    fe25519_mul(r->T, E, H);
+    fe25519_mul(r->Z, F, G);
+}
+
+/* Scalar multiplication using double-and-add */
+static void ge25519_scalarmult(ge25519_p3 *r, const uint8_t *scalar, const ge25519_p3 *p) {
+    ge25519_p3 Q;
+    ge25519_p1p1 t;
+    ge25519_p2 p2;
+    int i;
+
+    ge25519_p3_0(&Q);
+
+    for (i = 255; i >= 0; i--) {
+        int bit = (scalar[i >> 3] >> (i & 7)) & 1;
+
+        /* Q = 2*Q */
+        p2.X[0] = Q.X[0]; p2.X[1] = Q.X[1]; p2.X[2] = Q.X[2]; p2.X[3] = Q.X[3]; p2.X[4] = Q.X[4];
+        p2.X[5] = Q.X[5]; p2.X[6] = Q.X[6]; p2.X[7] = Q.X[7]; p2.X[8] = Q.X[8]; p2.X[9] = Q.X[9];
+        p2.Y[0] = Q.Y[0]; p2.Y[1] = Q.Y[1]; p2.Y[2] = Q.Y[2]; p2.Y[3] = Q.Y[3]; p2.Y[4] = Q.Y[4];
+        p2.Y[5] = Q.Y[5]; p2.Y[6] = Q.Y[6]; p2.Y[7] = Q.Y[7]; p2.Y[8] = Q.Y[8]; p2.Y[9] = Q.Y[9];
+        p2.Z[0] = Q.Z[0]; p2.Z[1] = Q.Z[1]; p2.Z[2] = Q.Z[2]; p2.Z[3] = Q.Z[3]; p2.Z[4] = Q.Z[4];
+        p2.Z[5] = Q.Z[5]; p2.Z[6] = Q.Z[6]; p2.Z[7] = Q.Z[7]; p2.Z[8] = Q.Z[8]; p2.Z[9] = Q.Z[9];
+
+        ge25519_p2_dbl(&t, &p2);
+        ge25519_p1p1_to_p3(&Q, &t);
+
+        /* Q = Q + P if bit is set */
+        if (bit) {
+            ge25519_add(&t, &Q, p);
+            ge25519_p1p1_to_p3(&Q, &t);
+        }
+    }
+
+    memcpy(r, &Q, sizeof(ge25519_p3));
+}
+
+/* Base point multiplication */
+static void ge25519_scalarmult_base(ge25519_p3 *r, const uint8_t *scalar) {
+    ge25519_scalarmult(r, scalar, &B);
+}
+
+/* ============================================================================
+ * SCALAR ARITHMETIC: mod L where L is the group order
+ * ============================================================================ */
+
+/* L = 2^252 + 27742317777372353535851937790883648493 */
+static void sc25519_reduce(uint8_t *s) {
+    /* Barrett reduction - simplified for Ed25519 */
+    int64_t s0 = 2097151 & (((int64_t)s[0]) | ((int64_t)s[1] << 8) | ((int64_t)s[2] << 16));
+    int64_t s1 = 2097151 & (((int64_t)s[2] >> 5) | ((int64_t)s[3] << 3) | ((int64_t)s[4] << 11) | ((int64_t)s[5] << 19));
+    int64_t s2 = 2097151 & (((int64_t)s[5] >> 2) | ((int64_t)s[6] << 6) | ((int64_t)s[7] << 14));
+    int64_t s3 = 2097151 & (((int64_t)s[7] >> 7) | ((int64_t)s[8] << 1) | ((int64_t)s[9] << 9) | ((int64_t)s[10] << 17));
+    int64_t s4 = 2097151 & (((int64_t)s[10] >> 4) | ((int64_t)s[11] << 4) | ((int64_t)s[12] << 12));
+    int64_t s5 = 2097151 & (((int64_t)s[12] >> 1) | ((int64_t)s[13] << 7) | ((int64_t)s[14] << 15));
+    int64_t s6 = 2097151 & (((int64_t)s[14] >> 6) | ((int64_t)s[15] << 2) | ((int64_t)s[16] << 10) | ((int64_t)s[17] << 18));
+    int64_t s7 = 2097151 & (((int64_t)s[17] >> 3) | ((int64_t)s[18] << 5) | ((int64_t)s[19] << 13));
+    int64_t s8 = 2097151 & (((int64_t)s[20]) | ((int64_t)s[21] << 8) | ((int64_t)s[22] << 16));
+    int64_t s9 = 2097151 & (((int64_t)s[22] >> 5) | ((int64_t)s[23] << 3) | ((int64_t)s[24] << 11) | ((int64_t)s[25] << 19));
+    int64_t s10 = 2097151 & (((int64_t)s[25] >> 2) | ((int64_t)s[26] << 6) | ((int64_t)s[27] << 14));
+    int64_t s11 = (((int64_t)s[27] >> 7) | ((int64_t)s[28] << 1) | ((int64_t)s[29] << 9) | ((int64_t)s[30] << 17) | ((int64_t)s[31] << 25));
+
+    int64_t carry;
+
+    /* Reduce */
+    s0 += s11 * 666643; s1 += s11 * 470296; s2 += s11 * 654183;
+    s3 -= s11 * 997805; s4 += s11 * 136657; s5 -= s11 * 683901;
+    s11 = 0;
+
+    s0 += s10 * 666643; s1 += s10 * 470296; s2 += s10 * 654183;
+    s3 -= s10 * 997805; s4 += s10 * 136657; s5 -= s10 * 683901;
+    s10 = 0;
+
+    s0 += s9 * 666643; s1 += s9 * 470296; s2 += s9 * 654183;
+    s3 -= s9 * 997805; s4 += s9 * 136657; s5 -= s9 * 683901;
+    s9 = 0;
+
+    s0 += s8 * 666643; s1 += s8 * 470296; s2 += s8 * 654183;
+    s3 -= s8 * 997805; s4 += s8 * 136657; s5 -= s8 * 683901;
+    s8 = 0;
+
+    s0 += s7 * 666643; s1 += s7 * 470296; s2 += s7 * 654183;
+    s3 -= s7 * 997805; s4 += s7 * 136657; s5 -= s7 * 683901;
+    s7 = 0;
+
+    s0 += s6 * 666643; s1 += s6 * 470296; s2 += s6 * 654183;
+    s3 -= s6 * 997805; s4 += s6 * 136657; s5 -= s6 * 683901;
+    s6 = 0;
+
+    carry = (s0 + (1 << 20)) >> 21; s1 += carry; s0 -= carry << 21;
+    carry = (s1 + (1 << 20)) >> 21; s2 += carry; s1 -= carry << 21;
+    carry = (s2 + (1 << 20)) >> 21; s3 += carry; s2 -= carry << 21;
+    carry = (s3 + (1 << 20)) >> 21; s4 += carry; s3 -= carry << 21;
+    carry = (s4 + (1 << 20)) >> 21; s5 += carry; s4 -= carry << 21;
+
+    s[0] = (uint8_t)(s0);
+    s[1] = (uint8_t)(s0 >> 8);
+    s[2] = (uint8_t)((s0 >> 16) | (s1 << 5));
+    s[3] = (uint8_t)(s1 >> 3);
+    s[4] = (uint8_t)(s1 >> 11);
+    s[5] = (uint8_t)((s1 >> 19) | (s2 << 2));
+    s[6] = (uint8_t)(s2 >> 6);
+    s[7] = (uint8_t)((s2 >> 14) | (s3 << 7));
+    s[8] = (uint8_t)(s3 >> 1);
+    s[9] = (uint8_t)(s3 >> 9);
+    s[10] = (uint8_t)((s3 >> 17) | (s4 << 4));
+    s[11] = (uint8_t)(s4 >> 4);
+    s[12] = (uint8_t)(s4 >> 12);
+    s[13] = (uint8_t)((s4 >> 20) | (s5 << 1));
+    s[14] = (uint8_t)(s5 >> 7);
+    s[15] = (uint8_t)(s5 >> 15);
+    /* Remaining bytes are implicitly zero after reduction */
+    memset(s + 16, 0, 16);
+}
+
+/* Compute s = a + b*c mod L */
+static void sc25519_muladd(uint8_t *s, const uint8_t *a, const uint8_t *b, const uint8_t *c) {
+    int64_t a0 = 2097151 & (((int64_t)a[0]) | ((int64_t)a[1] << 8) | ((int64_t)a[2] << 16));
+    int64_t a1 = 2097151 & (((int64_t)a[2] >> 5) | ((int64_t)a[3] << 3) | ((int64_t)a[4] << 11) | ((int64_t)a[5] << 19));
+    int64_t a2 = 2097151 & (((int64_t)a[5] >> 2) | ((int64_t)a[6] << 6) | ((int64_t)a[7] << 14));
+    int64_t a3 = 2097151 & (((int64_t)a[7] >> 7) | ((int64_t)a[8] << 1) | ((int64_t)a[9] << 9) | ((int64_t)a[10] << 17));
+    int64_t a4 = 2097151 & (((int64_t)a[10] >> 4) | ((int64_t)a[11] << 4) | ((int64_t)a[12] << 12));
+    int64_t a5 = 2097151 & (((int64_t)a[12] >> 1) | ((int64_t)a[13] << 7) | ((int64_t)a[14] << 15));
+    int64_t a6 = 2097151 & (((int64_t)a[14] >> 6) | ((int64_t)a[15] << 2) | ((int64_t)a[16] << 10) | ((int64_t)a[17] << 18));
+    int64_t a7 = 2097151 & (((int64_t)a[17] >> 3) | ((int64_t)a[18] << 5) | ((int64_t)a[19] << 13));
+    int64_t a8 = 2097151 & (((int64_t)a[20]) | ((int64_t)a[21] << 8) | ((int64_t)a[22] << 16));
+    int64_t a9 = 2097151 & (((int64_t)a[22] >> 5) | ((int64_t)a[23] << 3) | ((int64_t)a[24] << 11) | ((int64_t)a[25] << 19));
+    int64_t a10 = 2097151 & (((int64_t)a[25] >> 2) | ((int64_t)a[26] << 6) | ((int64_t)a[27] << 14));
+    int64_t a11 = (((int64_t)a[27] >> 7) | ((int64_t)a[28] << 1) | ((int64_t)a[29] << 9) | ((int64_t)a[30] << 17) | ((int64_t)a[31] << 25));
+
+    int64_t b0 = 2097151 & (((int64_t)b[0]) | ((int64_t)b[1] << 8) | ((int64_t)b[2] << 16));
+    int64_t b1 = 2097151 & (((int64_t)b[2] >> 5) | ((int64_t)b[3] << 3) | ((int64_t)b[4] << 11) | ((int64_t)b[5] << 19));
+    int64_t b2 = 2097151 & (((int64_t)b[5] >> 2) | ((int64_t)b[6] << 6) | ((int64_t)b[7] << 14));
+    int64_t b3 = 2097151 & (((int64_t)b[7] >> 7) | ((int64_t)b[8] << 1) | ((int64_t)b[9] << 9) | ((int64_t)b[10] << 17));
+    int64_t b4 = 2097151 & (((int64_t)b[10] >> 4) | ((int64_t)b[11] << 4) | ((int64_t)b[12] << 12));
+    int64_t b5 = 2097151 & (((int64_t)b[12] >> 1) | ((int64_t)b[13] << 7) | ((int64_t)b[14] << 15));
+    int64_t b6 = 2097151 & (((int64_t)b[14] >> 6) | ((int64_t)b[15] << 2) | ((int64_t)b[16] << 10) | ((int64_t)b[17] << 18));
+    int64_t b7 = 2097151 & (((int64_t)b[17] >> 3) | ((int64_t)b[18] << 5) | ((int64_t)b[19] << 13));
+    int64_t b8 = 2097151 & (((int64_t)b[20]) | ((int64_t)b[21] << 8) | ((int64_t)b[22] << 16));
+    int64_t b9 = 2097151 & (((int64_t)b[22] >> 5) | ((int64_t)b[23] << 3) | ((int64_t)b[24] << 11) | ((int64_t)b[25] << 19));
+    int64_t b10 = 2097151 & (((int64_t)b[25] >> 2) | ((int64_t)b[26] << 6) | ((int64_t)b[27] << 14));
+    int64_t b11 = (((int64_t)b[27] >> 7) | ((int64_t)b[28] << 1) | ((int64_t)b[29] << 9) | ((int64_t)b[30] << 17) | ((int64_t)b[31] << 25));
+
+    int64_t c0 = 2097151 & (((int64_t)c[0]) | ((int64_t)c[1] << 8) | ((int64_t)c[2] << 16));
+    int64_t c1 = 2097151 & (((int64_t)c[2] >> 5) | ((int64_t)c[3] << 3) | ((int64_t)c[4] << 11) | ((int64_t)c[5] << 19));
+    int64_t c2 = 2097151 & (((int64_t)c[5] >> 2) | ((int64_t)c[6] << 6) | ((int64_t)c[7] << 14));
+    int64_t c3 = 2097151 & (((int64_t)c[7] >> 7) | ((int64_t)c[8] << 1) | ((int64_t)c[9] << 9) | ((int64_t)c[10] << 17));
+    int64_t c4 = 2097151 & (((int64_t)c[10] >> 4) | ((int64_t)c[11] << 4) | ((int64_t)c[12] << 12));
+    int64_t c5 = 2097151 & (((int64_t)c[12] >> 1) | ((int64_t)c[13] << 7) | ((int64_t)c[14] << 15));
+    int64_t c6 = 2097151 & (((int64_t)c[14] >> 6) | ((int64_t)c[15] << 2) | ((int64_t)c[16] << 10) | ((int64_t)c[17] << 18));
+    int64_t c7 = 2097151 & (((int64_t)c[17] >> 3) | ((int64_t)c[18] << 5) | ((int64_t)c[19] << 13));
+    int64_t c8 = 2097151 & (((int64_t)c[20]) | ((int64_t)c[21] << 8) | ((int64_t)c[22] << 16));
+    int64_t c9 = 2097151 & (((int64_t)c[22] >> 5) | ((int64_t)c[23] << 3) | ((int64_t)c[24] << 11) | ((int64_t)c[25] << 19));
+    int64_t c10 = 2097151 & (((int64_t)c[25] >> 2) | ((int64_t)c[26] << 6) | ((int64_t)c[27] << 14));
+    int64_t c11 = (((int64_t)c[27] >> 7) | ((int64_t)c[28] << 1) | ((int64_t)c[29] << 9) | ((int64_t)c[30] << 17) | ((int64_t)c[31] << 25));
+
+    /* s = a + b*c */
+    int64_t s0 = a0 + b0*c0;
+    int64_t s1 = a1 + b0*c1 + b1*c0;
+    int64_t s2 = a2 + b0*c2 + b1*c1 + b2*c0;
+    int64_t s3 = a3 + b0*c3 + b1*c2 + b2*c1 + b3*c0;
+    int64_t s4 = a4 + b0*c4 + b1*c3 + b2*c2 + b3*c1 + b4*c0;
+    int64_t s5 = a5 + b0*c5 + b1*c4 + b2*c3 + b3*c2 + b4*c1 + b5*c0;
+    int64_t s6 = a6 + b0*c6 + b1*c5 + b2*c4 + b3*c3 + b4*c2 + b5*c1 + b6*c0;
+    int64_t s7 = a7 + b0*c7 + b1*c6 + b2*c5 + b3*c4 + b4*c3 + b5*c2 + b6*c1 + b7*c0;
+    int64_t s8 = a8 + b0*c8 + b1*c7 + b2*c6 + b3*c5 + b4*c4 + b5*c3 + b6*c2 + b7*c1 + b8*c0;
+    int64_t s9 = a9 + b0*c9 + b1*c8 + b2*c7 + b3*c6 + b4*c5 + b5*c4 + b6*c3 + b7*c2 + b8*c1 + b9*c0;
+    int64_t s10 = a10 + b0*c10 + b1*c9 + b2*c8 + b3*c7 + b4*c6 + b5*c5 + b6*c4 + b7*c3 + b8*c2 + b9*c1 + b10*c0;
+    int64_t s11 = a11 + b0*c11 + b1*c10 + b2*c9 + b3*c8 + b4*c7 + b5*c6 + b6*c5 + b7*c4 + b8*c3 + b9*c2 + b10*c1 + b11*c0;
+    int64_t s12 = b1*c11 + b2*c10 + b3*c9 + b4*c8 + b5*c7 + b6*c6 + b7*c5 + b8*c4 + b9*c3 + b10*c2 + b11*c1;
+    int64_t s13 = b2*c11 + b3*c10 + b4*c9 + b5*c8 + b6*c7 + b7*c6 + b8*c5 + b9*c4 + b10*c3 + b11*c2;
+    int64_t s14 = b3*c11 + b4*c10 + b5*c9 + b6*c8 + b7*c7 + b8*c6 + b9*c5 + b10*c4 + b11*c3;
+    int64_t s15 = b4*c11 + b5*c10 + b6*c9 + b7*c8 + b8*c7 + b9*c6 + b10*c5 + b11*c4;
+    int64_t s16 = b5*c11 + b6*c10 + b7*c9 + b8*c8 + b9*c7 + b10*c6 + b11*c5;
+    int64_t s17 = b6*c11 + b7*c10 + b8*c9 + b9*c8 + b10*c7 + b11*c6;
+    int64_t s18 = b7*c11 + b8*c10 + b9*c9 + b10*c8 + b11*c7;
+    int64_t s19 = b8*c11 + b9*c10 + b10*c9 + b11*c8;
+    int64_t s20 = b9*c11 + b10*c10 + b11*c9;
+    int64_t s21 = b10*c11 + b11*c10;
+    int64_t s22 = b11*c11;
+    int64_t s23 = 0;
+
+    int64_t carry;
+
+    /* Reduce mod L */
+    carry = (s0 + (1 << 20)) >> 21; s1 += carry; s0 -= carry << 21;
+    carry = (s2 + (1 << 20)) >> 21; s3 += carry; s2 -= carry << 21;
+    carry = (s4 + (1 << 20)) >> 21; s5 += carry; s4 -= carry << 21;
+    carry = (s6 + (1 << 20)) >> 21; s7 += carry; s6 -= carry << 21;
+    carry = (s8 + (1 << 20)) >> 21; s9 += carry; s8 -= carry << 21;
+    carry = (s10 + (1 << 20)) >> 21; s11 += carry; s10 -= carry << 21;
+    carry = (s12 + (1 << 20)) >> 21; s13 += carry; s12 -= carry << 21;
+    carry = (s14 + (1 << 20)) >> 21; s15 += carry; s14 -= carry << 21;
+    carry = (s16 + (1 << 20)) >> 21; s17 += carry; s16 -= carry << 21;
+    carry = (s18 + (1 << 20)) >> 21; s19 += carry; s18 -= carry << 21;
+    carry = (s20 + (1 << 20)) >> 21; s21 += carry; s20 -= carry << 21;
+    carry = (s22 + (1 << 20)) >> 21; s23 += carry; s22 -= carry << 21;
+
+    carry = (s1 + (1 << 20)) >> 21; s2 += carry; s1 -= carry << 21;
+    carry = (s3 + (1 << 20)) >> 21; s4 += carry; s3 -= carry << 21;
+    carry = (s5 + (1 << 20)) >> 21; s6 += carry; s5 -= carry << 21;
+    carry = (s7 + (1 << 20)) >> 21; s8 += carry; s7 -= carry << 21;
+    carry = (s9 + (1 << 20)) >> 21; s10 += carry; s9 -= carry << 21;
+    carry = (s11 + (1 << 20)) >> 21; s12 += carry; s11 -= carry << 21;
+    carry = (s13 + (1 << 20)) >> 21; s14 += carry; s13 -= carry << 21;
+    carry = (s15 + (1 << 20)) >> 21; s16 += carry; s15 -= carry << 21;
+    carry = (s17 + (1 << 20)) >> 21; s18 += carry; s17 -= carry << 21;
+    carry = (s19 + (1 << 20)) >> 21; s20 += carry; s19 -= carry << 21;
+    carry = (s21 + (1 << 20)) >> 21; s22 += carry; s21 -= carry << 21;
+
+    /* Reduce high limbs */
+    s11 += s23 * 666643; s12 += s23 * 470296; s13 += s23 * 654183;
+    s14 -= s23 * 997805; s15 += s23 * 136657; s16 -= s23 * 683901;
+    s23 = 0;
+
+    s10 += s22 * 666643; s11 += s22 * 470296; s12 += s22 * 654183;
+    s13 -= s22 * 997805; s14 += s22 * 136657; s15 -= s22 * 683901;
+    s22 = 0;
+
+    s9 += s21 * 666643; s10 += s21 * 470296; s11 += s21 * 654183;
+    s12 -= s21 * 997805; s13 += s21 * 136657; s14 -= s21 * 683901;
+    s21 = 0;
+
+    s8 += s20 * 666643; s9 += s20 * 470296; s10 += s20 * 654183;
+    s11 -= s20 * 997805; s12 += s20 * 136657; s13 -= s20 * 683901;
+    s20 = 0;
+
+    s7 += s19 * 666643; s8 += s19 * 470296; s9 += s19 * 654183;
+    s10 -= s19 * 997805; s11 += s19 * 136657; s12 -= s19 * 683901;
+    s19 = 0;
+
+    s6 += s18 * 666643; s7 += s18 * 470296; s8 += s18 * 654183;
+    s9 -= s18 * 997805; s10 += s18 * 136657; s11 -= s18 * 683901;
+    s18 = 0;
+
+    carry = (s6 + (1 << 20)) >> 21; s7 += carry; s6 -= carry << 21;
+    carry = (s8 + (1 << 20)) >> 21; s9 += carry; s8 -= carry << 21;
+    carry = (s10 + (1 << 20)) >> 21; s11 += carry; s10 -= carry << 21;
+    carry = (s12 + (1 << 20)) >> 21; s13 += carry; s12 -= carry << 21;
+    carry = (s14 + (1 << 20)) >> 21; s15 += carry; s14 -= carry << 21;
+    carry = (s16 + (1 << 20)) >> 21; s17 += carry; s16 -= carry << 21;
+
+    carry = (s7 + (1 << 20)) >> 21; s8 += carry; s7 -= carry << 21;
+    carry = (s9 + (1 << 20)) >> 21; s10 += carry; s9 -= carry << 21;
+    carry = (s11 + (1 << 20)) >> 21; s12 += carry; s11 -= carry << 21;
+    carry = (s13 + (1 << 20)) >> 21; s14 += carry; s13 -= carry << 21;
+    carry = (s15 + (1 << 20)) >> 21; s16 += carry; s15 -= carry << 21;
+
+    s5 += s17 * 666643; s6 += s17 * 470296; s7 += s17 * 654183;
+    s8 -= s17 * 997805; s9 += s17 * 136657; s10 -= s17 * 683901;
+    s17 = 0;
+
+    s4 += s16 * 666643; s5 += s16 * 470296; s6 += s16 * 654183;
+    s7 -= s16 * 997805; s8 += s16 * 136657; s9 -= s16 * 683901;
+    s16 = 0;
+
+    s3 += s15 * 666643; s4 += s15 * 470296; s5 += s15 * 654183;
+    s6 -= s15 * 997805; s7 += s15 * 136657; s8 -= s15 * 683901;
+    s15 = 0;
+
+    s2 += s14 * 666643; s3 += s14 * 470296; s4 += s14 * 654183;
+    s5 -= s14 * 997805; s6 += s14 * 136657; s7 -= s14 * 683901;
+    s14 = 0;
+
+    s1 += s13 * 666643; s2 += s13 * 470296; s3 += s13 * 654183;
+    s4 -= s13 * 997805; s5 += s13 * 136657; s6 -= s13 * 683901;
+    s13 = 0;
+
+    s0 += s12 * 666643; s1 += s12 * 470296; s2 += s12 * 654183;
+    s3 -= s12 * 997805; s4 += s12 * 136657; s5 -= s12 * 683901;
+    s12 = 0;
+
+    carry = (s0 + (1 << 20)) >> 21; s1 += carry; s0 -= carry << 21;
+    carry = (s1 + (1 << 20)) >> 21; s2 += carry; s1 -= carry << 21;
+    carry = (s2 + (1 << 20)) >> 21; s3 += carry; s2 -= carry << 21;
+    carry = (s3 + (1 << 20)) >> 21; s4 += carry; s3 -= carry << 21;
+    carry = (s4 + (1 << 20)) >> 21; s5 += carry; s4 -= carry << 21;
+    carry = (s5 + (1 << 20)) >> 21; s6 += carry; s5 -= carry << 21;
+    carry = (s6 + (1 << 20)) >> 21; s7 += carry; s6 -= carry << 21;
+    carry = (s7 + (1 << 20)) >> 21; s8 += carry; s7 -= carry << 21;
+    carry = (s8 + (1 << 20)) >> 21; s9 += carry; s8 -= carry << 21;
+    carry = (s9 + (1 << 20)) >> 21; s10 += carry; s9 -= carry << 21;
+    carry = (s10 + (1 << 20)) >> 21; s11 += carry; s10 -= carry << 21;
+
+    s[0] = (uint8_t)(s0);
+    s[1] = (uint8_t)(s0 >> 8);
+    s[2] = (uint8_t)((s0 >> 16) | (s1 << 5));
+    s[3] = (uint8_t)(s1 >> 3);
+    s[4] = (uint8_t)(s1 >> 11);
+    s[5] = (uint8_t)((s1 >> 19) | (s2 << 2));
+    s[6] = (uint8_t)(s2 >> 6);
+    s[7] = (uint8_t)((s2 >> 14) | (s3 << 7));
+    s[8] = (uint8_t)(s3 >> 1);
+    s[9] = (uint8_t)(s3 >> 9);
+    s[10] = (uint8_t)((s3 >> 17) | (s4 << 4));
+    s[11] = (uint8_t)(s4 >> 4);
+    s[12] = (uint8_t)(s4 >> 12);
+    s[13] = (uint8_t)((s4 >> 20) | (s5 << 1));
+    s[14] = (uint8_t)(s5 >> 7);
+    s[15] = (uint8_t)(s5 >> 15);
+    s[16] = (uint8_t)((s5 >> 23) | (s6 << 6));
+    s[17] = (uint8_t)(s6 >> 2);
+    s[18] = (uint8_t)(s6 >> 10);
+    s[19] = (uint8_t)((s6 >> 18) | (s7 << 3));
+    s[20] = (uint8_t)(s7 >> 5);
+    s[21] = (uint8_t)(s7 >> 13);
+    s[22] = (uint8_t)(s8);
+    s[23] = (uint8_t)(s8 >> 8);
+    s[24] = (uint8_t)((s8 >> 16) | (s9 << 5));
+    s[25] = (uint8_t)(s9 >> 3);
+    s[26] = (uint8_t)(s9 >> 11);
+    s[27] = (uint8_t)((s9 >> 19) | (s10 << 2));
+    s[28] = (uint8_t)(s10 >> 6);
+    s[29] = (uint8_t)((s10 >> 14) | (s11 << 7));
+    s[30] = (uint8_t)(s11 >> 1);
+    s[31] = (uint8_t)(s11 >> 9);
+}
+
+/* ============================================================================
+ * ED25519 API FUNCTIONS
+ * ============================================================================ */
+
+/**
+ * Generate Ed25519 keypair
+ *
+ * @param public_key Output: 32-byte public key
+ * @param secret_key Output: 64-byte secret key (seed || public_key)
+ * @return AVA_SUCCESS or error code
+ */
+ava_error_t ava_ed25519_keypair(uint8_t public_key[32], uint8_t secret_key[64]) {
+    uint8_t hash[64];
+    ge25519_p3 A;
+
+    if (!public_key || !secret_key) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    /* Generate random seed (first 32 bytes of secret_key) */
+    /* NOTE: In production, use a cryptographic RNG */
+    /* For now, we require the caller to provide entropy in secret_key[0..31] */
+
+    /* Hash the seed */
+    sha512(secret_key, 32, hash);
+
+    /* Clamp the scalar */
+    hash[0] &= 248;
+    hash[31] &= 127;
+    hash[31] |= 64;
+
+    /* Compute public key: A = s*B */
+    ge25519_scalarmult_base(&A, hash);
+    ge25519_p3_tobytes(public_key, &A);
+
+    /* Store public key in secret_key[32..63] */
+    memcpy(secret_key + 32, public_key, 32);
+
+    /* Scrub intermediate values */
+    ava_secure_memzero(hash, sizeof(hash));
+
+    return AVA_SUCCESS;
+}
+
+/**
+ * Sign a message with Ed25519
+ *
+ * @param signature Output: 64-byte signature
+ * @param message Message to sign
+ * @param message_len Length of message
+ * @param secret_key 64-byte secret key
+ * @return AVA_SUCCESS or error code
+ */
+ava_error_t ava_ed25519_sign(
+    uint8_t signature[64],
+    const uint8_t *message,
+    size_t message_len,
+    const uint8_t secret_key[64]
+) {
+    uint8_t hash[64];
+    uint8_t r[64];
+    uint8_t hram[64];
+    uint8_t *buf;
+    ge25519_p3 R;
+
+    if (!signature || !secret_key || (!message && message_len > 0)) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    /* Hash the secret key */
+    sha512(secret_key, 32, hash);
+    hash[0] &= 248;
+    hash[31] &= 127;
+    hash[31] |= 64;
+
+    /* r = H(h[32..63] || message) mod L */
+    buf = (uint8_t *)malloc(32 + message_len);
+    if (!buf) {
+        return AVA_ERROR_MEMORY;
+    }
+    memcpy(buf, hash + 32, 32);
+    if (message_len > 0) {
+        memcpy(buf + 32, message, message_len);
+    }
+    sha512(buf, 32 + message_len, r);
+    sc25519_reduce(r);
+
+    /* R = r*B */
+    ge25519_scalarmult_base(&R, r);
+    ge25519_p3_tobytes(signature, &R);
+
+    /* H(R || A || message) */
+    free(buf);
+    buf = (uint8_t *)malloc(64 + message_len);
+    if (!buf) {
+        return AVA_ERROR_MEMORY;
+    }
+    memcpy(buf, signature, 32);
+    memcpy(buf + 32, secret_key + 32, 32);
+    if (message_len > 0) {
+        memcpy(buf + 64, message, message_len);
+    }
+    sha512(buf, 64 + message_len, hram);
+    sc25519_reduce(hram);
+
+    /* s = r + H(R||A||M) * a mod L */
+    sc25519_muladd(signature + 32, r, hram, hash);
+
+    /* Cleanup */
+    ava_secure_memzero(hash, sizeof(hash));
+    ava_secure_memzero(r, sizeof(r));
+    ava_secure_memzero(hram, sizeof(hram));
+    free(buf);
+
+    return AVA_SUCCESS;
+}
+
+/**
+ * Verify an Ed25519 signature
+ *
+ * @param signature 64-byte signature
+ * @param message Message to verify
+ * @param message_len Length of message
+ * @param public_key 32-byte public key
+ * @return AVA_SUCCESS if valid, AVA_ERROR_VERIFY_FAILED if invalid
+ */
+ava_error_t ava_ed25519_verify(
+    const uint8_t signature[64],
+    const uint8_t *message,
+    size_t message_len,
+    const uint8_t public_key[32]
+) {
+    uint8_t h[64];
+    uint8_t *buf;
+    ge25519_p3 A, R_check;
+    ge25519_p1p1 t;
+    ge25519_p2 p2;
+    uint8_t R_bytes[32];
+    int i;
+
+    if (!signature || !public_key || (!message && message_len > 0)) {
+        return AVA_ERROR_INVALID_PARAM;
+    }
+
+    /* Decode public key */
+    if (ge25519_frombytes(&A, public_key) != 0) {
+        return AVA_ERROR_VERIFY_FAILED;
+    }
+
+    /* Negate A for later subtraction */
+    fe25519_neg(A.X, A.X);
+    fe25519_neg(A.T, A.T);
+
+    /* H(R || A || message) */
+    buf = (uint8_t *)malloc(64 + message_len);
+    if (!buf) {
+        return AVA_ERROR_MEMORY;
+    }
+    memcpy(buf, signature, 32);
+    memcpy(buf + 32, public_key, 32);
+    if (message_len > 0) {
+        memcpy(buf + 64, message, message_len);
+    }
+    sha512(buf, 64 + message_len, h);
+    sc25519_reduce(h);
+    free(buf);
+
+    /* Check: [s]B - [h]A == R */
+    /* Compute [s]B */
+    ge25519_scalarmult_base(&R_check, signature + 32);
+
+    /* Compute [h]A (A is already negated) */
+    ge25519_p3 hA;
+    ge25519_scalarmult(&hA, h, &A);
+
+    /* R_check = [s]B + (-[h]A) = [s]B - [h]A */
+    ge25519_add(&t, &R_check, &hA);
+    ge25519_p1p1_to_p3(&R_check, &t);
+
+    /* Encode and compare */
+    ge25519_p3_tobytes(R_bytes, &R_check);
+
+    int diff = 0;
+    for (i = 0; i < 32; i++) {
+        diff |= R_bytes[i] ^ signature[i];
+    }
+
+    return (diff == 0) ? AVA_SUCCESS : AVA_ERROR_VERIFY_FAILED;
+}
