@@ -39,7 +39,8 @@ settings.register_profile(
 # Load the appropriate profile
 settings.load_profile("ci" if _in_ci else os.environ.get("HYPOTHESIS_PROFILE", "default"))
 
-from dna_guardian_secure import (
+# Late imports required - Hypothesis settings must be configured before importing test subjects
+from dna_guardian_secure import (  # noqa: E402
     DILITHIUM_AVAILABLE,
     SIGNATURE_FORMAT_V2,
     build_signature_message,
