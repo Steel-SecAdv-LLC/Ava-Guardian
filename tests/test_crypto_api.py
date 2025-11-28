@@ -515,3 +515,102 @@ class TestProviderAbstractBase:
         """Verify KEMProvider cannot be instantiated directly."""
         with pytest.raises(TypeError):
             KEMProvider()
+
+
+class TestEd25519KeyObjectOptimization:
+    """
+    Test Ed25519 key object optimization.
+
+    Verifies that passing Ed25519PrivateKey/PublicKey objects instead of bytes
+    produces identical cryptographic results while enabling performance gains.
+    """
+
+    def test_sign_bytes_vs_key_object_identical(self):
+        """Verify signing with bytes and key object produces identical signatures."""
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+
+        provider = Ed25519Provider()
+        keypair = provider.generate_keypair()
+        message = b"Test message for key object optimization"
+
+        # Sign with bytes (original approach)
+        sig_bytes = provider.sign(message, keypair.secret_key)
+
+        # Sign with key object (optimized approach)
+        private_key_obj = ed25519.Ed25519PrivateKey.from_private_bytes(keypair.secret_key)
+        sig_obj = provider.sign(message, private_key_obj)
+
+        # Ed25519 is deterministic - signatures must be identical
+        assert sig_bytes.signature == sig_obj.signature
+        assert sig_bytes.algorithm == sig_obj.algorithm
+        assert sig_bytes.message_hash == sig_obj.message_hash
+
+    def test_verify_bytes_vs_key_object_identical(self):
+        """Verify verification with bytes and key object produces identical results."""
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+
+        provider = Ed25519Provider()
+        keypair = provider.generate_keypair()
+        message = b"Test message for verification optimization"
+
+        # Sign the message
+        signature = provider.sign(message, keypair.secret_key)
+
+        # Verify with bytes (original approach)
+        valid_bytes = provider.verify(message, signature.signature, keypair.public_key)
+
+        # Verify with key object (optimized approach)
+        public_key_obj = ed25519.Ed25519PublicKey.from_public_bytes(keypair.public_key)
+        valid_obj = provider.verify(message, signature.signature, public_key_obj)
+
+        # Both must return True
+        assert valid_bytes is True
+        assert valid_obj is True
+
+    def test_verify_invalid_signature_with_key_object(self):
+        """Verify invalid signatures are rejected when using key objects."""
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+
+        provider = Ed25519Provider()
+        keypair = provider.generate_keypair()
+        message = b"Original message"
+        tampered = b"Tampered message"
+
+        signature = provider.sign(message, keypair.secret_key)
+
+        # Verify tampered message with key object
+        public_key_obj = ed25519.Ed25519PublicKey.from_public_bytes(keypair.public_key)
+        is_valid = provider.verify(tampered, signature.signature, public_key_obj)
+
+        assert is_valid is False
+
+    def test_sign_multiple_messages_with_cached_key_object(self):
+        """Verify signing multiple messages with cached key object works correctly."""
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+
+        provider = Ed25519Provider()
+        keypair = provider.generate_keypair()
+
+        # Cache the key object (simulating high-throughput scenario)
+        private_key_obj = ed25519.Ed25519PrivateKey.from_private_bytes(keypair.secret_key)
+        public_key_obj = ed25519.Ed25519PublicKey.from_public_bytes(keypair.public_key)
+
+        messages = [
+            b"Message 1",
+            b"Message 2",
+            b"Message 3",
+            b"A longer message for testing",
+            b"",  # Empty message
+        ]
+
+        for msg in messages:
+            # Sign with cached key object
+            sig = provider.sign(msg, private_key_obj)
+
+            # Verify with cached key object
+            is_valid = provider.verify(msg, sig.signature, public_key_obj)
+            assert is_valid is True, f"Failed for message: {msg!r}"
+
+            # Cross-verify with bytes approach
+            is_valid_bytes = provider.verify(msg, sig.signature, keypair.public_key)
+            assert is_valid_bytes is True, f"Bytes verify failed for: {msg!r}"
