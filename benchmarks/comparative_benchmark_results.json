@@ -1,14 +1,14 @@
 {
-  "timestamp": "2025-11-28T19:32:45.674838",
+  "timestamp": "2025-11-28T20:30:05.521310",
   "iterations": 1000,
   "results": [
     {
       "implementation": "Ava Guardian",
       "operation": "Ed25519 Sign",
       "iterations": 1000,
-      "mean_time_ms": 0.09973210900147933,
-      "median_time_ms": 0.09465600004432417,
-      "ops_per_sec": 10026.861058209117,
+      "mean_time_ms": 0.1036935270002175,
+      "median_time_ms": 0.0945100000109278,
+      "ops_per_sec": 9643.803513385194,
       "available": true,
       "error": null
     },
@@ -16,9 +16,9 @@
       "implementation": "Ava Guardian",
       "operation": "Ed25519 Verify",
       "iterations": 1000,
-      "mean_time_ms": 0.12379536199944141,
-      "median_time_ms": 0.12170399998012726,
-      "ops_per_sec": 8077.847052173992,
+      "mean_time_ms": 0.12645323800046526,
+      "median_time_ms": 0.12108950001277208,
+      "ops_per_sec": 7908.061634580846,
       "available": true,
       "error": null
     },
@@ -26,9 +26,9 @@
       "implementation": "Ava Guardian",
       "operation": "ML-DSA-65 Sign",
       "iterations": 1000,
-      "mean_time_ms": 0.10929240500024662,
-      "median_time_ms": 0.09109350003200234,
-      "ops_per_sec": 9149.766628319172,
+      "mean_time_ms": 0.11692453299991712,
+      "median_time_ms": 0.10256600000957405,
+      "ops_per_sec": 8552.52507188298,
       "available": true,
       "error": null
     },
@@ -36,9 +36,9 @@
       "implementation": "Ava Guardian",
       "operation": "ML-DSA-65 Verify",
       "iterations": 1000,
-      "mean_time_ms": 0.036621964999312695,
-      "median_time_ms": 0.03566400005183823,
-      "ops_per_sec": 27306.01703154835,
+      "mean_time_ms": 0.03703708400064443,
+      "median_time_ms": 0.03454950000048029,
+      "ops_per_sec": 26999.965763573626,
       "available": true,
       "error": null
     },
@@ -46,9 +46,9 @@
       "implementation": "Ava Guardian",
       "operation": "Hybrid Sign",
       "iterations": 1000,
-      "mean_time_ms": 0.22624551999945197,
-      "median_time_ms": 0.20718899997973494,
-      "ops_per_sec": 4419.977023202149,
+      "mean_time_ms": 0.21856502300053648,
+      "median_time_ms": 0.20130849999588918,
+      "ops_per_sec": 4575.29748480179,
       "available": true,
       "error": null
     },
@@ -56,9 +56,9 @@
       "implementation": "Ava Guardian",
       "operation": "Hybrid Verify",
       "iterations": 1000,
-      "mean_time_ms": 0.16519064000078743,
-      "median_time_ms": 0.1605004999873927,
-      "ops_per_sec": 6053.611754244873,
+      "mean_time_ms": 0.1614933519999795,
+      "median_time_ms": 0.15729300000089097,
+      "ops_per_sec": 6192.205360875331,
       "available": true,
       "error": null
     },
@@ -66,9 +66,9 @@
       "implementation": "cryptography (OpenSSL)",
       "operation": "Ed25519 Sign",
       "iterations": 1000,
-      "mean_time_ms": 0.04858578400001079,
-      "median_time_ms": 0.045791499985625705,
-      "ops_per_sec": 20582.152178500975,
+      "mean_time_ms": 0.046962255000011055,
+      "median_time_ms": 0.04565049999882831,
+      "ops_per_sec": 21293.696395110597,
       "available": true,
       "error": null
     },
@@ -76,9 +76,9 @@
       "implementation": "cryptography (OpenSSL)",
       "operation": "Ed25519 Verify",
       "iterations": 1000,
-      "mean_time_ms": 0.11917226599928199,
-      "median_time_ms": 0.11652050000066083,
-      "ops_per_sec": 8391.214110219446,
+      "mean_time_ms": 0.12026706899993655,
+      "median_time_ms": 0.11621849999698952,
+      "ops_per_sec": 8314.828059878366,
       "available": true,
       "error": null
     },
@@ -86,9 +86,9 @@
       "implementation": "liboqs-python",
       "operation": "ML-DSA-65 Sign",
       "iterations": 1000,
-      "mean_time_ms": 0.10829079600216573,
-      "median_time_ms": 0.08994000000939195,
-      "ops_per_sec": 9234.395137145366,
+      "mean_time_ms": 0.10398957600045833,
+      "median_time_ms": 0.08573000000922093,
+      "ops_per_sec": 9616.34846934651,
       "available": true,
       "error": null
     },
@@ -96,9 +96,9 @@
       "implementation": "liboqs-python",
       "operation": "ML-DSA-65 Verify",
       "iterations": 1000,
-      "mean_time_ms": 0.0339230860013231,
-      "median_time_ms": 0.031164500001068518,
-      "ops_per_sec": 29478.45016107901,
+      "mean_time_ms": 0.03090824099990641,
+      "median_time_ms": 0.030495000004293615,
+      "ops_per_sec": 32353.83081175755,
       "available": true,
       "error": null
     },
@@ -106,9 +106,9 @@
       "implementation": "OpenSSL+liboqs",
       "operation": "Hybrid Sign",
       "iterations": 1000,
-      "mean_time_ms": 0.15461191500094174,
-      "median_time_ms": 0.13842350000459192,
-      "ops_per_sec": 6467.806831018871,
+      "mean_time_ms": 0.16106317900005251,
+      "median_time_ms": 0.14126899999666875,
+      "ops_per_sec": 6208.7437129232,
       "available": true,
       "error": null
     },
@@ -116,37 +116,37 @@
       "implementation": "OpenSSL+liboqs",
       "operation": "Hybrid Verify",
       "iterations": 1000,
-      "mean_time_ms": 0.1731184400005077,
-      "median_time_ms": 0.1464380000015808,
-      "ops_per_sec": 5776.392162481752,
+      "mean_time_ms": 0.14878976600047622,
+      "median_time_ms": 0.14704550000033123,
+      "ops_per_sec": 6720.892349523551,
       "available": true,
       "error": null
     }
   ],
   "comparisons": {
     "Ed25519 Sign_cryptography (OpenSSL)": {
-      "slowdown_factor": 0.48716290557226777,
-      "ava_guardian_faster_by_percent": -51.28370944277323
+      "slowdown_factor": 0.452894759765598,
+      "ava_guardian_faster_by_percent": -54.7105240234402
     },
     "Ed25519 Verify_cryptography (OpenSSL)": {
-      "slowdown_factor": 0.9626553376031949,
-      "ava_guardian_faster_by_percent": -3.7344662396805117
+      "slowdown_factor": 0.9510793942618856,
+      "ava_guardian_faster_by_percent": -4.892060573811441
     },
     "ML-DSA-65 Sign_liboqs-python": {
-      "slowdown_factor": 0.9908355114147354,
-      "ava_guardian_faster_by_percent": -0.9164488585264641
+      "slowdown_factor": 0.8893734559584004,
+      "ava_guardian_faster_by_percent": -11.062654404159955
     },
     "ML-DSA-65 Verify_liboqs-python": {
-      "slowdown_factor": 0.926304364114808,
-      "ava_guardian_faster_by_percent": -7.369563588519201
+      "slowdown_factor": 0.8345214488097558,
+      "ava_guardian_faster_by_percent": -16.547855119024423
     },
     "Hybrid Sign_OpenSSL+liboqs": {
-      "slowdown_factor": 0.6833811118174461,
-      "ava_guardian_faster_by_percent": -31.66188881825539
+      "slowdown_factor": 0.7369119577731208,
+      "ava_guardian_faster_by_percent": -26.30880422268792
     },
     "Hybrid Verify_OpenSSL+liboqs": {
-      "slowdown_factor": 1.0479918232636092,
-      "ava_guardian_faster_by_percent": 4.799182326360918
+      "slowdown_factor": 0.921336786671535,
+      "ava_guardian_faster_by_percent": -7.866321332846504
     }
   }
 }

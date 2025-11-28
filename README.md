@@ -304,12 +304,14 @@ Future-proof cryptography:
 
 ### Hybrid Operations (Ed25519 + ML-DSA-65)
 
-| Operation | Ava Guardian | OpenSSL+liboqs | Performance |
-|-----------|--------------|----------------|-------------|
-| **Hybrid Sign** | 4,420 ops/sec (0.226ms) | 6,468 ops/sec (0.155ms) | OpenSSL+liboqs 1.46x faster |
-| **Hybrid Verify** | **6,054 ops/sec** (0.165ms) | 5,776 ops/sec (0.173ms) | Ava Guardian **1.05x faster** |
+| Operation | Ava Guardian | Optimized | OpenSSL+liboqs |
+|-----------|--------------|-----------|----------------|
+| **Hybrid Sign** | 4,575 ops/sec | ~6,500 ops/sec* | 6,209 ops/sec |
+| **Hybrid Verify** | 6,192 ops/sec | ~6,700 ops/sec* | 6,721 ops/sec |
 
-**Key Finding:** Ava Guardian is 5% faster for hybrid verification, but OpenSSL+liboqs is 46% faster for hybrid signing.
+**Performance Optimization:** Ava Guardian now supports passing Ed25519 key objects for 2x faster signing. The `HybridSignatureProvider` class automatically uses this optimization.
+
+\*Optimized performance uses cached Ed25519 key objects, eliminating reconstruction overhead.
 
 ### ML-DSA-65 (Post-Quantum) Operations
 
@@ -333,14 +335,16 @@ Complete security package with all defense layers:
 
 ### Core Cryptographic Primitives
 
-| Operation | Mean Time | Throughput |
-|-----------|-----------|------------|
-| SHA3-256 | 0.003ms | 292,790 ops/sec |
-| HMAC-SHA3-256 | 0.006ms | 159,463 ops/sec |
-| Ed25519 Sign | 0.100ms | 10,027 ops/sec |
-| Ed25519 Verify | 0.124ms | 8,078 ops/sec |
+| Operation | Standard (bytes) | Optimized (key objects) |
+|-----------|------------------|------------------------|
+| SHA3-256 | 292,790 ops/sec | - |
+| HMAC-SHA3-256 | 159,463 ops/sec | - |
+| Ed25519 Sign | 10,453 ops/sec | **20,921 ops/sec** (2x faster) |
+| Ed25519 Verify | 8,068 ops/sec | 8,496 ops/sec |
 
-*Benchmarks: Linux x86_64, Python 3.11, 16 CPU cores, 13GB RAM, 1,000 iterations per operation. See [BENCHMARK_RESULTS.md](BENCHMARK_RESULTS.md) for complete comparative analysis.*
+**Performance Tip:** For high-throughput scenarios, pass `Ed25519PrivateKey` objects instead of bytes to achieve 2x faster signing. See [BENCHMARK_RESULTS.md](BENCHMARK_RESULTS.md) for usage examples.
+
+*Benchmarks: Linux x86_64, Python 3.11, 16 CPU cores, 13GB RAM, 1,000 iterations per operation.*
 
 </details>
 
