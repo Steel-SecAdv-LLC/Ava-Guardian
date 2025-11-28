@@ -213,3 +213,4 @@ public_keys/
 *.key
 DNA_CRYPTO_PACKAGE.json
 benchmark_results.json
+benchmark_suite_results.txt
