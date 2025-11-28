@@ -248,20 +248,118 @@ class ComparativeBenchmark:
         print("LIBOQS-PYTHON (Direct)")
         print("=" * 70)
 
-        # Skip liboqs benchmarking to avoid installation hang
-        print("  ⚠ Skipped: liboqs C library not available in this environment")
-        self.results.append(
-            BenchmarkResult(
-                implementation="liboqs-python",
-                operation="ML-DSA-65",
-                iterations=0,
-                mean_time_ms=0,
-                median_time_ms=0,
-                ops_per_sec=0,
-                available=False,
-                error="liboqs C library not available (would require system-level installation)",
+        try:
+            import oqs
+
+            test_data = b"Test message for benchmarking performance" * 10
+
+            # Test ML-DSA-65 (official NIST name, replaces Dilithium3)
+            try:
+                signer = oqs.Signature("ML-DSA-65")
+                public_key = signer.generate_keypair()
+
+                self.results.append(
+                    self.benchmark_operation(
+                        "liboqs-python",
+                        "ML-DSA-65 Sign",
+                        lambda: signer.sign(test_data),
+                    )
+                )
+
+                signature = signer.sign(test_data)
+                self.results.append(
+                    self.benchmark_operation(
+                        "liboqs-python",
+                        "ML-DSA-65 Verify",
+                        lambda: signer.verify(test_data, signature, public_key),
+                    )
+                )
+            except Exception as e:
+                print(f"  ⚠ ML-DSA-65 error: {e}")
+                self.results.append(
+                    BenchmarkResult(
+                        implementation="liboqs-python",
+                        operation="ML-DSA-65",
+                        iterations=0,
+                        mean_time_ms=0,
+                        median_time_ms=0,
+                        ops_per_sec=0,
+                        available=False,
+                        error=str(e),
+                    )
+                )
+
+        except ImportError as e:
+            print(f"  ⚠ liboqs-python not available: {e}")
+            self.results.append(
+                BenchmarkResult(
+                    implementation="liboqs-python",
+                    operation="ML-DSA-65",
+                    iterations=0,
+                    mean_time_ms=0,
+                    median_time_ms=0,
+                    ops_per_sec=0,
+                    available=False,
+                    error="liboqs-python not installed",
+                )
             )
-        )
+        except Exception as e:
+            print(f"  ❌ Error benchmarking liboqs: {e}")
+
+    def benchmark_hybrid_openssl_liboqs(self):
+        """Benchmark hybrid Ed25519 (OpenSSL) + ML-DSA-65 (liboqs)"""
+        print("\n" + "=" * 70)
+        print("HYBRID: OpenSSL Ed25519 + liboqs ML-DSA-65")
+        print("=" * 70)
+
+        try:
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+            import oqs
+
+            test_data = b"Test message for benchmarking performance" * 10
+
+            # Setup Ed25519
+            ed_private = Ed25519PrivateKey.generate()
+            ed_public = ed_private.public_key()
+
+            # Setup ML-DSA-65
+            ml_signer = oqs.Signature("ML-DSA-65")
+            ml_public = ml_signer.generate_keypair()
+
+            # Hybrid sign (both signatures)
+            def hybrid_sign():
+                ed_private.sign(test_data)
+                ml_signer.sign(test_data)
+
+            # Hybrid verify (both verifications)
+            ed_sig = ed_private.sign(test_data)
+            ml_sig = ml_signer.sign(test_data)
+
+            def hybrid_verify():
+                ed_public.verify(ed_sig, test_data)
+                ml_signer.verify(test_data, ml_sig, ml_public)
+
+            self.results.append(
+                self.benchmark_operation("OpenSSL+liboqs", "Hybrid Sign", hybrid_sign)
+            )
+            self.results.append(
+                self.benchmark_operation("OpenSSL+liboqs", "Hybrid Verify", hybrid_verify)
+            )
+
+        except Exception as e:
+            print(f"  ⚠ Hybrid benchmark error: {e}")
+            self.results.append(
+                BenchmarkResult(
+                    implementation="OpenSSL+liboqs",
+                    operation="Hybrid",
+                    iterations=0,
+                    mean_time_ms=0,
+                    median_time_ms=0,
+                    ops_per_sec=0,
+                    available=False,
+                    error=str(e),
+                )
+            )
 
     def calculate_comparative_metrics(self) -> Dict:
         """Calculate comparative metrics between implementations"""
@@ -356,6 +454,7 @@ def main():
     bench.benchmark_ava_guardian()
     bench.benchmark_cryptography_ed25519()
     bench.benchmark_liboqs_direct()
+    bench.benchmark_hybrid_openssl_liboqs()
 
     # Calculate and display comparisons
     comparisons = bench.calculate_comparative_metrics()
