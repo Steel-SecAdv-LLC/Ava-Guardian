@@ -1719,6 +1719,68 @@ def export_public_keys(kms: KeyManagementSystem, output_dir: Path) -> None:
 # ============================================================================
 
 
+# Domain separation constants for hybrid signature binding
+# These ensure Ed25519 and Dilithium sign identical, versioned messages
+SIGNATURE_DOMAIN_PREFIX = b"AG-PKG-v2"  # Ava Guardian Package v2
+SIGNATURE_FORMAT_V1 = "1.0.0"  # Legacy: signs raw content_hash
+SIGNATURE_FORMAT_V2 = "2.0.0"  # Current: signs domain-separated message
+
+
+def build_signature_message(
+    content_hash: bytes,
+    ethical_hash: bytes,
+    version: str = SIGNATURE_FORMAT_V2,
+) -> bytes:
+    """
+    Build domain-separated message for hybrid signature binding.
+
+    This function constructs a versioned, domain-separated message that both
+    Ed25519 and Dilithium sign. Domain separation prevents signature replay
+    attacks and ensures both algorithms sign identical, well-structured data.
+
+    Security Properties:
+    --------------------
+    1. Domain separation: Prefix prevents cross-protocol attacks
+    2. Version binding: Signatures are bound to specific format version
+    3. Ethical binding: Signatures cover the ethical vector hash
+    4. Algorithm agnostic: Same message for both Ed25519 and Dilithium
+
+    Message Structure (v2):
+    -----------------------
+    SIGNATURE_DOMAIN_PREFIX || version_bytes || content_hash || ethical_hash
+
+    Where:
+    - SIGNATURE_DOMAIN_PREFIX = b"AG-PKG-v2" (9 bytes)
+    - version_bytes = UTF-8 encoded version string (5 bytes for "2.0.0")
+    - content_hash = SHA3-256 hash of canonical DNA encoding (32 bytes)
+    - ethical_hash = SHA3-256 hash of ethical vector (32 bytes)
+
+    Total: 78 bytes for v2 format
+
+    Args:
+        content_hash: SHA3-256 hash of canonical DNA encoding (32 bytes)
+        ethical_hash: SHA3-256 hash of ethical vector (32 bytes)
+        version: Signature format version (default: "2.0.0")
+
+    Returns:
+        Domain-separated message bytes for signing
+
+    Raises:
+        ValueError: If content_hash or ethical_hash are wrong length
+    """
+    if len(content_hash) != 32:
+        raise ValueError(f"content_hash must be 32 bytes, got {len(content_hash)}")
+    if len(ethical_hash) != 32:
+        raise ValueError(f"ethical_hash must be 32 bytes, got {len(ethical_hash)}")
+
+    version_bytes = version.encode("utf-8")
+
+    # Construct domain-separated message
+    message = SIGNATURE_DOMAIN_PREFIX + version_bytes + content_hash + ethical_hash
+
+    return message
+
+
 @dataclass
 class CryptoPackage:
     """
@@ -1736,8 +1798,20 @@ class CryptoPackage:
         "author": "Package creator",
         "ed25519_pubkey": "Ed25519 public key (hex)",
         "dilithium_pubkey": "Dilithium public key (hex)",
-        "version": "Package format version"
+        "version": "Package format version",
+        "signature_format_version": "Signature binding format (1.0.0 or 2.0.0)"
     }
+
+    Signature Format Versions:
+    --------------------------
+    - 1.0.0 (legacy): Ed25519 and Dilithium sign raw content_hash
+    - 2.0.0 (current): Ed25519 and Dilithium sign domain-separated message:
+      b"AG-PKG-v2" || version || content_hash || ethical_hash
+
+    The v2 format provides:
+    - Domain separation to prevent cross-protocol signature replay
+    - Ethical binding to cryptographically tie signatures to policy
+    - Version binding to prevent downgrade attacks
 
     Verification Process:
     ---------------------
@@ -1764,6 +1838,7 @@ class CryptoPackage:
     ethical_vector: Dict[str, float]  # 12 Ethical Pillars
     ethical_hash: str  # SHA3-256 hash of ethical vector (hex)
     quantum_signatures_enabled: bool = True  # False if Dilithium unavailable
+    signature_format_version: str = SIGNATURE_FORMAT_V2  # Signature binding format
 
 
 def create_crypto_package(
@@ -1815,15 +1890,27 @@ def create_crypto_package(
         duration_ms = (time.time() - start_time) * 1000
         monitor.monitor_crypto_operation("hmac_auth", duration_ms)
 
-    # 3. Sign with Ed25519
+    # 3. Compute ethical hash BEFORE signing (needed for domain-separated message)
+    ethical_vector = kms.ethical_vector.copy()
+    ethical_json = json.dumps(ethical_vector, sort_keys=True)
+    ethical_hash_bytes = hashlib.sha3_256(ethical_json.encode()).digest()
+    ethical_hash_hex = ethical_hash_bytes.hex()
+
+    # 4. Build domain-separated message for hybrid signature binding (v2 format)
+    # Both Ed25519 and Dilithium sign this identical message
+    signature_message = build_signature_message(
+        content_hash, ethical_hash_bytes, SIGNATURE_FORMAT_V2
+    )
+
+    # 5. Sign with Ed25519 (domain-separated message)
     if monitor:
         start_time = time.time()
-    ed25519_sig = ed25519_sign(content_hash, kms.ed25519_keypair.private_key)
+    ed25519_sig = ed25519_sign(signature_message, kms.ed25519_keypair.private_key)
     if monitor:
         duration_ms = (time.time() - start_time) * 1000
         monitor.monitor_crypto_operation("ed25519_sign", duration_ms)
 
-    # 4. Sign with Dilithium (if available)
+    # 6. Sign with Dilithium (domain-separated message, if available)
     dilithium_sig = None
     dilithium_pubkey = None
     quantum_signatures_enabled = False
@@ -1831,7 +1918,7 @@ def create_crypto_package(
         if monitor:
             start_time = time.time()
         try:
-            dilithium_sig = dilithium_sign(content_hash, kms.dilithium_keypair.private_key)
+            dilithium_sig = dilithium_sign(signature_message, kms.dilithium_keypair.private_key)
             dilithium_pubkey = kms.dilithium_keypair.public_key.hex()
             quantum_signatures_enabled = True
         except QuantumSignatureUnavailableError:
@@ -1840,22 +1927,17 @@ def create_crypto_package(
             duration_ms = (time.time() - start_time) * 1000
             monitor.monitor_crypto_operation("dilithium_sign", duration_ms)
 
-    # 5. Generate timestamp
+    # 7. Generate timestamp
     timestamp = datetime.now(timezone.utc).isoformat()
 
-    # 6. Get RFC 3161 timestamp (optional)
+    # 8. Get RFC 3161 timestamp (optional)
     timestamp_token = None
     if use_rfc3161:
         token = get_rfc3161_timestamp(content_hash, tsa_url)
         if token:
             timestamp_token = base64.b64encode(token).decode("ascii")
 
-    # 7. Include ethical vector and compute its hash
-    ethical_vector = kms.ethical_vector.copy()
-    ethical_json = json.dumps(ethical_vector, sort_keys=True)
-    ethical_hash = hashlib.sha3_256(ethical_json.encode()).hexdigest()
-
-    # 8. Record package metadata for pattern analysis
+    # 9. Record package metadata for pattern analysis
     if monitor:
         # Count DNA codes (split by newline or comma)
         code_count = len([c.strip() for c in dna_codes.split("\n") if c.strip()])
@@ -1879,8 +1961,9 @@ def create_crypto_package(
         dilithium_pubkey=dilithium_pubkey,
         version="1.0.0",
         ethical_vector=ethical_vector,
-        ethical_hash=ethical_hash,
+        ethical_hash=ethical_hash_hex,
         quantum_signatures_enabled=quantum_signatures_enabled,
+        signature_format_version=SIGNATURE_FORMAT_V2,
     )
 
 
@@ -1895,7 +1978,7 @@ def _verify_timestamp_value(timestamp_str: str) -> bool:
 
 
 def _verify_dilithium_with_policy(
-    computed_hash: bytes,
+    signature_message: bytes,
     package: CryptoPackage,
     monitor: Optional["AvaGuardianMonitor"],
     require_quantum_signatures: bool,
@@ -1912,6 +1995,13 @@ def _verify_dilithium_with_policy(
     The caller is responsible for choosing the appropriate policy. Use the
     verify_crypto_package() function which provides smart defaulting based on
     DILITHIUM_AVAILABLE.
+
+    Args:
+        signature_message: The message that was signed (either raw content_hash
+            for v1 packages or domain-separated message for v2 packages)
+        package: CryptoPackage to verify
+        monitor: Optional security monitor
+        require_quantum_signatures: Policy flag for enforcement
 
     Returns:
         True if valid, False if invalid, None if not present/unsupported.
@@ -1934,7 +2024,7 @@ def _verify_dilithium_with_policy(
     start_time = time.time() if monitor else None
     try:
         result = dilithium_verify(
-            computed_hash,
+            signature_message,
             bytes.fromhex(package.dilithium_signature),
             bytes.fromhex(package.dilithium_pubkey),
         )
@@ -1976,6 +2066,13 @@ def verify_crypto_package(
     4. Dilithium signature - Quantum-resistant signature (NIST FIPS 204)
     5. Timestamp validity - Temporal integrity check
     6. RFC 3161 timestamp - Cryptographic proof of existence (RFC 3161)
+
+    Signature Format Compatibility:
+    -------------------------------
+    This function supports both v1 (legacy) and v2 (domain-separated) signature
+    formats for backward compatibility:
+    - v1 (1.0.0): Signatures over raw content_hash
+    - v2 (2.0.0): Signatures over domain-separated message with ethical binding
 
     Args:
         dna_codes: Original DNA codes
@@ -2035,9 +2132,23 @@ def verify_crypto_package(
         if monitor and start_time is not None:
             monitor.monitor_crypto_operation("hmac_verify", (time.time() - start_time) * 1000)
 
+        # Determine signature message based on package format version
+        # v1 (legacy): signatures over raw content_hash
+        # v2 (current): signatures over domain-separated message
+        sig_format = getattr(package, "signature_format_version", SIGNATURE_FORMAT_V1)
+        if sig_format == SIGNATURE_FORMAT_V2:
+            # v2: Build domain-separated message with ethical binding
+            ethical_hash_bytes = bytes.fromhex(package.ethical_hash)
+            signature_message = build_signature_message(
+                computed_hash, ethical_hash_bytes, SIGNATURE_FORMAT_V2
+            )
+        else:
+            # v1 (legacy): Use raw content_hash
+            signature_message = computed_hash
+
         start_time = time.time() if monitor else None
         results["ed25519"] = ed25519_verify(
-            computed_hash,
+            signature_message,
             bytes.fromhex(package.ed25519_signature),
             bytes.fromhex(package.ed25519_pubkey),
         )
@@ -2045,7 +2156,7 @@ def verify_crypto_package(
             monitor.monitor_crypto_operation("ed25519_verify", (time.time() - start_time) * 1000)
 
         results["dilithium"] = _verify_dilithium_with_policy(
-            computed_hash, package, monitor, require_quantum_signatures
+            signature_message, package, monitor, require_quantum_signatures
         )
 
         results["timestamp"] = _verify_timestamp_value(package.timestamp)

@@ -15,15 +15,29 @@ from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from dna_guardian_secure import (
+    DILITHIUM_AVAILABLE,
+    SIGNATURE_FORMAT_V2,
+    build_signature_message,
     canonical_hash_dna,
+    create_crypto_package,
     ed25519_sign,
     ed25519_verify,
     generate_ed25519_keypair,
+    generate_key_management_system,
     hmac_authenticate,
     hmac_verify,
     length_prefixed_encode,
     secure_wipe,
+    verify_crypto_package,
 )
+
+# Import Dilithium functions if available
+if DILITHIUM_AVAILABLE:
+    from dna_guardian_secure import (
+        dilithium_sign,
+        dilithium_verify,
+        generate_dilithium_keypair,
+    )
 
 
 class TestLengthPrefixFuzzing:
@@ -180,3 +194,180 @@ class TestSecureWipeFuzzing:
 
         assert all(b == 0 for b in ba), "All bytes must be zeroed"
         assert len(ba) == len(data), "Length must be preserved"
+
+
+class TestDomainSeparationFuzzing:
+    """Fuzz tests for domain-separated signature message building."""
+
+    @given(
+        st.binary(min_size=32, max_size=32),  # content_hash (SHA3-256)
+        st.binary(min_size=32, max_size=32),  # ethical_hash (SHA3-256)
+    )
+    @settings(max_examples=200, deadline=None)
+    def test_signature_message_deterministic(self, content_hash, ethical_hash):
+        """Same inputs always produce same signature message."""
+        msg1 = build_signature_message(content_hash, ethical_hash, SIGNATURE_FORMAT_V2)
+        msg2 = build_signature_message(content_hash, ethical_hash, SIGNATURE_FORMAT_V2)
+        assert msg1 == msg2, "Signature message must be deterministic"
+
+    @given(
+        st.binary(min_size=32, max_size=32),
+        st.binary(min_size=32, max_size=32),
+    )
+    @settings(max_examples=200, deadline=None)
+    def test_signature_message_length(self, content_hash, ethical_hash):
+        """Signature message has expected length (78 bytes for v2)."""
+        msg = build_signature_message(content_hash, ethical_hash, SIGNATURE_FORMAT_V2)
+        # 9 (prefix) + 5 (version) + 32 (content_hash) + 32 (ethical_hash) = 78
+        assert len(msg) == 78, f"Expected 78 bytes, got {len(msg)}"
+
+    @given(
+        st.binary(min_size=32, max_size=32),
+        st.binary(min_size=32, max_size=32),
+        st.binary(min_size=32, max_size=32),
+        st.binary(min_size=32, max_size=32),
+    )
+    @settings(max_examples=200, deadline=None)
+    def test_different_inputs_different_messages(self, ch1, eh1, ch2, eh2):
+        """Different inputs produce different signature messages."""
+        assume(ch1 != ch2 or eh1 != eh2)
+        msg1 = build_signature_message(ch1, eh1, SIGNATURE_FORMAT_V2)
+        msg2 = build_signature_message(ch2, eh2, SIGNATURE_FORMAT_V2)
+        assert msg1 != msg2, "Different inputs must produce different messages"
+
+    @given(st.binary(min_size=32, max_size=32))
+    @settings(max_examples=100, deadline=None)
+    def test_signature_message_contains_domain_prefix(self, content_hash):
+        """Signature message starts with domain prefix."""
+        ethical_hash = secrets.token_bytes(32)
+        msg = build_signature_message(content_hash, ethical_hash, SIGNATURE_FORMAT_V2)
+        assert msg.startswith(b"AG-PKG-v2"), "Message must start with domain prefix"
+
+    @given(st.binary(min_size=32, max_size=32))
+    @settings(max_examples=100, deadline=None)
+    def test_ed25519_signs_domain_separated_message(self, content_hash):
+        """Ed25519 can sign and verify domain-separated messages."""
+        ethical_hash = secrets.token_bytes(32)
+        msg = build_signature_message(content_hash, ethical_hash, SIGNATURE_FORMAT_V2)
+
+        kp = generate_ed25519_keypair()
+        sig = ed25519_sign(msg, kp.private_key)
+        assert ed25519_verify(
+            msg, sig, kp.public_key
+        ), "Ed25519 must verify domain-separated message"
+
+
+class TestDilithiumFuzzing:
+    """Fuzz tests for Dilithium (ML-DSA-65) signatures."""
+
+    @given(st.binary(max_size=10000))
+    @settings(max_examples=50, deadline=None)
+    def test_dilithium_sign_verify_roundtrip(self, message):
+        """Dilithium signatures verify correctly."""
+        if not DILITHIUM_AVAILABLE:
+            return  # Skip if Dilithium not available
+
+        kp = generate_dilithium_keypair()
+        sig = dilithium_sign(message, kp.private_key)
+        assert dilithium_verify(
+            message, sig, kp.public_key
+        ), "Valid Dilithium signature must verify"
+
+    @given(st.binary(max_size=1000))
+    @settings(max_examples=30, deadline=None)
+    def test_dilithium_modified_signature_fails(self, message):
+        """Modified Dilithium signatures fail verification."""
+        if not DILITHIUM_AVAILABLE:
+            return
+
+        kp = generate_dilithium_keypair()
+        sig = bytearray(dilithium_sign(message, kp.private_key))
+        sig[0] ^= 0xFF
+        assert not dilithium_verify(message, bytes(sig), kp.public_key), "Modified sig must fail"
+
+    @given(st.binary(max_size=1000))
+    @settings(max_examples=30, deadline=None)
+    def test_dilithium_wrong_key_fails(self, message):
+        """Wrong Dilithium public key fails verification."""
+        if not DILITHIUM_AVAILABLE:
+            return
+
+        kp1 = generate_dilithium_keypair()
+        kp2 = generate_dilithium_keypair()
+        sig = dilithium_sign(message, kp1.private_key)
+        assert not dilithium_verify(message, sig, kp2.public_key), "Wrong key must fail"
+
+    @given(st.binary(min_size=32, max_size=32))
+    @settings(max_examples=30, deadline=None)
+    def test_dilithium_signs_domain_separated_message(self, content_hash):
+        """Dilithium can sign and verify domain-separated messages."""
+        if not DILITHIUM_AVAILABLE:
+            return
+
+        ethical_hash = secrets.token_bytes(32)
+        msg = build_signature_message(content_hash, ethical_hash, SIGNATURE_FORMAT_V2)
+
+        kp = generate_dilithium_keypair()
+        sig = dilithium_sign(msg, kp.private_key)
+        assert dilithium_verify(
+            msg, sig, kp.public_key
+        ), "Dilithium must verify domain-separated message"
+
+
+class TestCryptoPackageFuzzing:
+    """Fuzz tests for complete crypto package creation and verification."""
+
+    @given(
+        st.text(min_size=1, max_size=500, alphabet="ACGT"),
+        st.lists(
+            st.tuples(
+                st.floats(min_value=0.1, max_value=10, allow_nan=False, allow_infinity=False),
+                st.floats(min_value=0.1, max_value=10, allow_nan=False, allow_infinity=False),
+            ),
+            min_size=1,
+            max_size=10,
+        ),
+    )
+    @settings(max_examples=30, deadline=None)
+    def test_package_roundtrip(self, dna_codes, helix_params):
+        """Created packages verify successfully."""
+        kms = generate_key_management_system("fuzz_test")
+        pkg = create_crypto_package(dna_codes, helix_params, kms, "fuzz_author")
+
+        results = verify_crypto_package(
+            dna_codes,
+            helix_params,
+            pkg,
+            kms.hmac_key,
+            require_quantum_signatures=kms.quantum_signatures_enabled,
+        )
+
+        assert results["content_hash"], "Content hash must verify"
+        assert results["hmac"], "HMAC must verify"
+        assert results["ed25519"], "Ed25519 signature must verify"
+        if kms.quantum_signatures_enabled:
+            assert results["dilithium"], "Dilithium signature must verify when enabled"
+
+    @given(
+        st.text(min_size=1, max_size=100, alphabet="ACGT"),
+        st.text(min_size=1, max_size=100, alphabet="ACGT"),
+    )
+    @settings(max_examples=20, deadline=None)
+    def test_tampered_dna_fails(self, dna1, dna2):
+        """Verification fails when DNA codes are tampered."""
+        assume(dna1 != dna2)
+        params = [(1.0, 1.0)]
+        kms = generate_key_management_system("fuzz_test")
+        pkg = create_crypto_package(dna1, params, kms, "fuzz_author")
+
+        results = verify_crypto_package(
+            dna2,  # Different DNA
+            params,
+            pkg,
+            kms.hmac_key,
+            require_quantum_signatures=False,
+        )
+
+        assert not results["content_hash"], "Tampered DNA must fail content hash"
+        assert not results["hmac"], "Tampered DNA must fail HMAC"
+        assert not results["ed25519"], "Tampered DNA must fail Ed25519"
