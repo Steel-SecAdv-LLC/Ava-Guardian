@@ -226,10 +226,12 @@ Future-proof cryptography:
 
 ## Use Cases by Sector 🌐
 
+> **Experimental Research Areas:** The use cases below represent targeted experimental applications where AG♱'s quantum-resistant cryptography may provide value. These are research-grade implementations requiring independent validation before deployment in regulated, clinical, or mission-critical environments.
+
 <details>
 <summary><strong>Real-world scenarios (click to expand)</strong></summary>
 
-### Humanitarian and Conservation 🌎
+### Humanitarian and Conservation 🌎 *(Experimental)*
 
 **Unique Value:** Protection of sensitive field data with runtime attack detection (Not approved for clinical, medical, or regulated government deployment without independent audit):
 
@@ -238,7 +240,7 @@ Future-proof cryptography:
 - **Whistleblower Protection**: Document signing and verification that remains secure for 50+ years under "harvest now, decrypt later" quantum threats.
 - **Sensitive Record Preservation**: Ethical framework ensures respectful handling of records for victims and individuals, with complete audit trails.
 
-### Government and Defense
+### Government and Defense *(Experimental)*
 
 **Unique Value:** Classified data with quantum resistance and side-channel attack detection
 
@@ -248,7 +250,7 @@ Future-proof cryptography:
 - **Integrity Verification**: Mathematical invariant checking catches sophisticated tampering beyond standard checksums.
 - **Zero-Trust Environments**: Runtime monitoring provides continuous verification of cryptographic operations.
 
-### Financial Services
+### Financial Services *(Experimental)*
 
 **Unique Value:** Transaction security with real-time anomaly detection
 
@@ -258,7 +260,7 @@ Future-proof cryptography:
 - **Audit Compliance**: Complete cryptographic audit trail with ethical constraint enforcement.
 - **Long-term Archival**: Financial records with 50+ year security guarantees.
 
-### Healthcare
+### Healthcare *(Experimental)*
 
 **Unique Value:** HIPAA-compliant encryption with sophisticated integrity monitoring
 
@@ -269,7 +271,7 @@ Future-proof cryptography:
 - **Research Data**: Sensitive research data with ethical policy enforcement and audit trails.
 - **Telemedicine**: Secure video consultations with hybrid classical+quantum key exchange.
 
-### Critical Infrastructure
+### Critical Infrastructure *(Experimental)*
 
 **Unique Value:** SCADA/ICS security with active attack detection
 
@@ -280,7 +282,7 @@ Future-proof cryptography:
 - **Active Monitoring**: 3R system provides real-time alerts if cryptographic operations show attack patterns.
 - **Legacy System Protection**: Wrapper for older systems needing quantum resistance without full replacement.
 
-### Blockchain and Cryptocurrency
+### Blockchain and Cryptocurrency *(Experimental)*
 
 **Unique Value:** Post-quantum secure signatures with high-performance verification
 
