@@ -29,7 +29,13 @@ import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
+
+if TYPE_CHECKING:
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+        Ed25519PrivateKey,
+        Ed25519PublicKey,
+    )
 
 from ava_guardian.pqc_backends import (
     DILITHIUM_AVAILABLE,
@@ -353,12 +359,20 @@ class Ed25519Provider(CryptoProvider):
             metadata={"backend": "cryptography", "key_size": len(pk_bytes)},
         )
 
-    def sign(self, message: bytes, secret_key: bytes) -> Signature:
+    def sign(self, message: bytes, secret_key: "Union[bytes, Ed25519PrivateKey]") -> Signature:
         """
         Sign message with Ed25519.
 
         Performance: Now optimized to accept both bytes and key objects.
         For high-throughput scenarios, pass Ed25519PrivateKey object.
+
+        Args:
+            message: Data to sign
+            secret_key: Either 32-byte Ed25519 private key (bytes) OR
+                       Ed25519PrivateKey object (for 2x performance)
+
+        Returns:
+            Signature object with Ed25519 signature
         """
         from cryptography.hazmat.primitives.asymmetric import ed25519
 
@@ -378,12 +392,23 @@ class Ed25519Provider(CryptoProvider):
             metadata={"signature_size": len(sig_bytes)},
         )
 
-    def verify(self, message: bytes, signature: bytes, public_key: bytes) -> bool:
+    def verify(
+        self, message: bytes, signature: bytes, public_key: "Union[bytes, Ed25519PublicKey]"
+    ) -> bool:
         """
         Verify Ed25519 signature.
 
         Performance: Now optimized to accept both bytes and key objects.
         For high-throughput scenarios, pass Ed25519PublicKey object.
+
+        Args:
+            message: Original data that was signed
+            signature: 64-byte Ed25519 signature
+            public_key: Either 32-byte Ed25519 public key (bytes) OR
+                       Ed25519PublicKey object (for better performance)
+
+        Returns:
+            True if signature is valid, False otherwise
         """
         from cryptography.exceptions import InvalidSignature
         from cryptography.hazmat.primitives.asymmetric import ed25519

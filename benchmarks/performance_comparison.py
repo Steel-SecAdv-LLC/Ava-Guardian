@@ -17,8 +17,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from dna_guardian_secure import ed25519_sign, ed25519_verify, generate_ed25519_keypair
-from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives.asymmetric import ed25519  # noqa: E402
+
+from dna_guardian_secure import (  # noqa: E402
+    ed25519_sign,
+    ed25519_verify,
+    generate_ed25519_keypair,
+)
 
 
 def benchmark_bytes_approach(iterations=1000):
@@ -103,7 +108,7 @@ def main():
     print("=" * 70)
     print("Ed25519 Performance: Bytes vs Key Objects")
     print("=" * 70)
-    print(f"Testing 1,000 iterations each...")
+    print("Testing 1,000 iterations each...")
 
     bytes_sign, bytes_verify = benchmark_bytes_approach()
     keyobj_sign, keyobj_verify = benchmark_keyobject_approach()
@@ -115,12 +120,12 @@ def main():
     sign_speedup = keyobj_sign / bytes_sign
     verify_speedup = keyobj_verify / bytes_verify
 
-    print(f"\nSign Performance:")
+    print("\nSign Performance:")
     print(f"  Bytes:      {bytes_sign:>10,.2f} ops/sec")
     print(f"  Key Object: {keyobj_sign:>10,.2f} ops/sec")
     print(f"  Speedup:    {sign_speedup:>10.2f}x")
 
-    print(f"\nVerify Performance:")
+    print("\nVerify Performance:")
     print(f"  Bytes:      {bytes_verify:>10,.2f} ops/sec")
     print(f"  Key Object: {keyobj_verify:>10,.2f} ops/sec")
     print(f"  Speedup:    {verify_speedup:>10.2f}x")
@@ -128,7 +133,8 @@ def main():
     print("\n" + "=" * 70)
     print("RECOMMENDATION")
     print("=" * 70)
-    print("""
+    print(
+        """
 For high-throughput scenarios (>10,000 signatures/sec):
 
   # Reconstruct key objects ONCE
@@ -140,7 +146,8 @@ For high-throughput scenarios (>10,000 signatures/sec):
   for message in messages:
       signature = ed25519_sign(message, private_key)  # Fast!
       valid = ed25519_verify(message, signature, public_key)  # Fast!
-""")
+"""
+    )
 
 
 if __name__ == "__main__":

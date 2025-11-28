@@ -585,9 +585,7 @@ def generate_ed25519_keypair(seed: Optional[bytes] = None) -> Ed25519KeyPair:
     return Ed25519KeyPair(private_key=private_bytes, public_key=public_bytes)
 
 
-def ed25519_sign(
-    message: bytes, private_key: Union[bytes, ed25519.Ed25519PrivateKey]
-) -> bytes:
+def ed25519_sign(message: bytes, private_key: Union[bytes, ed25519.Ed25519PrivateKey]) -> bytes:
     """
     Sign message with Ed25519 (deterministic).
 

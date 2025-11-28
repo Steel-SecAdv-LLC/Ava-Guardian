@@ -313,8 +313,8 @@ class ComparativeBenchmark:
         print("=" * 70)
 
         try:
-            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
             import oqs
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
             test_data = b"Test message for benchmarking performance" * 10
 
@@ -388,14 +388,15 @@ class ComparativeBenchmark:
                 continue
 
             print(f"\n{operation}:")
-            print(f"  Ava Guardian: {ava_result.mean_time_ms:.4f}ms ({ava_result.ops_per_sec:.2f} ops/sec)")
+            print(
+                f"  Ava Guardian: {ava_result.mean_time_ms:.4f}ms ({ava_result.ops_per_sec:.2f} ops/sec)"
+            )
 
             for result in results:
                 if result.implementation == "Ava Guardian":
                     continue
 
                 slowdown = result.mean_time_ms / ava_result.mean_time_ms
-                speedup = ava_result.ops_per_sec / result.ops_per_sec
 
                 print(
                     f"  {result.implementation}: {result.mean_time_ms:.4f}ms ({result.ops_per_sec:.2f} ops/sec) - {slowdown:.2f}x vs Ava Guardian"
@@ -460,7 +461,7 @@ def main():
     comparisons = bench.calculate_comparative_metrics()
 
     # Save results
-    results = bench.save_results()
+    bench.save_results()
 
     # Summary
     print("\n" + "=" * 70)
