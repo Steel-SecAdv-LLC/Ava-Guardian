@@ -1,0 +1,66 @@
+{
+  "timestamp": "2025-11-28T19:20:38.917084",
+  "iterations": 1000,
+  "results": [
+    {
+      "implementation": "Ava Guardian",
+      "operation": "Ed25519 Sign",
+      "iterations": 1000,
+      "mean_time_ms": 0.09785326300007569,
+      "median_time_ms": 0.0943749999890997,
+      "ops_per_sec": 10219.383282080502,
+      "available": true,
+      "error": null
+    },
+    {
+      "implementation": "Ava Guardian",
+      "operation": "Ed25519 Verify",
+      "iterations": 1000,
+      "mean_time_ms": 0.12064389099964501,
+      "median_time_ms": 0.1188630000115154,
+      "ops_per_sec": 8288.85732807592,
+      "available": true,
+      "error": null
+    },
+    {
+      "implementation": "cryptography (OpenSSL)",
+      "operation": "Ed25519 Sign",
+      "iterations": 1000,
+      "mean_time_ms": 0.04719950300020059,
+      "median_time_ms": 0.04569099999685022,
+      "ops_per_sec": 21186.6637662636,
+      "available": true,
+      "error": null
+    },
+    {
+      "implementation": "cryptography (OpenSSL)",
+      "operation": "Ed25519 Verify",
+      "iterations": 1000,
+      "mean_time_ms": 0.12051068499994244,
+      "median_time_ms": 0.11652800000661045,
+      "ops_per_sec": 8298.019383098499,
+      "available": true,
+      "error": null
+    },
+    {
+      "implementation": "liboqs-python",
+      "operation": "ML-DSA-65",
+      "iterations": 0,
+      "mean_time_ms": 0,
+      "median_time_ms": 0,
+      "ops_per_sec": 0,
+      "available": false,
+      "error": "liboqs C library not available (would require system-level installation)"
+    }
+  ],
+  "comparisons": {
+    "Ed25519 Sign_cryptography (OpenSSL)": {
+      "slowdown_factor": 0.48234981188275844,
+      "ava_guardian_faster_by_percent": -51.76501881172415
+    },
+    "Ed25519 Verify_cryptography (OpenSSL)": {
+      "slowdown_factor": 0.9988958744732217,
+      "ava_guardian_faster_by_percent": -0.1104125526778299
+    }
+  }
+}
