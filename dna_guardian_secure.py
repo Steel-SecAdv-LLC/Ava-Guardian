@@ -1476,6 +1476,9 @@ DNA_CODES_INDIVIDUAL = [
     "Γ19L11ϖ_XΔHΛX_∞19A84♰",
 ]
 
+# Newline-separated string of all DNA codes (for demo and testing)
+MASTER_DNA_CODES_STR = "\n".join(DNA_CODES_INDIVIDUAL)
+
 
 # ============================================================================
 # KEY MANAGEMENT SYSTEM
