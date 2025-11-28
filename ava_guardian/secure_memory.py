@@ -144,6 +144,7 @@ def secure_memzero(data: Union[bytearray, memoryview]) -> None:
         return
 
     if _HAS_NACL:
+        assert _nacl is not None  # Type narrowing for mypy
         # Use libsodium's secure zeroing
         # nacl.bindings doesn't expose sodium_memzero directly,
         # so we use their utils or fall back to overwrite
@@ -214,6 +215,7 @@ def secure_mlock(data: Union[bytes, bytearray, memoryview]) -> bool:
         )
         return False
 
+    assert _nacl is not None  # Type narrowing for mypy
     try:
         # pynacl doesn't directly expose mlock, but we can use it through
         # nacl.bindings if available, or return False
@@ -246,6 +248,7 @@ def secure_munlock(data: Union[bytes, bytearray, memoryview]) -> bool:
     if not _HAS_NACL:
         return False
 
+    assert _nacl is not None  # Type narrowing for mypy
     try:
         if hasattr(_nacl.bindings, "sodium_munlock"):
             _nacl.bindings.sodium_munlock(data)
@@ -280,8 +283,9 @@ def constant_time_compare(a: bytes, b: bytes) -> bool:
         return False
 
     if _HAS_NACL:
+        assert _nacl is not None  # Type narrowing for mypy
         try:
-            return _nacl.bindings.sodium_memcmp(a, b)
+            return bool(_nacl.bindings.sodium_memcmp(a, b))
         except (AttributeError, TypeError):
             pass
 
@@ -315,7 +319,8 @@ def secure_random_bytes(size: int) -> bytes:
         return b""
 
     if _HAS_NACL:
-        return _nacl.utils.random(size)
+        assert _nacl is not None  # Type narrowing for mypy
+        return bytes(_nacl.utils.random(size))
 
     # Fallback to os.urandom
     import os
@@ -457,6 +462,7 @@ def _init_libsodium() -> bool:
     if not _HAS_NACL:
         return False
 
+    assert _nacl is not None  # Type narrowing for mypy
     try:
         # pynacl initializes libsodium automatically
         # Just verify it's working
@@ -483,6 +489,7 @@ def get_status() -> dict:
     """
     mlock_available = False
     if _HAS_NACL:
+        assert _nacl is not None  # Type narrowing for mypy
         mlock_available = hasattr(_nacl.bindings, "sodium_mlock")
 
     return {

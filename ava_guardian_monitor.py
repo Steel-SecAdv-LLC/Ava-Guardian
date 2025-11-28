@@ -49,9 +49,9 @@ AI Co-Architects:
 import ast
 import time
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Deque, Dict, List, Optional, Tuple, Union
+from typing import Any, Deque, Dict, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -453,7 +453,6 @@ class ResonanceTimingMonitor:
         # Detect statistical anomaly using both Z-score and MAD
         is_anomaly = False
         deviation = 0.0
-        detection_method = "z-score"
 
         # Numerical tolerance for floating-point threshold comparisons
         # This prevents flaky behavior when deviation is very close to threshold
@@ -470,7 +469,6 @@ class ResonanceTimingMonitor:
         # Secondary: MAD-based detection (more robust to outliers)
         if self.use_ewma and self._ewma_stats[operation].is_anomaly_mad(duration_ms):
             is_anomaly = True
-            detection_method = "mad"
 
         if is_anomaly:
             # Critical threshold: 5.0σ with same epsilon tolerance
