@@ -31,7 +31,7 @@
 **Author/Inventor:** Andrew E. A.  
 **Contact:** steel.sa.llc@gmail.com  
 **License:** Apache License 2.0  
-**Version:** 1.0.0
+**Version:** 1.1.0
 
 **AI Co-Architects:** Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
@@ -53,7 +53,7 @@ Novel in assimilation, the system combines cutting-edge NIST-approved post-quant
 > - Constant-time implementation verification for side-channel resistance
 >
 > **Status:** Experimental | Community-tested | Not externally audited
-> **Last Updated:** 2025-11-27
+> **Last Updated:** 2025-11-28
 > **Audit Status:** Community-tested, not externally audited. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for self-assessment details.
 >
 > See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed security properties and threat model.
@@ -1098,6 +1098,6 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. THE AUTHORS AND 
 
 <img src="assets/ama_logo.png" alt="AMA" height="24">
 
-*Last updated: 2025-11-27*
+*Last updated: 2025-11-28*
 
 </div>
