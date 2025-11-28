@@ -39,7 +39,7 @@
 
 ## Executive Summary
 
-Ava Guardian ♱ (AG♱) is a secure, multi-language cryptographic security system designed to protect people, data, and networks against both classical and quantum threats. Built on a foundation of mathematically rigorous post-quantum cryptography (PQC), AG♱ delivers security-hardened features with exceptional performance.
+Ava Guardian ♱ (AG♱) is an experimental hybrid Ed25519 + Dilithium (ML-DSA-65) framework for quantum-resistant integrity protection. Research-grade, not externally audited. Providing secure, multi-language cryptographic security system designed to protect people, data, and networks against both classical and quantum threats. Built on a foundation of mathematically rigorous post-quantum cryptography (PQC), AG♱ delivers security-hardened features with exceptional performance.
 
 Novel in assimilation, the system combines cutting-edge NIST-approved post-quantum algorithms with a unique 3R runtime security monitoring framework, creating a defense-in-depth architecture that provides unprecedented visibility into cryptographic operations while maintaining less than 2% performance overhead. The multi-language architecture (C + Cython + Python) enables both maximum security through constant-time implementations and optional Cython acceleration (18-37x speedup when built), making it suitable for environments ranging from high-security government applications to performance-critical enterprise systems.
 
@@ -231,7 +231,7 @@ Future-proof cryptography:
 
 ### Humanitarian and Conservation 🌎
 
-**Unique Value:** Protection of sensitive field data with runtime attack detection
+**Unique Value:** Protection of sensitive field data with runtime attack detection (Not approved for clinical, medical, or regulated government deployment without independent audit):
 
 - **Crisis Response**: GPS coordinates, victim data, and safe house locations protected with ML-DSA-65 quantum-resistant signatures. 3R monitoring surfaces timing anomalies that may indicate compromise in hostile environments.
 - **Conservation**: Wildlife tracking data, ranger locations, and anti-poaching intelligence with integrity verification using helical invariants. Detects if data has been tampered with.
