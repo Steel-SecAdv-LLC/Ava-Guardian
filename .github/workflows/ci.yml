@@ -14,6 +14,7 @@ jobs:
   test:
     name: Test on Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -95,6 +96,7 @@ jobs:
   code-quality:
     name: Code Quality Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
     - name: Checkout code
@@ -132,6 +134,7 @@ jobs:
   security-checks:
     name: Security Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
     - name: Checkout code
@@ -167,6 +170,7 @@ jobs:
   benchmark-regression:
     name: Benchmark Regression Detection
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
     - name: Checkout code

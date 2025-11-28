@@ -12,6 +12,7 @@ jobs:
   c-library:
     name: C Library (${{ matrix.os }}, ${{ matrix.compiler }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -90,6 +91,7 @@ jobs:
   python-package:
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -152,6 +154,7 @@ jobs:
   lint:
     name: Lint and Format Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -181,6 +184,7 @@ jobs:
   security:
     name: Security Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -205,6 +209,7 @@ jobs:
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
