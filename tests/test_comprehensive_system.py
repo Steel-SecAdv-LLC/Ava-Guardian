@@ -55,11 +55,14 @@ from dna_guardian_secure import (
     ETHICAL_VECTOR,
     MASTER_DNA_CODES,
     MASTER_HELIX_PARAMS,
+    SIGNATURE_FORMAT_V1,
+    SIGNATURE_FORMAT_V2,
     QuantumSignatureRequiredError,
     QuantumSignatureUnavailableError,
     _verify_dilithium_with_policy,
     _verify_rfc3161_token,
     _verify_timestamp_value,
+    build_signature_message,
     canonical_hash_dna,
     create_crypto_package,
     create_ethical_hkdf_context,
@@ -299,6 +302,15 @@ class TestDilithiumPolicyEnforcement:
         """Create valid package for testing."""
         return create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
 
+    def _build_signature_message_for_package(self, package):
+        """Helper to build the correct signature message based on package format version."""
+        computed_hash = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
+        sig_format = getattr(package, "signature_format_version", SIGNATURE_FORMAT_V1)
+        if sig_format == SIGNATURE_FORMAT_V2:
+            ethical_hash_bytes = bytes.fromhex(package.ethical_hash)
+            return build_signature_message(computed_hash, ethical_hash_bytes, SIGNATURE_FORMAT_V2)
+        return computed_hash
+
     def test_policy_not_required_missing_signature_returns_none(self, kms, valid_package):
         """Test that missing Dilithium signature returns None when not required."""
         # Create package without quantum signatures
@@ -307,9 +319,9 @@ class TestDilithiumPolicyEnforcement:
         pkg.dilithium_signature = None
         pkg.dilithium_pubkey = None
 
-        computed_hash = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
+        signature_message = self._build_signature_message_for_package(pkg)
         result = _verify_dilithium_with_policy(
-            computed_hash, pkg, monitor=None, require_quantum_signatures=False
+            signature_message, pkg, monitor=None, require_quantum_signatures=False
         )
         assert result is None
 
@@ -320,10 +332,10 @@ class TestDilithiumPolicyEnforcement:
         pkg.dilithium_signature = None
         pkg.dilithium_pubkey = None
 
-        computed_hash = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
+        signature_message = self._build_signature_message_for_package(pkg)
         with pytest.raises(QuantumSignatureRequiredError):
             _verify_dilithium_with_policy(
-                computed_hash, pkg, monitor=None, require_quantum_signatures=True
+                signature_message, pkg, monitor=None, require_quantum_signatures=True
             )
 
     @pytest.mark.skipif(not DILITHIUM_AVAILABLE, reason="Dilithium not available")
@@ -332,9 +344,9 @@ class TestDilithiumPolicyEnforcement:
         if not valid_package.quantum_signatures_enabled:
             pytest.skip("Quantum signatures not enabled")
 
-        computed_hash = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
+        signature_message = self._build_signature_message_for_package(valid_package)
         result = _verify_dilithium_with_policy(
-            computed_hash, valid_package, monitor=None, require_quantum_signatures=True
+            signature_message, valid_package, monitor=None, require_quantum_signatures=True
         )
         assert result is True
 
@@ -350,10 +362,10 @@ class TestDilithiumPolicyEnforcement:
         tampered_bytes[0] ^= 0xFF
         valid_package.dilithium_signature = tampered_bytes.hex()
 
-        computed_hash = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
+        signature_message = self._build_signature_message_for_package(valid_package)
         with pytest.raises(QuantumSignatureRequiredError):
             _verify_dilithium_with_policy(
-                computed_hash, valid_package, monitor=None, require_quantum_signatures=True
+                signature_message, valid_package, monitor=None, require_quantum_signatures=True
             )
 
 
