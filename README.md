@@ -46,6 +46,8 @@ Novel in assimilation, the system combines cutting-edge NIST-approved post-quant
 **Protecting people, data, and networks with quantum-resistant cryptography**
 
 > **Project Philosophy:** Promoting action over inaction in the hope of helping secure critical systems against emerging quantum threats. This project is experimental and under active development. While we strive for cryptographic rigor, users should remain cautious and conduct independent security reviews before production deployment. The perceived absence of a threat does not constitute the lack of a threat. Our goal is to deter, mitigate, and elevate security posture—not create new vulnerabilities.
+>
+> **NOT APPROVED** for clinical, medical, or regulated government deployment without independent audit.
 > 
 > **Security Disclosure:** This is a self-assessed cryptographic implementation without third-party audit. Production use REQUIRES:
 > - FIPS 140-2 Level 3+ HSM for master secrets (no software-only keys in high-security environments)
