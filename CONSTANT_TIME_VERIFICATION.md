@@ -35,7 +35,7 @@ All 5 constant-time functions are implemented and verified:
 | `ava_consttime_lookup()` | Table lookup | Full table scan with conditional copy | Yes |
 | `ava_consttime_copy()` | Conditional copy | Bitwise masking based on condition | Yes |
 
-### Python Utilities (`dna_guardian_secure.py`)
+### Python Utilities (`code_guardian_secure.py`)
 
 HMAC verification uses Python's `hmac.compare_digest()`:
 

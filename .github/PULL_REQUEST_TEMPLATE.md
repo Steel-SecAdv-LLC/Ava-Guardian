@@ -140,7 +140,7 @@ Example:
 - [ ] Black formatting applied (`black .`)
 - [ ] Flake8 linting passed (`flake8 .`)
 - [ ] Import ordering checked (`isort .`)
-- [ ] Type checking passed (`mypy dna_guardian_secure.py`)
+- [ ] Type checking passed (`mypy code_guardian_secure.py`)
 
 ### Documentation Updates
 <!-- Mark all documentation that was updated -->

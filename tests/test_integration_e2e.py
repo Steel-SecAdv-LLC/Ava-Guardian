@@ -36,8 +36,8 @@ class TestFullCryptoPackageLifecycle:
 
     def test_complete_sign_verify_workflow(self):
         """Test complete workflow: generate keys -> create package -> verify."""
-        from dna_guardian_secure import (
-            MASTER_DNA_CODES,
+        from code_guardian_secure import (
+            MASTER_CODES,
             MASTER_HELIX_PARAMS,
             create_crypto_package,
             generate_key_management_system,
@@ -52,7 +52,7 @@ class TestFullCryptoPackageLifecycle:
 
         # Step 2: Create cryptographic package
         package = create_crypto_package(
-            dna_codes=MASTER_DNA_CODES,
+            codes=MASTER_CODES,
             helix_params=MASTER_HELIX_PARAMS,
             kms=kms,
             author="E2E Test",
@@ -64,7 +64,7 @@ class TestFullCryptoPackageLifecycle:
 
         # Step 3: Verify package
         results = verify_crypto_package(
-            dna_codes=MASTER_DNA_CODES,
+            codes=MASTER_CODES,
             helix_params=MASTER_HELIX_PARAMS,
             package=package,
             hmac_key=kms.hmac_key,
@@ -78,8 +78,8 @@ class TestFullCryptoPackageLifecycle:
 
     def test_package_serialization_roundtrip(self):
         """Test that packages can be serialized and deserialized correctly."""
-        from dna_guardian_secure import (
-            MASTER_DNA_CODES,
+        from code_guardian_secure import (
+            MASTER_CODES,
             MASTER_HELIX_PARAMS,
             CryptoPackage,
             create_crypto_package,
@@ -89,7 +89,7 @@ class TestFullCryptoPackageLifecycle:
 
         kms = generate_key_management_system("Serialization Test")
         package = create_crypto_package(
-            dna_codes=MASTER_DNA_CODES,
+            codes=MASTER_CODES,
             helix_params=MASTER_HELIX_PARAMS,
             kms=kms,
             author="Serialization Test",
@@ -106,7 +106,7 @@ class TestFullCryptoPackageLifecycle:
 
         # Verify the loaded package
         results = verify_crypto_package(
-            dna_codes=MASTER_DNA_CODES,
+            codes=MASTER_CODES,
             helix_params=MASTER_HELIX_PARAMS,
             package=loaded_package,
             hmac_key=kms.hmac_key,
@@ -119,8 +119,8 @@ class TestFullCryptoPackageLifecycle:
 
     def test_tamper_detection(self):
         """Test that tampering with package data is detected."""
-        from dna_guardian_secure import (
-            MASTER_DNA_CODES,
+        from code_guardian_secure import (
+            MASTER_CODES,
             MASTER_HELIX_PARAMS,
             create_crypto_package,
             generate_key_management_system,
@@ -129,7 +129,7 @@ class TestFullCryptoPackageLifecycle:
 
         kms = generate_key_management_system("Tamper Test")
         package = create_crypto_package(
-            dna_codes=MASTER_DNA_CODES,
+            codes=MASTER_CODES,
             helix_params=MASTER_HELIX_PARAMS,
             kms=kms,
             author="Tamper Test",
@@ -141,7 +141,7 @@ class TestFullCryptoPackageLifecycle:
         package.content_hash = "a" * 64  # Invalid hash
 
         results = verify_crypto_package(
-            dna_codes=MASTER_DNA_CODES,
+            codes=MASTER_CODES,
             helix_params=MASTER_HELIX_PARAMS,
             package=package,
             hmac_key=kms.hmac_key,
@@ -156,7 +156,7 @@ class TestFullCryptoPackageLifecycle:
         package.ed25519_signature = "b" * 128
 
         results = verify_crypto_package(
-            dna_codes=MASTER_DNA_CODES,
+            codes=MASTER_CODES,
             helix_params=MASTER_HELIX_PARAMS,
             package=package,
             hmac_key=kms.hmac_key,
@@ -397,7 +397,7 @@ class TestPerformanceRegression:
         """Test that hashing operations meet performance targets."""
         import sys
 
-        from dna_guardian_secure import canonical_hash_dna
+        from code_guardian_secure import canonical_hash_code
 
         # Large input
         large_codes = "A" * 10000
@@ -406,7 +406,7 @@ class TestPerformanceRegression:
         iterations = 100
         start = time.perf_counter()
         for _ in range(iterations):
-            canonical_hash_dna(large_codes, large_params)
+            canonical_hash_code(large_codes, large_params)
         hash_time = (time.perf_counter() - start) / iterations
 
         # Performance threshold varies by platform due to CI environment variability.
@@ -428,7 +428,7 @@ class TestHumanitarianUseCases:
 
     def test_crisis_data_protection(self):
         """Test protecting sensitive crisis response data."""
-        from dna_guardian_secure import (
+        from code_guardian_secure import (
             create_crypto_package,
             generate_key_management_system,
             verify_crypto_package,
@@ -442,7 +442,7 @@ class TestHumanitarianUseCases:
 
         # Create protected package
         package = create_crypto_package(
-            dna_codes=crisis_data,
+            codes=crisis_data,
             helix_params=helix_params,
             kms=kms,
             author="Field Operator",
@@ -451,7 +451,7 @@ class TestHumanitarianUseCases:
 
         # Verify integrity
         results = verify_crypto_package(
-            dna_codes=crisis_data,
+            codes=crisis_data,
             helix_params=helix_params,
             package=package,
             hmac_key=kms.hmac_key,
@@ -464,7 +464,7 @@ class TestHumanitarianUseCases:
 
     def test_whistleblower_document_signing(self):
         """Test document signing for whistleblower protection."""
-        from dna_guardian_secure import (
+        from code_guardian_secure import (
             create_crypto_package,
             generate_key_management_system,
             verify_crypto_package,
@@ -477,7 +477,7 @@ class TestHumanitarianUseCases:
         kms = generate_key_management_system("Anonymous Source")
 
         package = create_crypto_package(
-            dna_codes=document,
+            codes=document,
             helix_params=helix_params,
             kms=kms,
             author="Anonymous",
@@ -486,7 +486,7 @@ class TestHumanitarianUseCases:
 
         # Package should be verifiable without revealing identity
         results = verify_crypto_package(
-            dna_codes=document,
+            codes=document,
             helix_params=helix_params,
             package=package,
             hmac_key=kms.hmac_key,
@@ -497,7 +497,7 @@ class TestHumanitarianUseCases:
 
     def test_medical_record_integrity(self):
         """Test medical record integrity verification."""
-        from dna_guardian_secure import (
+        from code_guardian_secure import (
             create_crypto_package,
             generate_key_management_system,
             verify_crypto_package,
@@ -517,7 +517,7 @@ class TestHumanitarianUseCases:
         kms = generate_key_management_system("Healthcare Provider")
 
         package = create_crypto_package(
-            dna_codes=medical_record,
+            codes=medical_record,
             helix_params=helix_params,
             kms=kms,
             author="Dr. Smith",
@@ -526,7 +526,7 @@ class TestHumanitarianUseCases:
 
         # Verify record hasn't been tampered
         results = verify_crypto_package(
-            dna_codes=medical_record,
+            codes=medical_record,
             helix_params=helix_params,
             package=package,
             hmac_key=kms.hmac_key,
@@ -542,7 +542,7 @@ class TestEthicalIntegration:
 
     def test_ethical_vector_in_key_derivation(self):
         """Test that ethical vector is properly integrated."""
-        from dna_guardian_secure import (
+        from code_guardian_secure import (
             ETHICAL_VECTOR,
             create_ethical_hkdf_context,
         )
@@ -558,10 +558,10 @@ class TestEthicalIntegration:
         assert len(context) > 0
 
     def test_ethical_pillars_coverage(self):
-        """Test that all 12 Omni-DNA ethical pillars are present."""
-        from dna_guardian_secure import ETHICAL_VECTOR
+        """Test that all 12 Omni-Code ethical pillars are present."""
+        from code_guardian_secure import ETHICAL_VECTOR
 
-        # The 12 Omni-DNA Ethical Pillars organized in 4 triads
+        # The 12 Omni-Code Ethical Pillars organized in 4 triads
         expected_pillars = [
             # Triad 1: Knowledge Domain
             "omniscient",

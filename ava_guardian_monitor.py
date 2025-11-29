@@ -273,7 +273,7 @@ class EWMAStats:
             return False
 
         values = np.array(self._recent_values)
-        median = np.median(values)
+        median = float(np.median(values))
         modified_z = abs(x - median) / (1.4826 * mad)
         return modified_z > threshold
 

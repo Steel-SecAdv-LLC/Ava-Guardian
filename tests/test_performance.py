@@ -20,8 +20,8 @@ from typing import Callable
 
 import pytest
 
-from dna_guardian_secure import (
-    canonical_hash_dna,
+from code_guardian_secure import (
+    canonical_hash_code,
     create_crypto_package,
     generate_ed25519_keypair,
     generate_key_management_system,
@@ -70,7 +70,7 @@ class TestSHA3Performance:
         dna = "ACGT" * 25  # 100 chars
         params = [(1.0, 1.0)]
 
-        ops_per_sec = benchmark(lambda: canonical_hash_dna(dna, params), iterations=5000)
+        ops_per_sec = benchmark(lambda: canonical_hash_code(dna, params), iterations=5000)
 
         assert ops_per_sec > 50000, f"SHA3 throughput {ops_per_sec:.0f} ops/sec below 50,000"
 
@@ -79,7 +79,7 @@ class TestSHA3Performance:
         dna = "ACGT" * 250  # 1000 chars
         params = [(1.0, 1.0)] * 10
 
-        ops_per_sec = benchmark(lambda: canonical_hash_dna(dna, params), iterations=2000)
+        ops_per_sec = benchmark(lambda: canonical_hash_code(dna, params), iterations=2000)
 
         assert ops_per_sec > 10000, f"SHA3 throughput {ops_per_sec:.0f} ops/sec below 10,000"
 
@@ -119,7 +119,7 @@ class TestEd25519Performance:
 
     def test_sign_throughput(self):
         """Ed25519 signing throughput (>4,000 ops/sec)."""
-        from dna_guardian_secure import ed25519_sign
+        from code_guardian_secure import ed25519_sign
 
         kp = generate_ed25519_keypair()
         message = b"test message for signing"
@@ -131,7 +131,7 @@ class TestEd25519Performance:
 
     def test_verify_throughput(self):
         """Ed25519 verification throughput (>4,000 ops/sec)."""
-        from dna_guardian_secure import ed25519_sign, ed25519_verify
+        from code_guardian_secure import ed25519_sign, ed25519_verify
 
         kp = generate_ed25519_keypair()
         message = b"test message for verification"
@@ -193,7 +193,7 @@ class TestMemoryEfficiency:
         for _ in range(1000):
             dna = "ACGT" * 100
             params = [(1.0, 1.0)]
-            canonical_hash_dna(dna, params)
+            canonical_hash_code(dna, params)
 
         # Force garbage collection
         gc.collect()

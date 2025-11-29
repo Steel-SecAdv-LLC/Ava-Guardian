@@ -276,7 +276,7 @@ python benchmark_suite.py
 python -m pytest tests/ -v
 
 # Profile specific operations
-python -m cProfile -o profile.stats dna_guardian_secure.py
+python -m cProfile -o profile.stats code_guardian_secure.py
 ```
 
 ---

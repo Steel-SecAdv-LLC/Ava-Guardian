@@ -40,11 +40,11 @@ settings.register_profile(
 settings.load_profile("ci" if _in_ci else os.environ.get("HYPOTHESIS_PROFILE", "default"))
 
 # Late imports required - Hypothesis settings must be configured before importing test subjects
-from dna_guardian_secure import (  # noqa: E402
+from code_guardian_secure import (  # noqa: E402
     DILITHIUM_AVAILABLE,
     SIGNATURE_FORMAT_V2,
     build_signature_message,
-    canonical_hash_dna,
+    canonical_hash_code,
     create_crypto_package,
     ed25519_sign,
     ed25519_verify,
@@ -59,7 +59,7 @@ from dna_guardian_secure import (  # noqa: E402
 
 # Import Dilithium functions if available
 if DILITHIUM_AVAILABLE:
-    from dna_guardian_secure import (
+    from code_guardian_secure import (
         dilithium_sign,
         dilithium_verify,
         generate_dilithium_keypair,
@@ -113,8 +113,8 @@ class TestCanonicalHashFuzzing:
     )
     def test_hash_deterministic(self, dna, params):
         """Hash is deterministic for same inputs."""
-        h1 = canonical_hash_dna(dna, params)
-        h2 = canonical_hash_dna(dna, params)
+        h1 = canonical_hash_code(dna, params)
+        h2 = canonical_hash_code(dna, params)
         assert h1 == h2, "Hash must be deterministic"
         assert len(h1) == 32, "SHA3-256 produces 32 bytes"
 
@@ -126,8 +126,8 @@ class TestCanonicalHashFuzzing:
         """Different DNA sequences produce different hashes."""
         assume(dna1 != dna2)
         params = [(1.0, 1.0)]
-        h1 = canonical_hash_dna(dna1, params)
-        h2 = canonical_hash_dna(dna2, params)
+        h1 = canonical_hash_code(dna1, params)
+        h2 = canonical_hash_code(dna2, params)
         assert h1 != h2, f"Hash collision: {dna1} vs {dna2}"
 
 
@@ -332,13 +332,13 @@ class TestCryptoPackageFuzzing:
             max_size=10,
         ),
     )
-    def test_package_roundtrip(self, dna_codes, helix_params):
+    def test_package_roundtrip(self, codes, helix_params):
         """Created packages verify successfully."""
         kms = generate_key_management_system("fuzz_test")
-        pkg = create_crypto_package(dna_codes, helix_params, kms, "fuzz_author")
+        pkg = create_crypto_package(codes, helix_params, kms, "fuzz_author")
 
         results = verify_crypto_package(
-            dna_codes,
+            codes,
             helix_params,
             pkg,
             kms.hmac_key,
@@ -356,7 +356,7 @@ class TestCryptoPackageFuzzing:
         st.text(min_size=1, max_size=100, alphabet="ACGT"),
     )
     def test_tampered_dna_fails(self, dna1, dna2):
-        """Verification fails when DNA codes are tampered."""
+        """Verification fails when Omni-Codes are tampered."""
         assume(dna1 != dna2)
         params = [(1.0, 1.0)]
         kms = generate_key_management_system("fuzz_test")

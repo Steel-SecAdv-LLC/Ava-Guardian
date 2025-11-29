@@ -17,7 +17,7 @@
 Ava Guardian ♱ (AG♱): Ethical-Cryptographic SHA3-256 Security System
 =====================================================================
 
-Complete cryptographic protection system for helical mathematical DNA codes.
+Complete cryptographic protection system for helical mathematical Omni-Codes.
 
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
@@ -271,7 +271,7 @@ def length_prefixed_encode(*fields: str) -> bytes:
     return encoded
 
 
-def canonical_hash_dna(dna_codes: str, helix_params: List[Tuple[float, float]]) -> bytes:
+def canonical_hash_code(codes: str, helix_params: List[Tuple[float, float]]) -> bytes:
     """
     Compute collision-resistant hash with proper domain separation.
 
@@ -287,7 +287,7 @@ def canonical_hash_dna(dna_codes: str, helix_params: List[Tuple[float, float]]) 
 
     Domain Separation Strategy:
     ----------------------------
-    1. DNA codes encoded with "DNA" domain tag
+    1. Omni-Codes encoded with "CODE" domain tag
     2. Helix parameters encoded with "HELIX" domain tag
     3. Each parameter tuple formatted as "radius:pitch"
     4. Length-prefixed encoding prevents concatenation attacks
@@ -297,30 +297,30 @@ def canonical_hash_dna(dna_codes: str, helix_params: List[Tuple[float, float]]) 
     Given two distinct inputs (D₁, H₁) and (D₂, H₂):
 
     If D₁ ≠ D₂ or H₁ ≠ H₂, then:
-        - encode("DNA", D₁, "HELIX", ...) ≠ encode("DNA", D₂, "HELIX", ...)
+        - encode("CODE", D₁, "HELIX", ...) ≠ encode("CODE", D₂, "HELIX", ...)
         - By SHA3-256 collision resistance:
         - P(hash(input₁) = hash(input₂)) ≤ 2^-128
 
     This provides cryptographic assurance of integrity.
 
     Args:
-        dna_codes: Concatenated DNA code string (must be non-empty)
+        codes: Concatenated Omni-Code string (must be non-empty)
         helix_params: List of (radius, pitch) tuples (must be non-empty)
 
     Returns:
         32-byte SHA3-256 hash digest
 
     Raises:
-        TypeError: If dna_codes is not a string or helix_params is not a list
-        ValueError: If dna_codes or helix_params is empty, or if tuples are malformed
+        TypeError: If codes is not a string or helix_params is not a list
+        ValueError: If codes or helix_params is empty, or if tuples are malformed
     """
     # Input validation
-    if not isinstance(dna_codes, str):
-        raise TypeError(f"dna_codes must be str, got {type(dna_codes).__name__}")
+    if not isinstance(codes, str):
+        raise TypeError(f"codes must be str, got {type(codes).__name__}")
     if not isinstance(helix_params, list):
         raise TypeError(f"helix_params must be list, got {type(helix_params).__name__}")
-    if not dna_codes:
-        raise ValueError("dna_codes cannot be empty")
+    if not codes:
+        raise ValueError("codes cannot be empty")
     if not helix_params:
         raise ValueError("helix_params cannot be empty")
 
@@ -339,7 +339,7 @@ def canonical_hash_dna(dna_codes: str, helix_params: List[Tuple[float, float]]) 
     helix_strs = [f"{r:.10f}:{p:.10f}" for r, p in helix_params]
 
     # Create length-prefixed encoding with domain tags
-    encoded = length_prefixed_encode("DNA", dna_codes, "HELIX", *helix_strs)
+    encoded = length_prefixed_encode("CODE", codes, "HELIX", *helix_strs)
 
     # Compute SHA3-256 hash
     return hashlib.sha3_256(encoded).digest()
@@ -1235,7 +1235,7 @@ def _verify_rfc3161_token(
 
 
 # ============================================================================
-# 12 OMNI-DNA ETHICAL PILLARS INTEGRATION
+# 12 OMNI-CODE ETHICAL PILLARS INTEGRATION
 # ============================================================================
 
 # 12 Ethical Pillars as balanced vector (Σw = 12.0)
@@ -1462,11 +1462,11 @@ def derive_keys(
 
 
 # ============================================================================
-# OMNI-DNA HELIX CODES
+# OMNI-CODE HELIX CODES
 # ============================================================================
 
-# Master DNA codes (preserved exactly as specified)
-MASTER_DNA_CODES = (
+# Master Omni-Codes (preserved exactly as specified)
+MASTER_CODES = (
     "👁20A07∞_XΔEΛX_ϵ19A89Ϙ"
     "Ϙ15A11ϵ_ΞΛMΔΞ_ϖ20A19Φ"
     "Φ07A09ϖ_ΨΔAΛΨ_ϵ19A88Σ"
@@ -1476,7 +1476,7 @@ MASTER_DNA_CODES = (
     "Γ19L11ϖ_XΔHΛX_∞19A84♰"
 )
 
-# Helical parameters (radius, pitch) for each DNA code
+# Helical parameters (radius, pitch) for each Omni-Code
 MASTER_HELIX_PARAMS = [
     (20.0, 0.7),  # 👁20A07∞ - Omni-Directional System
     (15.0, 1.1),  # Ϙ15A11ϵ - Omni-Percipient Future
@@ -1487,8 +1487,8 @@ MASTER_HELIX_PARAMS = [
     (19.0, 1.1),  # Γ19L11ϖ - Omni-Potent Lifeforce
 ]
 
-# Human-readable names for each DNA code
-DNA_CODE_NAMES = [
+# Human-readable names for each Omni-Code
+CODE_NAMES = [
     "Omni-Directional System",
     "Omni-Percipient Future",
     "Omni-Indivisible Guardian",
@@ -1498,8 +1498,8 @@ DNA_CODE_NAMES = [
     "Omni-Potent Lifeforce",
 ]
 
-# Individual DNA code strings (for reference)
-DNA_CODES_INDIVIDUAL = [
+# Individual Omni-Code strings (for reference)
+CODES_INDIVIDUAL = [
     "👁20A07∞_XΔEΛX_ϵ19A89Ϙ",
     "Ϙ15A11ϵ_ΞΛMΔΞ_ϖ20A19Φ",
     "Φ07A09ϖ_ΨΔAΛΨ_ϵ19A88Σ",
@@ -1509,8 +1509,8 @@ DNA_CODES_INDIVIDUAL = [
     "Γ19L11ϖ_XΔHΛX_∞19A84♰",
 ]
 
-# Newline-separated string of all DNA codes (for demo and testing)
-MASTER_DNA_CODES_STR = "\n".join(DNA_CODES_INDIVIDUAL)
+# Newline-separated string of all Omni-Codes (for demo and testing)
+MASTER_CODES_STR = "\n".join(CODES_INDIVIDUAL)
 
 
 # ============================================================================
@@ -1740,7 +1740,7 @@ def export_public_keys(kms: KeyManagementSystem, output_dir: Path) -> None:
             f.write("  Quantum-resistant signatures are disabled.\n")
             f.write("  Install liboqs-python or pqcrypto to enable.\n\n")
         f.write("These public keys can be safely distributed.\n")
-        f.write("Use them to verify signatures on DNA code packages.\n")
+        f.write("Use them to verify signatures on Omni-Code packages.\n")
 
     print(f"  ✓ Public keys exported to: {output_dir}")
     print(f"    Ed25519: {len(kms.ed25519_keypair.public_key)} bytes")
@@ -1788,13 +1788,13 @@ def build_signature_message(
     Where:
     - SIGNATURE_DOMAIN_PREFIX = b"AG-PKG-v2" (9 bytes)
     - version_bytes = UTF-8 encoded version string (5 bytes for "2.0.0")
-    - content_hash = SHA3-256 hash of canonical DNA encoding (32 bytes)
+    - content_hash = SHA3-256 hash of canonical code encoding (32 bytes)
     - ethical_hash = SHA3-256 hash of ethical vector (32 bytes)
 
     Total: 78 bytes for v2 format
 
     Args:
-        content_hash: SHA3-256 hash of canonical DNA encoding (32 bytes)
+        content_hash: SHA3-256 hash of canonical code encoding (32 bytes)
         ethical_hash: SHA3-256 hash of ethical vector (32 bytes)
         version: Signature format version (default: "2.0.0")
 
@@ -1820,7 +1820,7 @@ def build_signature_message(
 @dataclass
 class CryptoPackage:
     """
-    Complete cryptographic package for DNA codes.
+    Complete cryptographic package for Omni-Codes.
 
     Structure:
     ----------
@@ -1878,7 +1878,7 @@ class CryptoPackage:
 
 
 def create_crypto_package(
-    dna_codes: str,
+    codes: str,
     helix_params: List[Tuple[float, float]],
     kms: KeyManagementSystem,
     author: str,
@@ -1887,7 +1887,7 @@ def create_crypto_package(
     monitor: Optional["AvaGuardianMonitor"] = None,
 ) -> CryptoPackage:
     """
-    Create cryptographically signed package for DNA codes.
+    Create cryptographically signed package for Omni-Codes.
 
     Process:
     --------
@@ -1899,7 +1899,7 @@ def create_crypto_package(
     6. Package all cryptographic artifacts
 
     Args:
-        dna_codes: DNA code string
+        codes: Omni-Code string
         helix_params: List of (radius, pitch) tuples
         kms: Key management system
         author: Package creator
@@ -1913,7 +1913,7 @@ def create_crypto_package(
     # 1. Compute canonical hash
     if monitor:
         start_time = time.time()
-    content_hash = canonical_hash_dna(dna_codes, helix_params)
+    content_hash = canonical_hash_code(codes, helix_params)
     if monitor:
         duration_ms = (time.time() - start_time) * 1000
         monitor.monitor_crypto_operation("sha3_256_hash", duration_ms)
@@ -1975,8 +1975,8 @@ def create_crypto_package(
 
     # 9. Record package metadata for pattern analysis
     if monitor:
-        # Count DNA codes (split by newline or comma)
-        code_count = len([c.strip() for c in dna_codes.split("\n") if c.strip()])
+        # Count Omni-Codes (split by newline or comma)
+        code_count = len([c.strip() for c in codes.split("\n") if c.strip()])
         monitor.record_package_signing(
             {
                 "author": author,
@@ -2084,7 +2084,7 @@ def _verify_dilithium_with_policy(
 
 
 def verify_crypto_package(
-    dna_codes: str,
+    codes: str,
     helix_params: List[Tuple[float, float]],
     package: CryptoPackage,
     hmac_key: bytes,
@@ -2111,7 +2111,7 @@ def verify_crypto_package(
     - v2 (2.0.0): Signatures over domain-separated message with ethical binding
 
     Args:
-        dna_codes: Original DNA codes
+        codes: Original Omni-Codes
         helix_params: Original helix parameters
         package: Crypto package to verify
         hmac_key: HMAC key for verification
@@ -2160,7 +2160,7 @@ def verify_crypto_package(
     }
 
     try:
-        computed_hash = canonical_hash_dna(dna_codes, helix_params)
+        computed_hash = canonical_hash_code(codes, helix_params)
         results["content_hash"] = computed_hash.hex() == package.content_hash
 
         start_time = time.time() if monitor else None
@@ -2216,7 +2216,7 @@ def verify_crypto_package(
 
 def main():
     """
-    Demonstrate complete Ava Guardian ♱ system with all DNA codes.
+    Demonstrate complete Ava Guardian ♱ system with all Omni-Codes.
     """
     print("\n" + "=" * 70)
     print("Ava Guardian ♱ (AG♱): SHA3-256 Security Hash")
@@ -2238,9 +2238,9 @@ def main():
     else:
         print("  ⚠ Dilithium keypair: NOT AVAILABLE (quantum signatures disabled)")
 
-    # Display DNA codes
-    print("\n[2/5] Master DNA Helix Codes:")
-    for i, (code, name) in enumerate(zip(DNA_CODES_INDIVIDUAL, DNA_CODE_NAMES)):
+    # Display Omni-Codes
+    print("\n[2/5] Master Omni-Code Helix Codes:")
+    for i, (code, name) in enumerate(zip(CODES_INDIVIDUAL, CODE_NAMES)):
         r, p = MASTER_HELIX_PARAMS[i]
         print(f"  {i + 1}. {code}")
         print(f"     {name}")
@@ -2249,7 +2249,7 @@ def main():
     # Create cryptographic package
     print("\n[3/5] Creating DNA cryptographic package...")
     crypto_pkg = create_crypto_package(
-        MASTER_DNA_CODES,
+        MASTER_CODES,
         MASTER_HELIX_PARAMS,
         kms,
         "Steel-SecAdv-LLC",
@@ -2270,7 +2270,7 @@ def main():
     # In production, require_quantum_signatures=True (the default) should be used
     print("\n[4/5] Verifying cryptographic package...")
     results = verify_crypto_package(
-        MASTER_DNA_CODES,
+        MASTER_CODES,
         MASTER_HELIX_PARAMS,
         crypto_pkg,
         kms.hmac_key,
@@ -2297,7 +2297,7 @@ def main():
     export_public_keys(kms, output_dir)
 
     # Save cryptographic package
-    package_file = Path("DNA_CRYPTO_PACKAGE.json")
+    package_file = Path("CRYPTO_PACKAGE.json")
     with open(package_file, "w") as f:
         json.dump(asdict(crypto_pkg), f, indent=2)
     print(f"  ✓ Package saved: {package_file}")
@@ -2306,7 +2306,7 @@ def main():
     print("\n" + "=" * 70)
     if all_valid:
         print("✓ ALL VERIFICATIONS PASSED")
-        print("\nThe DNA Helix codes are cryptographically protected.")
+        print("\nThe Omni-Code Helix codes are cryptographically protected.")
         print("All integrity checks, authentication, and signatures verified.")
     else:
         print("✗ VERIFICATION FAILED")

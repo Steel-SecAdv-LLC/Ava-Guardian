@@ -73,7 +73,7 @@ The `HybridSignatureProvider` class (in `crypto_api.py`) now automatically cache
 **How to Use Optimized Path:**
 ```python
 from cryptography.hazmat.primitives.asymmetric import ed25519
-from dna_guardian_secure import ed25519_sign, ed25519_verify
+from code_guardian_secure import ed25519_sign, ed25519_verify
 
 # Reconstruct key objects ONCE
 private_key = ed25519.Ed25519PrivateKey.from_private_bytes(key_bytes)

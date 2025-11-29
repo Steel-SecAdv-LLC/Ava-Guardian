@@ -851,8 +851,8 @@ class TestMonitorIntegration:
         sys.path.insert(0, str(Path(__file__).parent.parent))
 
         try:
-            from dna_guardian_secure import (
-                MASTER_DNA_CODES_STR,
+            from code_guardian_secure import (
+                MASTER_CODES_STR,
                 MASTER_HELIX_PARAMS,
                 create_crypto_package,
                 generate_key_management_system,
@@ -865,12 +865,12 @@ class TestMonitorIntegration:
 
             # Create monitored package
             pkg = create_crypto_package(
-                MASTER_DNA_CODES_STR, MASTER_HELIX_PARAMS, kms, "test", monitor=monitor
+                MASTER_CODES_STR, MASTER_HELIX_PARAMS, kms, "test", monitor=monitor
             )
 
             # Verify monitored package
             results = verify_crypto_package(
-                MASTER_DNA_CODES_STR,
+                MASTER_CODES_STR,
                 MASTER_HELIX_PARAMS,
                 pkg,
                 kms.hmac_key,

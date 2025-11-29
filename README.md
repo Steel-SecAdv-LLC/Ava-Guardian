@@ -953,7 +953,7 @@ make security-audit
 
 Ava Guardian ♱ pioneers the integration of ethical principles directly into cryptographic operations through mathematically rigorous constraints. Unlike traditional security systems that treat ethics as policy overlays, AG♱ embeds ethical considerations into the cryptographic foundation itself.
 
-**12 Omni-DNA Ethical Pillars** are mathematically integrated into key derivation:
+**12 Omni-Code Ethical Pillars** are mathematically integrated into key derivation:
 
 | Triad | Pillars | Cryptographic Binding |
 |-------|---------|----------------------|
@@ -979,7 +979,7 @@ The ethical integration achieves:
 
 AG♱ employs a revolutionary bio-inspired approach where data structures mirror the elegance and resilience of biological DNA. This metaphor extends beyond naming conventions into the actual architecture of cryptographic packages.
 
-**Master DNA Codes** - Seven foundational codes govern the system:
+**Master Omni-Codes** - Seven foundational codes govern the system:
 
 | Code | Symbol | Domain | Helical Parameters |
 |------|--------|--------|-------------------|

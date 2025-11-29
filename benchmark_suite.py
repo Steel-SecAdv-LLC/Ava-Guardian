@@ -44,13 +44,13 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
-from dna_guardian_secure import (
+from code_guardian_secure import (
     DILITHIUM_AVAILABLE,
     DILITHIUM_BACKEND,
     ETHICAL_VECTOR,
-    MASTER_DNA_CODES,
+    MASTER_CODES,
     MASTER_HELIX_PARAMS,
-    canonical_hash_dna,
+    canonical_hash_code,
     create_crypto_package,
     create_ethical_hkdf_context,
     derive_keys,
@@ -232,14 +232,14 @@ class BenchmarkSuite:
         # Canonical encoding
         results["canonical_encoding"] = self.benchmark_operation(
             "Canonical Encoding",
-            lambda: length_prefixed_encode("DNA", MASTER_DNA_CODES, "HELIX", "test"),
+            lambda: length_prefixed_encode("DNA", MASTER_CODES, "HELIX", "test"),
             iterations=10000,
         )
 
         # DNA hash computation
         results["dna_hash"] = self.benchmark_operation(
             "DNA Hash Computation",
-            lambda: canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS),
+            lambda: canonical_hash_code(MASTER_CODES, MASTER_HELIX_PARAMS),
             iterations=10000,
         )
 
@@ -247,15 +247,15 @@ class BenchmarkSuite:
         kms = generate_key_management_system("benchmark")
         results["package_creation"] = self.benchmark_operation(
             "Complete Package Creation",
-            lambda: create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "benchmark"),
+            lambda: create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "benchmark"),
             iterations=100,
         )
 
         # Package verification
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "benchmark")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "benchmark")
         results["package_verification"] = self.benchmark_operation(
             "Package Verification",
-            lambda: verify_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key),
+            lambda: verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key),
             iterations=100,
         )
 
@@ -330,12 +330,12 @@ class BenchmarkSuite:
         # Test different DNA code lengths
         dna_sizes = [1, 10, 100, 1000]
         for size in dna_sizes:
-            dna_codes = MASTER_DNA_CODES * size
+            codes = MASTER_CODES * size
             helix_params = MASTER_HELIX_PARAMS * size
 
             results[f"dna_size_{size}"] = self.benchmark_operation(
                 f"DNA Processing (size={size})",
-                lambda: create_crypto_package(dna_codes, helix_params, kms, "benchmark"),
+                lambda: create_crypto_package(codes, helix_params, kms, "benchmark"),
                 iterations=50,
             )
 

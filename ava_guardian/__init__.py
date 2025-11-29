@@ -48,7 +48,7 @@ from ava_guardian.equations import (
     initialize_ethical_matrix,
     lyapunov_function,
     lyapunov_stability_proof,
-    verify_all_dna_codes,
+    verify_all_codes,
     verify_mathematical_foundations,
 )
 
@@ -64,7 +64,7 @@ __all__ = [
     "HELIX_PARAMS",
     "helix_curvature",
     "helix_torsion",
-    "verify_all_dna_codes",
+    "verify_all_codes",
     "lyapunov_function",
     "lyapunov_stability_proof",
     "golden_ratio_convergence_proof",

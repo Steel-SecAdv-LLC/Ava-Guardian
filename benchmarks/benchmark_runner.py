@@ -166,18 +166,18 @@ def run_hkdf_derive_benchmark(iterations: int = 100) -> float:
 
 def run_full_package_create_benchmark(iterations: int = 20) -> float:
     """Benchmark complete crypto package creation."""
-    from dna_guardian_secure import (
+    from code_guardian_secure import (
         create_crypto_package,
         generate_key_management_system,
     )
 
     kms = generate_key_management_system("Benchmark Test")
-    dna_codes = "TEST_DNA_CODE_12345"
+    codes = "TEST_DNA_CODE_12345"
     helix_params = [(1.0, 2.0)]
 
     def operation():
         create_crypto_package(
-            dna_codes=dna_codes,
+            codes=codes,
             helix_params=helix_params,
             kms=kms,
             author="Benchmark",
@@ -189,18 +189,18 @@ def run_full_package_create_benchmark(iterations: int = 20) -> float:
 
 def run_full_package_verify_benchmark(iterations: int = 20) -> float:
     """Benchmark complete crypto package verification."""
-    from dna_guardian_secure import (
+    from code_guardian_secure import (
         create_crypto_package,
         generate_key_management_system,
         verify_crypto_package,
     )
 
     kms = generate_key_management_system("Benchmark Test")
-    dna_codes = "TEST_DNA_CODE_12345"
+    codes = "TEST_DNA_CODE_12345"
     helix_params = [(1.0, 2.0)]
 
     package = create_crypto_package(
-        dna_codes=dna_codes,
+        codes=codes,
         helix_params=helix_params,
         kms=kms,
         author="Benchmark",
@@ -209,7 +209,7 @@ def run_full_package_verify_benchmark(iterations: int = 20) -> float:
 
     def operation():
         verify_crypto_package(
-            dna_codes=dna_codes,
+            codes=codes,
             helix_params=helix_params,
             package=package,
             hmac_key=kms.hmac_key,

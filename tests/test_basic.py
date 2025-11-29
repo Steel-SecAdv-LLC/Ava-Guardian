@@ -38,7 +38,7 @@ def test_imports():
         initialize_ethical_matrix,
         lyapunov_function,
         lyapunov_stability_proof,
-        verify_all_dna_codes,
+        verify_all_codes,
         verify_mathematical_foundations,
     )
 
@@ -61,7 +61,7 @@ def test_imports():
     assert callable(initialize_ethical_matrix)
     assert callable(lyapunov_function)
     assert callable(lyapunov_stability_proof)
-    assert callable(verify_all_dna_codes)
+    assert callable(verify_all_codes)
     assert callable(verify_mathematical_foundations)
 
 

@@ -29,7 +29,7 @@ security guarantees. The functions here implement mathematical frameworks for:
 
 These utilities support the overall system architecture but do not provide
 cryptographic protection. For cryptographic operations, use the dedicated
-modules: pqc_backends.py, crypto_api.py, and dna_guardian_secure.py.
+modules: pqc_backends.py, crypto_api.py, and code_guardian_secure.py.
 
 Complete implementation of 5 proven mathematical frameworks with machine-precision verification.
 
@@ -68,7 +68,7 @@ __all__ = [
     "helix_curvature",
     "helix_torsion",
     "verify_fundamental_relation",
-    "verify_all_dna_codes",
+    "verify_all_codes",
     "lyapunov_function",
     "lyapunov_derivative",
     "convergence_time",
@@ -91,7 +91,7 @@ TAU = 2 * np.pi  # τ = 2π ≈ 6.283185
 SIGMA_QUADRATIC_THRESHOLD = 0.96  # Quadratic form constraint
 LAMBDA_DECAY = 0.18  # Lyapunov decay rate O(e^{-0.18t})
 
-# 7 Memorial DNA Codes
+# 7 Memorial Omni-Codes
 DNA_CODES = [
     "👁20A07∞_XΔEΛX_ϵ19A89Ϙ",  # Omni-Directional System
     "Ϙ15A11ϵ_ΞΛMΔΞ_ϖ20A19Φ",  # Omni-Percipient Future
@@ -171,12 +171,12 @@ def verify_fundamental_relation(radius: float, pitch_coeff: float) -> float:
     return abs(actual - expected)
 
 
-def verify_all_dna_codes() -> Dict[str, Dict[str, float]]:
+def verify_all_codes() -> Dict[str, Dict[str, float]]:
     """
-    Verify helical geometric invariants for all 7 DNA codes.
+    Verify helical geometric invariants for all 7 Omni-Codes.
 
     Returns:
-        Dictionary mapping DNA codes to verification results:
+        Dictionary mapping Omni-Codes to verification results:
         {
             'code': {
                 'radius': r,
@@ -489,7 +489,7 @@ def verify_mathematical_foundations() -> Dict[str, bool]:
     results = {}
 
     # 1. Helical Geometric Invariants
-    dna_results = verify_all_dna_codes()
+    dna_results = verify_all_codes()
     results["helical_invariants"] = all(r["valid"] for r in dna_results.values())
 
     # 2. Lyapunov Stability
@@ -530,7 +530,7 @@ if __name__ == "__main__":
     results = verify_mathematical_foundations()
 
     print("\n[1/5] Helical Geometric Invariants:")
-    dna_results = verify_all_dna_codes()
+    dna_results = verify_all_codes()
     for code, data in dna_results.items():
         status = "✓" if data["valid"] else "✗"
         print(f"  {status} {code[:15]}: error = {data['fundamental_error']:.2e}")

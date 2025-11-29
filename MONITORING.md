@@ -133,7 +133,7 @@ Ava Guardian ♱ includes optional runtime security monitoring using the 3R Mech
 
 ```python
 from ava_guardian_monitor import AvaGuardianMonitor
-from dna_guardian_secure import *
+from code_guardian_secure import *
 
 # Enable monitoring
 monitor = AvaGuardianMonitor(enabled=True)
@@ -180,7 +180,7 @@ monitor.patterns.max_depth = 4  # Deeper recursion
 ### Production Scenarios
 
 **Enable Monitoring When**:
-- Processing sensitive or high-value DNA codes
+- Processing sensitive or high-value Omni-Codes
 - Compliance requires audit trails
 - Security incident investigation
 - Performance regression testing
