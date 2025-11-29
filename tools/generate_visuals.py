@@ -24,46 +24,111 @@ ASSETS_DIR.mkdir(exist_ok=True)
 
 
 def create_defense_layers_diagram():
-    """Create the 6-layer defense-in-depth visualization."""
-    fig, ax = plt.subplots(figsize=(10, 7))
+    """Create the 6-layer defense-in-depth visualization with data flow."""
+    fig, ax = plt.subplots(figsize=(16, 10))
+    ax.set_xlim(0, 16)
+    ax.set_ylim(0, 12)
+    ax.axis('off')
     
+    # Layer data: (name, color, what_it_does, what_it_blocks, optional)
     layers = [
-        ("Layer 6: RFC 3161 Timestamp", "#8B5CF6", "Third-party proof of existence"),
-        ("Layer 5: HKDF Key Derivation", "#6366F1", "Cryptographic key independence"),
-        ("Layer 4: ML-DSA-65 (Dilithium)", "#3B82F6", "192-bit quantum security"),
-        ("Layer 3: Ed25519 Signatures", "#0EA5E9", "128-bit classical security"),
-        ("Layer 2: HMAC-SHA3-256", "#14B8A6", "Keyed message authentication"),
-        ("Layer 1: SHA3-256 Hash", "#22C55E", "128-bit collision resistance"),
+        ("Layer 1: SHA3-256 Hash", "#22C55E", 
+         "Detects any change in data", "Silent tampering, corruption", False),
+        ("Layer 2: HMAC-SHA3-256", "#14B8A6", 
+         "Ties data to a secret key", "Message forgery without key", False),
+        ("Layer 3: Ed25519 Signatures", "#0EA5E9", 
+         "Classical digital signature", "Forgery by classical computers", False),
+        ("Layer 4: ML-DSA-65 (Dilithium)", "#3B82F6", 
+         "Post-quantum signature", "Forgery by quantum computers", False),
+        ("Layer 5: HKDF Key Derivation", "#6366F1", 
+         "Fresh keys per package", "Key reuse attacks", False),
+        ("Layer 6: RFC 3161 Timestamp", "#8B5CF6", 
+         "Proves when data existed", "Backdating, timeline attacks", True),
     ]
     
-    y_positions = np.arange(len(layers))
-    bar_height = 0.7
+    # Title
+    ax.text(8, 11.5, "Ava Guardian: 6-Layer Defense-in-Depth Architecture", 
+            ha='center', fontsize=18, fontweight='bold', color='#1F2937')
     
-    for i, (name, color, desc) in enumerate(layers):
-        # Draw the layer bar
-        ax.barh(i, 1, height=bar_height, color=color, alpha=0.85, edgecolor='white', linewidth=2)
-        # Add layer name
-        ax.text(0.02, i, name, va='center', ha='left', fontsize=12, fontweight='bold', color='white')
-        # Add description on the right
-        ax.text(1.02, i, desc, va='center', ha='left', fontsize=10, color='#374151')
+    # Data flow arrow on the left
+    ax.annotate('', xy=(1.2, 1.5), xytext=(1.2, 9.5),
+                arrowprops=dict(arrowstyle='->', color='#374151', lw=3))
+    ax.text(0.4, 9.5, "Data In", ha='center', va='bottom', fontsize=11, 
+            fontweight='bold', color='#374151')
+    ax.text(0.4, 1.2, "Protected\nPackage\nOut", ha='center', va='top', fontsize=10, 
+            fontweight='bold', color='#374151')
     
-    ax.set_xlim(0, 2.2)
-    ax.set_ylim(-0.5, len(layers) - 0.5)
-    ax.set_yticks([])
-    ax.set_xticks([])
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
+    # Column headers
+    ax.text(4.5, 10.3, "Layer", ha='center', fontsize=12, fontweight='bold', color='#6B7280')
+    ax.text(9.5, 10.3, "What It Does", ha='center', fontsize=12, fontweight='bold', color='#6B7280')
+    ax.text(13.5, 10.3, "What It Blocks", ha='center', fontsize=12, fontweight='bold', color='#6B7280')
     
-    # Title and subtitle
-    ax.set_title("Ava Guardian: 6-Layer Defense-in-Depth Architecture", 
-                 fontsize=16, fontweight='bold', pad=20, color='#1F2937')
+    # Draw each layer
+    y_start = 9.2
+    layer_height = 1.2
     
-    # Add annotation
-    fig.text(0.5, 0.02, 
-             "An attacker must defeat ALL layers to forge a package. Most systems use only 1-2 layers.",
-             ha='center', fontsize=11, style='italic', color='#6B7280')
+    for i, (name, color, does, blocks, optional) in enumerate(layers):
+        y = y_start - i * layer_height
+        
+        # Layer name box
+        rect = mpatches.FancyBboxPatch((2, y - 0.4), 5, 0.8,
+                                        boxstyle="round,pad=0.02,rounding_size=0.1",
+                                        facecolor=color, edgecolor='white', linewidth=2)
+        ax.add_patch(rect)
+        
+        label = name + (" *" if optional else "")
+        ax.text(4.5, y, label, ha='center', va='center', fontsize=11, 
+                fontweight='bold', color='white')
+        
+        # What it does box
+        rect2 = mpatches.FancyBboxPatch((7.2, y - 0.35), 4.6, 0.7,
+                                         boxstyle="round,pad=0.02,rounding_size=0.1",
+                                         facecolor='#F3F4F6', edgecolor='#D1D5DB', linewidth=1)
+        ax.add_patch(rect2)
+        ax.text(9.5, y, does, ha='center', va='center', fontsize=10, color='#374151')
+        
+        # What it blocks box
+        rect3 = mpatches.FancyBboxPatch((12, y - 0.35), 3.5, 0.7,
+                                         boxstyle="round,pad=0.02,rounding_size=0.1",
+                                         facecolor='#FEE2E2', edgecolor='#FECACA', linewidth=1)
+        ax.add_patch(rect3)
+        ax.text(13.75, y, blocks, ha='center', va='center', fontsize=10, color='#991B1B')
+        
+        # Flow arrow between layers (except last)
+        if i < len(layers) - 1:
+            ax.annotate('', xy=(4.5, y - 0.5), xytext=(4.5, y - 0.7),
+                        arrowprops=dict(arrowstyle='->', color='#9CA3AF', lw=1.5))
+    
+    # Comparison box: Typical vs Ava Guardian
+    # Typical system box
+    ax.text(8, 1.8, "Comparison: Typical System vs Ava Guardian", 
+            ha='center', fontsize=12, fontweight='bold', color='#374151')
+    
+    # Typical system (1-2 layers)
+    rect_typical = mpatches.FancyBboxPatch((3, 0.4), 4, 1.0,
+                                            boxstyle="round,pad=0.02,rounding_size=0.1",
+                                            facecolor='#9CA3AF', edgecolor='#6B7280', linewidth=2)
+    ax.add_patch(rect_typical)
+    ax.text(5, 0.9, "Typical: 1-2 Layers", ha='center', va='center', 
+            fontsize=11, fontweight='bold', color='white')
+    ax.text(5, 0.55, "(Hash + Signature)", ha='center', va='center', 
+            fontsize=9, color='white')
+    
+    # Ava Guardian (6 layers)
+    colors_mini = ["#22C55E", "#14B8A6", "#0EA5E9", "#3B82F6", "#6366F1", "#8B5CF6"]
+    for j, c in enumerate(colors_mini):
+        rect_ag = mpatches.FancyBboxPatch((9 + j * 0.7, 0.4), 0.65, 1.0,
+                                           boxstyle="round,pad=0.01,rounding_size=0.05",
+                                           facecolor=c, edgecolor='white', linewidth=1)
+        ax.add_patch(rect_ag)
+    ax.text(11.1, 0.9, "Ava Guardian: 6 Layers", ha='center', va='center', 
+            fontsize=11, fontweight='bold', color='#1F2937')
+    ax.text(11.1, 0.55, "(All must be broken)", ha='center', va='center', 
+            fontsize=9, color='#374151')
+    
+    # Optional layer note
+    ax.text(8, -0.1, "* Optional layer for trusted third-party timestamping", 
+            ha='center', fontsize=9, style='italic', color='#6B7280')
     
     plt.tight_layout()
     plt.savefig(ASSETS_DIR / "defense_layers.png", dpi=150, bbox_inches='tight', 
