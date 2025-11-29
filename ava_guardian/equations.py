@@ -44,7 +44,7 @@ Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
 Date: 2025-11-27
-Version: 1.0.0
+Version: 1.1.0
 
 AI Co-Architects:
     Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
@@ -55,7 +55,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import numpy.typing as npt
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Andrew E. A., Steel Security Advisors LLC"
 __all__ = [
     "PHI",
