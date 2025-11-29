@@ -29,7 +29,7 @@ import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -1097,7 +1097,7 @@ class CryptoPackageResult:
     hmac_tag: bytes
     primary_signature: Signature
     sphincs_signature: Optional[Signature]
-    derived_keys: list[bytes]
+    derived_keys: List[bytes]
     hkdf_salt: bytes
     timestamp: Optional[bytes]
     kem_ciphertext: Optional[bytes]
