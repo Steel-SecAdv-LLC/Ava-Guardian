@@ -699,7 +699,7 @@ class SecureKeyStorage:
 
             aesgcm = AESGCM(self.encryption_key)
             # Decrypt with authentication (will raise InvalidTag if tampered)
-            plaintext = aesgcm.decrypt(nonce, ciphertext, key_id.encode("utf-8"))
+            plaintext: bytes = aesgcm.decrypt(nonce, ciphertext, key_id.encode("utf-8"))
             return plaintext
 
         elif algorithm == "AES-256-CFB":
@@ -720,7 +720,8 @@ class SecureKeyStorage:
                 algorithms.AES(self.encryption_key), modes.CFB(iv), backend=default_backend()
             )
             decryptor = cipher.decryptor()
-            return decryptor.update(encrypted_data) + decryptor.finalize()
+            result: bytes = decryptor.update(encrypted_data) + decryptor.finalize()
+            return result
 
         else:
             raise ValueError(f"Unknown encryption algorithm: {algorithm}")
