@@ -521,9 +521,7 @@ def create_full_package_performance():
     _percentages = [c[3] for c in components]  # noqa: F841
 
     y_pos = range(len(names))
-    ax_layers.barh(
-        y_pos, times, color=colors_layers, edgecolor="white", linewidth=1.5, height=0.55
-    )
+    ax_layers.barh(y_pos, times, color=colors_layers, edgecolor="white", linewidth=1.5, height=0.55)
 
     ax_layers.set_yticks(y_pos)
     ax_layers.set_yticklabels(names, fontsize=10)
