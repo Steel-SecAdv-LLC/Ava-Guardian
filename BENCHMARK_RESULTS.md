@@ -5,7 +5,7 @@
 | Property | Value |
 |----------|-------|
 | Document Version | 1.1.0 |
-| Test Date | 2025-11-28 |
+| Test Date | 2025-11-29 |
 | Classification | Public |
 | Maintainer | Steel Security Advisors LLC |
 
@@ -13,7 +13,7 @@
 
 ## Executive Summary
 
-Complete performance benchmarks for Ava Guardian ♱ v1.0.0, including **comparative analysis against OpenSSL and liboqs** implementations.
+Complete performance benchmarks for Ava Guardian ♱ v1.1.0, including **comparative analysis against OpenSSL and liboqs** implementations.
 
 **Test Environment:**
 - OS: Linux 4.4.0 x86_64
@@ -316,6 +316,6 @@ The native C library provides high-performance implementations of cryptographic 
 
 ---
 
-**Generated:** 2025-11-28
+**Generated:** 2025-11-29
 **Copyright:** 2025 Steel Security Advisors LLC
 **License:** Apache License 2.0
