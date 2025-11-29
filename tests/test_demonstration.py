@@ -110,9 +110,9 @@ class TestDemonstration:
                 missing_outputs.append(f"{description}: '{check}' not found")
 
         assert not missing_outputs, (
-            "Demonstration output validation failed:\n" +
-            "\n".join(f"  - {msg}" for msg in missing_outputs) +
-            f"\n\nActual output:\n{output}"
+            "Demonstration output validation failed:\n"
+            + "\n".join(f"  - {msg}" for msg in missing_outputs)
+            + f"\n\nActual output:\n{output}"
         )
 
     def test_demonstration_no_errors(self):
