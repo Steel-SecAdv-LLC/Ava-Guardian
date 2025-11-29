@@ -1753,11 +1753,9 @@ def _verify_dilithium_with_policy(
         QuantumSignatureRequiredError: If require_quantum_signatures=True and
             signatures are missing, unavailable, or invalid.
     """
-    if (
-        not package.quantum_signatures_enabled
-        or not package.dilithium_signature
-        or not package.dilithium_pubkey
-    ):
+    if (not package.quantum_signatures_enabled or
+            not package.dilithium_signature or
+            not package.dilithium_pubkey):
         if require_quantum_signatures:
             raise QuantumSignatureRequiredError(
                 "Quantum signatures required but package lacks Dilithium signature"
