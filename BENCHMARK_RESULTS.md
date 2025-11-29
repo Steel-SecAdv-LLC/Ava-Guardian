@@ -280,6 +280,7 @@ The native C library provides high-performance implementations of cryptographic 
 |------------|------------|---------|
 | 13 bytes | **1,111,144 ops/sec** | 0.900 µs/op |
 | 1 KB | **153,494 ops/sec** | 6.515 µs/op |
+| 1 KB (streaming API) | **152,319 ops/sec** | 6.565 µs/op |
 
 ### HKDF-SHA3-256
 
@@ -299,7 +300,7 @@ The native C library provides high-performance implementations of cryptographic 
 
 | Operation | Throughput | Latency |
 |-----------|------------|---------|
-| Ed25519 Sign (32-byte msg) | **7,505 ops/sec** | 133.238 µs/op |
+| Ed25519 Sign (32-byte msg) | **8,131 ops/sec** | 123.0 µs/op |
 
 > **Note:** The native C Ed25519 implementation is experimental. Field arithmetic requires further optimization. For production, use the Python API which leverages the cryptography library.
 
@@ -309,7 +310,7 @@ The native C library provides high-performance implementations of cryptographic 
 |-----------|-----------|------------|-----------|
 | SHA3-256 (short) | 1,111,144 ops/sec | 292,790 ops/sec | **3.8x** |
 | HKDF (32B) | 133,327 ops/sec | 21,443 ops/sec | **6.2x** |
-| Ed25519 Sign | 7,505 ops/sec | 10,453 ops/sec | 0.72x (Python faster*) |
+| Ed25519 Sign | 8,131 ops/sec | 10,453 ops/sec | 0.78x (Python faster*) |
 
 *Python Ed25519 uses the optimized cryptography/OpenSSL library. C implementation is experimental.
 

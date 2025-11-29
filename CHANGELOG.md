@@ -30,13 +30,14 @@ Added native C implementations of core cryptographic primitives including SHA3-2
 #### Changes
 
 - **Native C Implementations (`src/c/`):**
-  - `ava_sha3.c`: SHA3-256, SHAKE128, SHAKE256 using Keccak-f[1600] sponge construction (388 lines)
+  - `ava_sha3.c`: SHA3-256, SHAKE128, SHAKE256 with **streaming API** (init/update/final) (513 lines)
   - `ava_hkdf.c`: HKDF-SHA3-256 with HMAC-SHA3-256 per RFC 5869 (313 lines)
-  - `ava_ed25519.c`: Ed25519 keygen/sign/verify with SHA-512 and field arithmetic (1,150 lines, experimental)
-  - `ava_kyber.c`: Extended with NTT, inverse NTT, Montgomery reduction, polynomial compression
+  - `ava_ed25519.c`: Ed25519 keygen/sign/verify with **windowed scalar multiplication** (1,244 lines, experimental)
+  - `ava_kyber.c`: Extended with NTT, inverse NTT, Montgomery reduction, polynomial compression (611 lines)
 
 - **Header Updates (`include/ava_guardian.h`):**
   - Added Ed25519 standalone API: `ava_ed25519_keypair()`, `ava_ed25519_sign()`, `ava_ed25519_verify()`
+  - Added **Streaming SHA3 API**: `ava_sha3_init()`, `ava_sha3_update()`, `ava_sha3_final()`, `ava_sha3_ctx`
   - Updated documentation for SHA3-256 and HKDF functions
   - Removed "STUB" notes for implemented functions
 
@@ -60,7 +61,7 @@ Added native C implementations of core cryptographic primitives including SHA3-2
 |-----------|-----------|------------|-----------|
 | SHA3-256 (short) | 1,111,144 ops/sec | 292,790 ops/sec | **3.8x** |
 | HKDF (32B) | 133,327 ops/sec | 21,443 ops/sec | **6.2x** |
-| Ed25519 Sign | 7,505 ops/sec | 10,453 ops/sec | 0.72x (Python faster*) |
+| Ed25519 Sign | 8,131 ops/sec | 10,453 ops/sec | 0.78x (Python faster*) |
 
 *Python Ed25519 uses the optimized cryptography/OpenSSL library. C implementation is experimental.
 

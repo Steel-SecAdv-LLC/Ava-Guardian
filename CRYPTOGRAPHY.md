@@ -1,5 +1,16 @@
 # Cryptographic Algorithms - Ava Guardian ♱
 
+## Document Information
+
+| Property | Value |
+|----------|-------|
+| Document Version | 1.1.0 |
+| Last Updated | 2025-11-28 |
+| Classification | Public |
+| Maintainer | Steel Security Advisors LLC |
+
+---
+
 This document provides an overview of the cryptographic algorithms used in Ava Guardian ♱ (AG♱), their security properties, and references to official specifications.
 
 ## Algorithm Summary

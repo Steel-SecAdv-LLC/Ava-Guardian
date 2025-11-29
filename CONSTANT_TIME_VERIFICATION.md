@@ -1,5 +1,16 @@
 # Constant-Time Verification Guide
 
+## Document Information
+
+| Property | Value |
+|----------|-------|
+| Document Version | 1.1.0 |
+| Last Updated | 2025-11-28 |
+| Classification | Public |
+| Maintainer | Steel Security Advisors LLC |
+
+---
+
 This document describes the constant-time verification methodology and tooling for Ava Guardian's cryptographic implementations.
 
 ## Overview
