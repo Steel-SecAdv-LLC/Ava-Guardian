@@ -35,19 +35,22 @@ from typing import Optional
 # Try to import rfc3161ng for RFC 3161 timestamp support
 try:
     from rfc3161ng import RemoteTimestamper
+
     RFC3161_AVAILABLE = True
 except ImportError:
     RFC3161_AVAILABLE = False
-    RemoteTimestamper = None  # type: ignore
+    RemoteTimestamper = None
 
 
 class TimestampUnavailableError(Exception):
     """Raised when RFC 3161 timestamping is requested but not available."""
+
     pass
 
 
 class TimestampError(Exception):
     """Raised when timestamp request fails."""
+
     pass
 
 
@@ -62,6 +65,7 @@ class TimestampResult:
         hash_algorithm: Hash algorithm used (e.g., 'sha256', 'sha3-256')
         data_hash: Hash of the timestamped data
     """
+
     token: bytes
     tsa_url: str
     hash_algorithm: str
@@ -71,7 +75,7 @@ class TimestampResult:
 def get_timestamp(
     data: bytes,
     tsa_url: Optional[str] = None,
-    hash_algorithm: str = 'sha3-256',
+    hash_algorithm: str = "sha3-256",
     certificate_file: Optional[str] = None,
 ) -> TimestampResult:
     """
@@ -133,13 +137,13 @@ def get_timestamp(
         )
 
     # Compute hash based on specified algorithm
-    if hash_algorithm == 'sha256':
+    if hash_algorithm == "sha256":
         data_hash = hashlib.sha256(data).digest()
-    elif hash_algorithm == 'sha3-256':
+    elif hash_algorithm == "sha3-256":
         data_hash = hashlib.sha3_256(data).digest()
-    elif hash_algorithm == 'sha512':
+    elif hash_algorithm == "sha512":
         data_hash = hashlib.sha512(data).digest()
-    elif hash_algorithm == 'sha3-512':
+    elif hash_algorithm == "sha3-512":
         data_hash = hashlib.sha3_512(data).digest()
     else:
         raise ValueError(
@@ -152,7 +156,7 @@ def get_timestamp(
         timestamper = RemoteTimestamper(
             tsa_url,
             certificate=certificate_file,
-            hashname=hash_algorithm.replace('-', ''),  # 'sha3256' format
+            hashname=hash_algorithm.replace("-", ""),  # 'sha3256' format
         )
 
         # Request timestamp token
@@ -174,9 +178,7 @@ def get_timestamp(
     except Exception as e:
         if isinstance(e, (TimestampUnavailableError, TimestampError, ValueError)):
             raise
-        raise TimestampError(
-            f"Timestamp request failed: {str(e)}"
-        ) from e
+        raise TimestampError(f"Timestamp request failed: {str(e)}") from e
 
 
 def verify_timestamp(
@@ -224,13 +226,13 @@ def verify_timestamp(
 
     try:
         # Recompute hash
-        if timestamp_result.hash_algorithm == 'sha256':
+        if timestamp_result.hash_algorithm == "sha256":
             computed_hash = hashlib.sha256(data).digest()
-        elif timestamp_result.hash_algorithm == 'sha3-256':
+        elif timestamp_result.hash_algorithm == "sha3-256":
             computed_hash = hashlib.sha3_256(data).digest()
-        elif timestamp_result.hash_algorithm == 'sha512':
+        elif timestamp_result.hash_algorithm == "sha512":
             computed_hash = hashlib.sha512(data).digest()
-        elif timestamp_result.hash_algorithm == 'sha3-512':
+        elif timestamp_result.hash_algorithm == "sha3-512":
             computed_hash = hashlib.sha3_512(data).digest()
         else:
             return False
@@ -243,7 +245,7 @@ def verify_timestamp(
         timestamper = RemoteTimestamper(
             timestamp_result.tsa_url,
             certificate=certificate_file,
-            hashname=timestamp_result.hash_algorithm.replace('-', ''),
+            hashname=timestamp_result.hash_algorithm.replace("-", ""),
         )
 
         # Verify timestamp token
@@ -261,10 +263,10 @@ def verify_timestamp(
 
 # Public API
 __all__ = [
-    'get_timestamp',
-    'verify_timestamp',
-    'TimestampResult',
-    'TimestampUnavailableError',
-    'TimestampError',
-    'RFC3161_AVAILABLE',
+    "get_timestamp",
+    "verify_timestamp",
+    "TimestampResult",
+    "TimestampUnavailableError",
+    "TimestampError",
+    "RFC3161_AVAILABLE",
 ]

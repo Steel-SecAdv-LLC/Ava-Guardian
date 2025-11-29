@@ -72,8 +72,8 @@ try:
     from code_guardian_secure import (
         derive_keys,
         hmac_authenticate,
-        hmac_verify,
     )
+
     HMAC_HKDF_AVAILABLE = True
 except ImportError:
     HMAC_HKDF_AVAILABLE = False
@@ -92,9 +92,9 @@ try:
     )
 except ImportError:
     RFC3161_AVAILABLE = False
-    TimestampUnavailableError = Exception  # type: ignore
-    TimestampError = Exception  # type: ignore
-    get_timestamp = None  # type: ignore
+    TimestampUnavailableError = Exception  # type: ignore[misc,assignment]
+    TimestampError = Exception  # type: ignore[misc,assignment]
+    get_timestamp = None
 
 # Runtime PQC availability check
 pqc_available = DILITHIUM_AVAILABLE or KYBER_AVAILABLE or SPHINCS_AVAILABLE
@@ -746,8 +746,8 @@ class HybridSignatureProvider(CryptoProvider):
             raise PQCUnavailableError("PQC_UNAVAILABLE: Hybrid signatures require ML-DSA-65.")
 
         # Split keys
-        classical_sk_bytes = secret_key[:self.ED25519_SK_SIZE]
-        pqc_sk = secret_key[self.ED25519_SK_SIZE:]
+        classical_sk_bytes = secret_key[: self.ED25519_SK_SIZE]
+        pqc_sk = secret_key[self.ED25519_SK_SIZE :]
 
         # Optimize: Reconstruct Ed25519 key object once and pass to provider
         from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -795,10 +795,10 @@ class HybridSignatureProvider(CryptoProvider):
             raise PQCUnavailableError("PQC_UNAVAILABLE: Hybrid signatures require ML-DSA-65.")
 
         # Split keys and signatures
-        classical_pk_bytes = public_key[:self.ED25519_PK_SIZE]
-        pqc_pk = public_key[self.ED25519_PK_SIZE:]
-        classical_sig = signature[:self.ED25519_SIG_SIZE]
-        pqc_sig = signature[self.ED25519_SIG_SIZE:]
+        classical_pk_bytes = public_key[: self.ED25519_PK_SIZE]
+        pqc_pk = public_key[self.ED25519_PK_SIZE :]
+        classical_sig = signature[: self.ED25519_SIG_SIZE]
+        pqc_sig = signature[self.ED25519_SIG_SIZE :]
 
         # Optimize: Reconstruct Ed25519 key object once and pass to provider
         from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -1255,7 +1255,7 @@ def create_crypto_package(
         hkdf_salt = secrets.token_bytes(32)
         derived_keys = []
         for i in range(config.num_derived_keys):
-            key_material = hashlib.sha3_256(hkdf_salt + content + i.to_bytes(4, 'big')).digest()
+            key_material = hashlib.sha3_256(hkdf_salt + content + i.to_bytes(4, "big")).digest()
             derived_keys.append(key_material)
         warnings.warn(
             "HKDF not available, using simple key derivation fallback. "
@@ -1293,13 +1293,12 @@ def create_crypto_package(
             timestamp_result = get_timestamp(
                 data=content,
                 tsa_url=config.tsa_url,
-                hash_algorithm='sha3-256',
+                hash_algorithm="sha3-256",
             )
             timestamp_token = timestamp_result.token
         except TimestampError as e:
             warnings.warn(
-                f"Failed to obtain RFC 3161 timestamp: {str(e)}. "
-                "Continuing without timestamp.",
+                f"Failed to obtain RFC 3161 timestamp: {str(e)}. " "Continuing without timestamp.",
                 category=UserWarning,
             )
             timestamp_token = None
