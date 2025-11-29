@@ -29,12 +29,15 @@ class SecurityWarning(UserWarning):
     pass
 
 
-class PQCUnavailableError(Exception):
+class PQCUnavailableError(RuntimeError):
     """
     Raised when post-quantum cryptography is required but unavailable.
 
     This exception indicates that a PQC operation was requested but the
     necessary backend (liboqs-python or pqcrypto) is not installed.
+
+    Inherits from RuntimeError to maintain backward compatibility with
+    existing tests and code that expects this exception hierarchy.
 
     To resolve, install one of:
         pip install liboqs-python  # Recommended, requires Python 3.10+

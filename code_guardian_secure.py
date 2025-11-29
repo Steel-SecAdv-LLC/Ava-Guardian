@@ -68,7 +68,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 if TYPE_CHECKING:
     from ava_guardian_monitor import AvaGuardianMonitor
@@ -92,15 +92,162 @@ from ava_guardian.exceptions import QuantumSignatureUnavailableError
 
 # Quantum-resistant cryptography (CRYSTALS-Dilithium)
 # Import from centralized PQC backends module (DRY principle)
-# DILITHIUM_BACKEND is re-exported for backward compatibility with tests
-from ava_guardian.pqc_backends import (  # noqa: F401
-    DILITHIUM_AVAILABLE,
-    DILITHIUM_BACKEND,
+# We import the backend functions with underscore prefix and wrap them
+# to allow tests to monkeypatch module-level DILITHIUM_* variables
+from ava_guardian.pqc_backends import DILITHIUM_AVAILABLE as _PQC_DILITHIUM_AVAILABLE
+from ava_guardian.pqc_backends import DILITHIUM_BACKEND as _PQC_DILITHIUM_BACKEND
+from ava_guardian.pqc_backends import (
     DilithiumKeyPair,
-    dilithium_sign,
-    dilithium_verify,
-    generate_dilithium_keypair,
 )
+from ava_guardian.pqc_backends import dilithium_sign as _pqc_dilithium_sign
+from ava_guardian.pqc_backends import dilithium_verify as _pqc_dilithium_verify
+from ava_guardian.pqc_backends import generate_dilithium_keypair as _pqc_generate_dilithium_keypair
+
+# Module-level variables for backward compatibility with tests
+# Tests can monkeypatch these to test different backend paths
+DILITHIUM_AVAILABLE: bool = _PQC_DILITHIUM_AVAILABLE
+DILITHIUM_BACKEND: Optional[str] = _PQC_DILITHIUM_BACKEND
+
+# Optional pqcrypto module reference for test mocking
+# Tests can set this to FakeDilithium3 to test pqcrypto paths
+dilithium3: Any = None
+try:
+    from pqcrypto.sign import dilithium3 as _dilithium3_module
+
+    dilithium3 = _dilithium3_module
+except ImportError:
+    pass
+
+
+# ============================================================================
+# DILITHIUM WRAPPER FUNCTIONS (for test compatibility)
+# ============================================================================
+# These wrapper functions check module-level DILITHIUM_* variables,
+# allowing tests to monkeypatch them to test different backend paths.
+
+
+def generate_dilithium_keypair() -> DilithiumKeyPair:
+    """
+    Generate a CRYSTALS-Dilithium (ML-DSA-65) keypair.
+
+    This wrapper function checks module-level DILITHIUM_AVAILABLE and
+    DILITHIUM_BACKEND variables, allowing tests to monkeypatch them.
+
+    Returns:
+        DilithiumKeyPair with ML-DSA-65 keys
+
+    Raises:
+        QuantumSignatureUnavailableError: If no Dilithium backend is available
+    """
+    import sys
+
+    # Get current module to check monkeypatched values
+    this_module = sys.modules[__name__]
+    available = getattr(this_module, "DILITHIUM_AVAILABLE", _PQC_DILITHIUM_AVAILABLE)
+    backend = getattr(this_module, "DILITHIUM_BACKEND", _PQC_DILITHIUM_BACKEND)
+
+    if not available:
+        raise QuantumSignatureUnavailableError(
+            "PQC_UNAVAILABLE: Dilithium backend not available. "
+            "Install liboqs-python (recommended) or pqcrypto: "
+            "pip install liboqs-python"
+        )
+
+    # Check for pqcrypto backend (used by tests with FakeDilithium3)
+    if backend == "pqcrypto":
+        d3 = getattr(this_module, "dilithium3", None)
+        if d3 is not None:
+            public_key, private_key = d3.generate_keypair()
+            return DilithiumKeyPair(private_key=private_key, public_key=public_key)
+
+    # Default to centralized PQC backend
+    return _pqc_generate_dilithium_keypair()
+
+
+def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
+    """
+    Sign message with CRYSTALS-Dilithium (ML-DSA-65).
+
+    This wrapper function checks module-level DILITHIUM_AVAILABLE and
+    DILITHIUM_BACKEND variables, allowing tests to monkeypatch them.
+
+    Args:
+        message: Data to sign
+        private_key: Dilithium private key (4032 bytes)
+
+    Returns:
+        Dilithium signature (3293 bytes)
+
+    Raises:
+        QuantumSignatureUnavailableError: If no Dilithium backend is available
+    """
+    import sys
+
+    # Get current module to check monkeypatched values
+    this_module = sys.modules[__name__]
+    available = getattr(this_module, "DILITHIUM_AVAILABLE", _PQC_DILITHIUM_AVAILABLE)
+    backend = getattr(this_module, "DILITHIUM_BACKEND", _PQC_DILITHIUM_BACKEND)
+
+    if not available:
+        raise QuantumSignatureUnavailableError(
+            "PQC_UNAVAILABLE: Dilithium backend not available. "
+            "Install liboqs-python (recommended) or pqcrypto."
+        )
+
+    # Check for pqcrypto backend (used by tests with FakeDilithium3)
+    if backend == "pqcrypto":
+        d3 = getattr(this_module, "dilithium3", None)
+        if d3 is not None:
+            return cast(bytes, d3.sign(message, private_key))
+
+    # Default to centralized PQC backend
+    return _pqc_dilithium_sign(message, private_key)
+
+
+def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
+    """
+    Verify CRYSTALS-Dilithium signature.
+
+    This wrapper function checks module-level DILITHIUM_AVAILABLE and
+    DILITHIUM_BACKEND variables, allowing tests to monkeypatch them.
+
+    Args:
+        message: Original data
+        signature: Dilithium signature
+        public_key: Dilithium public key (1952 bytes)
+
+    Returns:
+        True if signature is valid, False otherwise
+
+    Raises:
+        QuantumSignatureUnavailableError: If no Dilithium backend is available
+    """
+    import sys
+
+    # Get current module to check monkeypatched values
+    this_module = sys.modules[__name__]
+    available = getattr(this_module, "DILITHIUM_AVAILABLE", _PQC_DILITHIUM_AVAILABLE)
+    backend = getattr(this_module, "DILITHIUM_BACKEND", _PQC_DILITHIUM_BACKEND)
+
+    if not available:
+        raise QuantumSignatureUnavailableError(
+            "PQC_UNAVAILABLE: Dilithium backend not available. "
+            "Install liboqs-python (recommended) or pqcrypto."
+        )
+
+    # Check for pqcrypto backend (used by tests with FakeDilithium3)
+    if backend == "pqcrypto":
+        d3 = getattr(this_module, "dilithium3", None)
+        if d3 is not None:
+            try:
+                d3.verify(message, signature, public_key)
+                return True
+            except Exception:
+                return False
+
+    # Default to centralized PQC backend
+    return _pqc_dilithium_verify(message, signature, public_key)
+
 
 # ============================================================================
 # EXCEPTIONS
