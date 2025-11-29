@@ -277,47 +277,160 @@ def create_test_coverage():
 
 
 def create_ethical_binding_flow():
-    """Create ethical binding flow diagram."""
-    fig, ax = plt.subplots(figsize=(14, 4))
-    ax.set_xlim(0, 14)
-    ax.set_ylim(0, 4)
+    """Create comprehensive ethical binding diagram showing 12 pillars with weights."""
+    fig, ax = plt.subplots(figsize=(18, 12))
+    ax.set_xlim(0, 18)
+    ax.set_ylim(0, 12)
     ax.axis('off')
     
-    # Define boxes
-    boxes = [
-        (1, 2, "12 Ethical\nPillars", "#8B5CF6"),
-        (4, 2, "SHA3-256\nHash", "#3B82F6"),
-        (7, 2, "128-bit\nSignature", "#0EA5E9"),
-        (10, 2, "HKDF Context\n+ Signatures", "#22C55E"),
+    # Title
+    ax.text(9, 11.5, "Ethical Vector Cryptographic Binding", 
+            ha='center', fontsize=20, fontweight='bold', color='#1F2937')
+    ax.text(9, 10.9, "12 Omni-DNA Ethical Pillars bound to keys and signatures via SHA3-256 + HKDF",
+            ha='center', fontsize=12, color='#6B7280')
+    
+    # Define the 4 triads with their pillars
+    triads = [
+        ("Triad 1: Knowledge", "#3B82F6", "Verification Layer", [
+            ("omniscient", "Complete verification"),
+            ("omnipercipient", "Multi-dimensional detection"),
+            ("omnilegent", "Data validation"),
+        ]),
+        ("Triad 2: Power", "#22C55E", "Cryptographic Generation", [
+            ("omnipotent", "Maximum strength"),
+            ("omnificent", "Key generation"),
+            ("omniactive", "Real-time protection"),
+        ]),
+        ("Triad 3: Coverage", "#0EA5E9", "Defense-in-Depth", [
+            ("omnipresent", "Multi-layer defense"),
+            ("omnitemporal", "Temporal integrity"),
+            ("omnidirectional", "Attack surface coverage"),
+        ]),
+        ("Triad 4: Benevolence", "#8B5CF6", "Ethical Constraints", [
+            ("omnibenevolent", "Ethical foundation"),
+            ("omniperfect", "Mathematical correctness"),
+            ("omnivalent", "Hybrid security"),
+        ]),
     ]
     
-    box_width = 2
-    box_height = 1.5
+    # Draw 4 triad boxes in 2x2 grid on the left
+    triad_positions = [(1.8, 8.5), (1.8, 5.5), (1.8, 2.5), (5.5, 5.5)]
+    triad_positions = [(1.8, 8.2), (5.5, 8.2), (1.8, 4.8), (5.5, 4.8)]
     
-    for x, y, text, color in boxes:
-        rect = mpatches.FancyBboxPatch((x - box_width/2, y - box_height/2), 
-                                        box_width, box_height,
-                                        boxstyle="round,pad=0.05,rounding_size=0.2",
+    for idx, ((name, color, subtitle, pillars), (x, y)) in enumerate(zip(triads, triad_positions)):
+        # Triad box
+        rect = mpatches.FancyBboxPatch((x - 1.6, y - 1.5), 3.2, 3.0,
+                                        boxstyle="round,pad=0.02,rounding_size=0.15",
+                                        facecolor=color, edgecolor='white', linewidth=2, alpha=0.15)
+        ax.add_patch(rect)
+        
+        # Triad header
+        header_rect = mpatches.FancyBboxPatch((x - 1.5, y + 1.0), 3.0, 0.45,
+                                               boxstyle="round,pad=0.01,rounding_size=0.1",
+                                               facecolor=color, edgecolor='white', linewidth=1)
+        ax.add_patch(header_rect)
+        ax.text(x, y + 1.22, name, ha='center', va='center', fontsize=10, 
+                fontweight='bold', color='white')
+        ax.text(x, y + 0.75, f"({subtitle})", ha='center', va='center', fontsize=8, color='#374151')
+        
+        # Pillars
+        for i, (pillar_name, pillar_desc) in enumerate(pillars):
+            py = y + 0.3 - i * 0.55
+            ax.text(x - 1.4, py, f"{pillar_name}", ha='left', va='center', 
+                    fontsize=9, fontweight='bold', color='#1F2937')
+            ax.text(x + 1.5, py, "w=1.0", ha='right', va='center', 
+                    fontsize=8, color=color, fontweight='bold')
+            ax.text(x - 1.4, py - 0.22, f"  {pillar_desc}", ha='left', va='center', 
+                    fontsize=7, color='#6B7280')
+    
+    # Aggregator box: Balanced Ethical Vector
+    agg_x, agg_y = 9.2, 6.5
+    agg_rect = mpatches.FancyBboxPatch((agg_x - 1.3, agg_y - 0.8), 2.6, 1.6,
+                                        boxstyle="round,pad=0.02,rounding_size=0.1",
+                                        facecolor='#F3F4F6', edgecolor='#9CA3AF', linewidth=2)
+    ax.add_patch(agg_rect)
+    ax.text(agg_x, agg_y + 0.35, "Balanced Vector", ha='center', va='center', 
+            fontsize=10, fontweight='bold', color='#1F2937')
+    ax.text(agg_x, agg_y - 0.05, "12 pillars", ha='center', va='center', 
+            fontsize=9, color='#374151')
+    ax.text(agg_x, agg_y - 0.4, "each w = 1.0", ha='center', va='center', 
+            fontsize=9, color='#374151', fontweight='bold')
+    
+    # Draw arrows from triads to aggregator
+    arrow_style = dict(arrowstyle='->', color='#9CA3AF', lw=1.5)
+    for (x, y) in triad_positions:
+        ax.annotate('', xy=(agg_x - 1.3, agg_y), xytext=(x + 1.6, y),
+                    arrowprops=dict(arrowstyle='->', color='#9CA3AF', lw=1.2,
+                                   connectionstyle="arc3,rad=0.1"))
+    
+    # Cryptographic binding pipeline on the right
+    pipeline_y = 6.5
+    pipeline_boxes = [
+        (11.5, "JSON Encode", "sorted keys", "#6366F1"),
+        (13.5, "SHA3-256", "H(ethical_json)", "#3B82F6"),
+        (15.5, "128-bit Sig", "H(E)[:16]", "#0EA5E9"),
+    ]
+    
+    # Arrow from aggregator to pipeline
+    ax.annotate('', xy=(11.5 - 0.9, pipeline_y), xytext=(agg_x + 1.3, agg_y),
+                arrowprops=dict(arrowstyle='->', color='#374151', lw=2))
+    
+    for px, label, sublabel, color in pipeline_boxes:
+        rect = mpatches.FancyBboxPatch((px - 0.85, pipeline_y - 0.6), 1.7, 1.2,
+                                        boxstyle="round,pad=0.02,rounding_size=0.1",
                                         facecolor=color, edgecolor='white', linewidth=2)
         ax.add_patch(rect)
-        ax.text(x, y, text, ha='center', va='center', fontsize=11, 
-                fontweight='bold', color='white')
+        ax.text(px, pipeline_y + 0.15, label, ha='center', va='center', 
+                fontsize=10, fontweight='bold', color='white')
+        ax.text(px, pipeline_y - 0.2, sublabel, ha='center', va='center', 
+                fontsize=8, color='white', alpha=0.9)
     
-    # Draw arrows
-    arrow_style = dict(arrowstyle='->', color='#374151', lw=2)
-    for i in range(len(boxes) - 1):
-        x1 = boxes[i][0] + box_width/2
-        x2 = boxes[i+1][0] - box_width/2
-        ax.annotate('', xy=(x2, 2), xytext=(x1, 2), arrowprops=arrow_style)
+    # Arrows between pipeline boxes
+    for i in range(len(pipeline_boxes) - 1):
+        x1 = pipeline_boxes[i][0] + 0.85
+        x2 = pipeline_boxes[i + 1][0] - 0.85
+        ax.annotate('', xy=(x2, pipeline_y), xytext=(x1, pipeline_y),
+                    arrowprops=dict(arrowstyle='->', color='#374151', lw=2))
     
-    # Title
-    ax.text(7, 3.7, "Ethical Vector Cryptographic Binding", 
-            ha='center', fontsize=14, fontweight='bold', color='#1F2937')
+    # Final output boxes
+    output_y1, output_y2 = 8.5, 4.5
+    
+    # Arrow from 128-bit sig to outputs
+    ax.annotate('', xy=(16.2, output_y1 - 0.5), xytext=(15.5, pipeline_y + 0.6),
+                arrowprops=dict(arrowstyle='->', color='#22C55E', lw=2))
+    ax.annotate('', xy=(16.2, output_y2 + 0.5), xytext=(15.5, pipeline_y - 0.6),
+                arrowprops=dict(arrowstyle='->', color='#22C55E', lw=2))
+    
+    # HKDF Context output
+    rect1 = mpatches.FancyBboxPatch((15.3, output_y1 - 0.5), 2.4, 1.0,
+                                     boxstyle="round,pad=0.02,rounding_size=0.1",
+                                     facecolor='#22C55E', edgecolor='white', linewidth=2)
+    ax.add_patch(rect1)
+    ax.text(16.5, output_y1 + 0.1, "HKDF Context", ha='center', va='center', 
+            fontsize=10, fontweight='bold', color='white')
+    ax.text(16.5, output_y1 - 0.2, "Key Derivation", ha='center', va='center', 
+            fontsize=8, color='white', alpha=0.9)
+    
+    # Signature Message output
+    rect2 = mpatches.FancyBboxPatch((15.3, output_y2 - 0.5), 2.4, 1.0,
+                                     boxstyle="round,pad=0.02,rounding_size=0.1",
+                                     facecolor='#22C55E', edgecolor='white', linewidth=2)
+    ax.add_patch(rect2)
+    ax.text(16.5, output_y2 + 0.1, "Signature Msg", ha='center', va='center', 
+            fontsize=10, fontweight='bold', color='white')
+    ax.text(16.5, output_y2 - 0.2, "Ed25519 + ML-DSA-65", ha='center', va='center', 
+            fontsize=8, color='white', alpha=0.9)
+    
+    # Sum annotation
+    ax.text(9.2, 5.4, "Sum: 12 x 1.0 = 12.0", ha='center', va='center', 
+            fontsize=11, fontweight='bold', color='#059669',
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='#DCFCE7', edgecolor='#22C55E'))
     
     # Caption
-    ax.text(7, 0.3, 
-            "Keys and signatures are cryptographically bound to the ethical profile hash.\n"
-            "This makes the policy explicit and verifiable, not a constraint enforcement mechanism.",
+    ax.text(9, 0.8, 
+            "The 12 Omni-DNA Ethical Pillars form a balanced vector (each w = 1.0, total = 12.0).\n"
+            "This vector is hashed with SHA3-256 and a 128-bit signature is injected into HKDF context and signature messages,\n"
+            "cryptographically binding keys and signatures to an explicit ethical profile. This is binding, not enforcement.",
             ha='center', fontsize=10, style='italic', color='#6B7280')
     
     plt.tight_layout()
