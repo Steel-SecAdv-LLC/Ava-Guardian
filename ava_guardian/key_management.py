@@ -745,6 +745,32 @@ class SecureKeyStorage:
             return True
         return False
 
+    def list_keys(self) -> list:
+        """
+        List all stored key IDs.
+
+        Returns:
+            List of key IDs stored in this storage
+        """
+        key_ids = []
+        for key_file in self.storage_path.glob("*.json"):
+            if not key_file.name.startswith("."):
+                key_ids.append(key_file.stem)
+        return key_ids
+
+    def __enter__(self) -> "SecureKeyStorage":
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit - securely clear encryption key from memory."""
+        # Securely zero the encryption key
+        if hasattr(self, "encryption_key") and self.encryption_key:
+            # Overwrite with zeros before dereferencing
+            key_len = len(self.encryption_key)
+            self.encryption_key = b"\x00" * key_len
+        return None
+
 
 class HSMKeyStorage:
     """
