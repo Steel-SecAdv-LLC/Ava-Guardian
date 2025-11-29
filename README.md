@@ -77,23 +77,11 @@ Understanding Ava Guardian at a glance through visual representations of its arc
 
 *Classical algorithms (RSA, ECDSA, Ed25519) are broken by quantum computers. ML-DSA-65 provides 192-bit security against both classical and quantum attacks.*
 
-### Performance Comparison
-
-![Performance Comparison](assets/performance_comparison.png)
-
-*Ava Guardian achieves competitive performance with OpenSSL+liboqs while providing 6 layers of defense instead of 1-2.*
-
 ### Full Package Throughput
 
 ![Package Performance](assets/package_performance.png)
 
 *Complete 6-layer cryptographic packages can be created at 3,595 ops/sec and verified at 5,029 ops/sec.*
-
-### Test Coverage
-
-![Test Coverage](assets/test_coverage.png)
-
-*729 tests across 25 test files (~11,000 lines) covering core crypto, PQC backends, key management, memory security, and monitoring.*
 
 ### 3R Monitoring Overhead
 

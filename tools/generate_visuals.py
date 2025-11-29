@@ -138,41 +138,102 @@ def create_defense_layers_diagram():
 
 
 def create_performance_comparison():
-    """Create performance comparison bar chart."""
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    """Create advanced multi-factor performance comparison with line charts."""
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     
-    # Hybrid Signing Performance
+    # Data from BENCHMARK_RESULTS.md
+    implementations = ['Ava Guardian\n(Standard)', 'Ava Guardian\n(Optimized)', 'OpenSSL+liboqs']
+    x_pos = np.arange(len(implementations))
+    
+    # Throughput data (ops/sec)
+    sign_throughput = [4575, 6500, 6209]
+    verify_throughput = [6192, 6700, 6721]
+    
+    # Derived latency data (ms = 1000 / ops_per_sec)
+    sign_latency = [1000/v for v in sign_throughput]
+    verify_latency = [1000/v for v in verify_throughput]
+    
+    # Relative performance vs OpenSSL+liboqs baseline (%)
+    sign_relative = [100 * v / sign_throughput[2] for v in sign_throughput]
+    verify_relative = [100 * v / verify_throughput[2] for v in verify_throughput]
+    
+    # === Panel 1: Throughput Line Chart ===
     ax1 = axes[0]
-    categories = ['Ava Guardian\n(Standard)', 'Ava Guardian\n(Optimized)', 'OpenSSL+liboqs']
-    sign_values = [4575, 6500, 6209]
-    colors = ['#3B82F6', '#22C55E', '#6B7280']
+    ax1.plot(x_pos, sign_throughput, 'o-', color='#3B82F6', linewidth=2.5, 
+             markersize=10, label='Hybrid Sign', markeredgecolor='white', markeredgewidth=2)
+    ax1.plot(x_pos, verify_throughput, 's-', color='#22C55E', linewidth=2.5, 
+             markersize=10, label='Hybrid Verify', markeredgecolor='white', markeredgewidth=2)
     
-    bars1 = ax1.bar(categories, sign_values, color=colors, edgecolor='white', linewidth=2)
-    ax1.set_ylabel('Operations per Second', fontsize=12)
-    ax1.set_title('Hybrid Signing Performance\n(Ed25519 + ML-DSA-65)', fontsize=13, fontweight='bold')
-    ax1.set_ylim(0, 8000)
+    # Add value annotations
+    for i, (s, v) in enumerate(zip(sign_throughput, verify_throughput)):
+        ax1.annotate(f'{s:,}', (i, s), textcoords="offset points", xytext=(0, 12),
+                     ha='center', fontsize=9, fontweight='bold', color='#3B82F6')
+        ax1.annotate(f'{v:,}', (i, v), textcoords="offset points", xytext=(0, -18),
+                     ha='center', fontsize=9, fontweight='bold', color='#22C55E')
     
-    # Add value labels
-    for bar, val in zip(bars1, sign_values):
-        ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100, 
-                f'{val:,}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+    ax1.set_xticks(x_pos)
+    ax1.set_xticklabels(implementations, fontsize=9)
+    ax1.set_ylabel('Operations per Second', fontsize=11)
+    ax1.set_title('Throughput Comparison\n(Higher is Better)', fontsize=12, fontweight='bold')
+    ax1.legend(loc='lower right', fontsize=9)
+    ax1.set_ylim(3500, 7500)
+    ax1.grid(True, alpha=0.3)
     
-    # Hybrid Verification Performance
+    # === Panel 2: Latency Line Chart ===
     ax2 = axes[1]
-    verify_values = [6192, 6700, 6721]
+    ax2.plot(x_pos, sign_latency, 'o-', color='#3B82F6', linewidth=2.5, 
+             markersize=10, label='Sign Latency', markeredgecolor='white', markeredgewidth=2)
+    ax2.plot(x_pos, verify_latency, 's-', color='#22C55E', linewidth=2.5, 
+             markersize=10, label='Verify Latency', markeredgecolor='white', markeredgewidth=2)
     
-    bars2 = ax2.bar(categories, verify_values, color=colors, edgecolor='white', linewidth=2)
-    ax2.set_ylabel('Operations per Second', fontsize=12)
-    ax2.set_title('Hybrid Verification Performance\n(Ed25519 + ML-DSA-65)', fontsize=13, fontweight='bold')
-    ax2.set_ylim(0, 8000)
+    for i, (s, v) in enumerate(zip(sign_latency, verify_latency)):
+        ax2.annotate(f'{s:.3f}ms', (i, s), textcoords="offset points", xytext=(0, 12),
+                     ha='center', fontsize=9, fontweight='bold', color='#3B82F6')
+        ax2.annotate(f'{v:.3f}ms', (i, v), textcoords="offset points", xytext=(0, -18),
+                     ha='center', fontsize=9, fontweight='bold', color='#22C55E')
     
-    for bar, val in zip(bars2, verify_values):
-        ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100, 
-                f'{val:,}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+    ax2.set_xticks(x_pos)
+    ax2.set_xticklabels(implementations, fontsize=9)
+    ax2.set_ylabel('Latency (milliseconds)', fontsize=11)
+    ax2.set_title('Latency Comparison\n(Lower is Better)', fontsize=12, fontweight='bold')
+    ax2.legend(loc='upper right', fontsize=9)
+    ax2.set_ylim(0.1, 0.25)
+    ax2.grid(True, alpha=0.3)
     
-    # Add benchmark info
-    fig.text(0.5, -0.02, 
-             "Benchmarks: Linux x86_64, 16 cores, 13GB RAM, Python 3.11, liboqs 0.15.0",
+    # === Panel 3: Relative Performance vs Baseline ===
+    ax3 = axes[2]
+    width = 0.35
+    bars1 = ax3.bar(x_pos - width/2, sign_relative, width, color='#3B82F6', 
+                    label='Sign', edgecolor='white', linewidth=1.5)
+    bars2 = ax3.bar(x_pos + width/2, verify_relative, width, color='#22C55E', 
+                    label='Verify', edgecolor='white', linewidth=1.5)
+    
+    # Add percentage labels
+    for bar, val in zip(bars1, sign_relative):
+        ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
+                 f'{val:.1f}%', ha='center', va='bottom', fontsize=9, fontweight='bold')
+    for bar, val in zip(bars2, verify_relative):
+        ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
+                 f'{val:.1f}%', ha='center', va='bottom', fontsize=9, fontweight='bold')
+    
+    # 100% baseline line
+    ax3.axhline(y=100, color='#6B7280', linestyle='--', linewidth=1.5, alpha=0.7)
+    ax3.text(2.4, 101, 'OpenSSL+liboqs baseline', fontsize=8, color='#6B7280', va='bottom')
+    
+    ax3.set_xticks(x_pos)
+    ax3.set_xticklabels(implementations, fontsize=9)
+    ax3.set_ylabel('Relative Performance (%)', fontsize=11)
+    ax3.set_title('Performance vs OpenSSL+liboqs\n(100% = Baseline)', fontsize=12, fontweight='bold')
+    ax3.legend(loc='lower right', fontsize=9)
+    ax3.set_ylim(0, 115)
+    ax3.grid(True, alpha=0.3, axis='y')
+    
+    # Overall title and footer
+    fig.suptitle('Hybrid Signature Performance Analysis (Ed25519 + ML-DSA-65)', 
+                 fontsize=14, fontweight='bold', y=1.02)
+    fig.text(0.5, -0.04, 
+             "Benchmarks: Linux x86_64, 16 cores, 13GB RAM, Python 3.11, liboqs 0.15.0\n"
+             "Optimized mode uses cached Ed25519 key objects, eliminating reconstruction overhead",
              ha='center', fontsize=9, color='#6B7280')
     
     plt.tight_layout()
@@ -288,27 +349,26 @@ def create_full_package_performance():
 
 
 def create_monitoring_overhead():
-    """Create monitoring overhead pie chart."""
-    fig, ax = plt.subplots(figsize=(7, 7))
+    """Create compact monitoring overhead pie chart."""
+    fig, ax = plt.subplots(figsize=(5, 4))
     
     sizes = [98, 2]
-    labels = ['Cryptographic\nOperations\n(98%)', '3R Monitoring\nOverhead\n(2%)']
+    labels = ['Crypto Ops\n(98%)', '3R Monitor\n(2%)']
     colors = ['#3B82F6', '#F59E0B']
     explode = (0, 0.05)
     
     wedges, texts, autotexts = ax.pie(sizes, explode=explode, labels=labels, colors=colors,
                                        autopct='', startangle=90, 
-                                       wedgeprops=dict(edgecolor='white', linewidth=2))
+                                       wedgeprops=dict(edgecolor='white', linewidth=2),
+                                       textprops={'fontsize': 9})
     
-    ax.set_title('3R Runtime Security Monitoring\nPerformance Impact', 
-                 fontsize=14, fontweight='bold', pad=20)
+    ax.set_title('3R Monitoring Overhead', fontsize=11, fontweight='bold', pad=10)
     
-    # Add annotation
-    fig.text(0.5, 0.02, 
-             "Comprehensive security monitoring with less than 2% overhead",
-             ha='center', fontsize=11, style='italic', color='#6B7280')
+    # Compact annotation
+    fig.text(0.5, 0.02, "<2% overhead for comprehensive security monitoring",
+             ha='center', fontsize=8, style='italic', color='#6B7280')
     
-    plt.tight_layout()
+    plt.tight_layout(pad=0.5)
     plt.savefig(ASSETS_DIR / "monitoring_overhead.png", dpi=150, bbox_inches='tight',
                 facecolor='white', edgecolor='none')
     plt.close()
@@ -316,31 +376,63 @@ def create_monitoring_overhead():
 
 
 def create_test_coverage():
-    """Create test coverage visualization."""
-    fig, ax = plt.subplots(figsize=(12, 4))
+    """Create enhanced test coverage visualization with percentages and cumulative data."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 5), gridspec_kw={'width_ratios': [2, 1]})
     
     categories = ['Core Crypto\n& NIST KATs', 'PQC Backends\n& Integration', 
                   'Key Management\n& Rotation', 'Memory Security\n& Fuzzing', 
                   'Performance\n& Monitoring']
     # Approximate distribution based on test file analysis
-    test_counts = [180, 150, 120, 140, 139]  # Total ~729
+    test_counts = [180, 150, 120, 140, 139]  # Total = 729
+    total_tests = sum(test_counts)
+    percentages = [100 * c / total_tests for c in test_counts]
     colors = ['#22C55E', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444']
     
-    bars = ax.barh(categories, test_counts, color=colors, edgecolor='white', linewidth=2)
+    # === Left Panel: Horizontal bar chart with percentages ===
+    bars = ax1.barh(categories, test_counts, color=colors, edgecolor='white', linewidth=2)
     
-    ax.set_xlabel('Number of Tests', fontsize=12)
-    ax.set_title('Test Suite Coverage: 729 Tests Across 25 Test Files (~11,000 Lines)', 
-                 fontsize=13, fontweight='bold')
-    ax.set_xlim(0, 220)
+    ax1.set_xlabel('Number of Tests', fontsize=11)
+    ax1.set_title('Test Distribution by Category', fontsize=12, fontweight='bold')
+    ax1.set_xlim(0, 240)
     
-    for bar, val in zip(bars, test_counts):
-        ax.text(bar.get_width() + 3, bar.get_y() + bar.get_height()/2, 
-                f'{val}', ha='left', va='center', fontsize=11, fontweight='bold')
+    # Add count and percentage labels
+    for bar, val, pct in zip(bars, test_counts, percentages):
+        ax1.text(bar.get_width() + 3, bar.get_y() + bar.get_height()/2, 
+                f'{val} ({pct:.1f}%)', ha='left', va='center', fontsize=10, fontweight='bold')
     
-    # Add total annotation
-    ax.text(0.98, 0.05, f'Total: {sum(test_counts)} tests',
-            transform=ax.transAxes, ha='right', va='bottom', fontsize=12, fontweight='bold',
-            bbox=dict(boxstyle='round', facecolor='#DCFCE7', edgecolor='#22C55E'))
+    ax1.grid(True, alpha=0.3, axis='x')
+    
+    # === Right Panel: Cumulative coverage line chart ===
+    cumulative = np.cumsum(test_counts)
+    cumulative_pct = 100 * cumulative / total_tests
+    y_pos = np.arange(len(categories))
+    
+    ax2.plot(cumulative_pct, y_pos, 'o-', color='#3B82F6', linewidth=2.5, 
+             markersize=10, markeredgecolor='white', markeredgewidth=2)
+    ax2.fill_betweenx(y_pos, 0, cumulative_pct, alpha=0.2, color='#3B82F6')
+    
+    # Add percentage annotations
+    for i, (cum, pct) in enumerate(zip(cumulative, cumulative_pct)):
+        ax2.annotate(f'{pct:.0f}%\n({cum})', (pct, i), textcoords="offset points", 
+                     xytext=(8, 0), ha='left', fontsize=9, fontweight='bold')
+    
+    ax2.set_yticks(y_pos)
+    ax2.set_yticklabels(categories, fontsize=9)
+    ax2.set_xlabel('Cumulative Coverage (%)', fontsize=11)
+    ax2.set_title('Cumulative Test Coverage', fontsize=12, fontweight='bold')
+    ax2.set_xlim(0, 115)
+    ax2.grid(True, alpha=0.3)
+    
+    # Overall title
+    fig.suptitle('Test Suite Coverage: 729 Tests Across 25 Files (~11,000 Lines)', 
+                 fontsize=14, fontweight='bold', y=1.02)
+    
+    # Summary box
+    fig.text(0.5, -0.06,
+             f"Total: {total_tests} tests | 25 test files | ~11,000 LOC | "
+             "Categories: NIST KATs, PQC, Key Mgmt, Memory Security, Performance",
+             ha='center', fontsize=9, color='#6B7280',
+             bbox=dict(boxstyle='round,pad=0.4', facecolor='#F3F4F6', edgecolor='#D1D5DB'))
     
     plt.tight_layout()
     plt.savefig(ASSETS_DIR / "test_coverage.png", dpi=150, bbox_inches='tight',
