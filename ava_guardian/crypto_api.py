@@ -1174,7 +1174,17 @@ def create_crypto_package(
         ...     signature_algorithm=AlgorithmType.ML_DSA_65
         ... )
         >>> result = create_crypto_package(b"Maximum security", config)
+
+    Raises:
+        TypeError: If content is not bytes
+        ValueError: If content is empty
     """
+    # Input validation
+    if not isinstance(content, bytes):
+        raise TypeError(f"content must be bytes, got {type(content).__name__}")
+    if not content:
+        raise ValueError("content cannot be empty")
+
     if config is None:
         config = CryptoPackageConfig()
 

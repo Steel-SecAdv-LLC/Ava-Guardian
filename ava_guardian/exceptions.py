@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+# Copyright 2025 Steel Security Advisors LLC
+# Licensed under the Apache License, Version 2.0
+"""
+Ava Guardian ♱ Exception Classes
+=================================
+
+Centralized exception and warning classes for the Ava Guardian package.
+All modules should import exceptions from this module to ensure consistency.
+
+Organization: Steel Security Advisors LLC
+Author/Inventor: Andrew E. A.
+Date: 2025-11-29
+Version: 1.1.0
+"""
+
+
+class SecurityWarning(UserWarning):
+    """
+    Warning for security-related issues in cryptographic configurations.
+
+    Used to alert users about potentially unsafe or suboptimal security
+    configurations without raising an exception. Examples include:
+    - Using non-constant-time implementations
+    - Legacy encryption formats
+    - Missing recommended security features
+    """
+
+    pass
+
+
+class PQCUnavailableError(RuntimeError):
+    """
+    Raised when post-quantum cryptography is required but unavailable.
+
+    This exception indicates that a PQC operation was requested but the
+    necessary backend (liboqs-python or pqcrypto) is not installed.
+
+    Inherits from RuntimeError to maintain backward compatibility with
+    existing tests and code that expects this exception hierarchy.
+
+    To resolve, install one of:
+        pip install liboqs-python  # Recommended, requires Python 3.10+
+        pip install pqcrypto       # Alternative, pure Python
+    """
+
+    pass
+
+
+class QuantumSignatureUnavailableError(PQCUnavailableError):
+    """
+    Raised when quantum-resistant signature operations are requested but
+    the required libraries (liboqs-python or pqcrypto) are not available.
+
+    This exception ensures fail-closed behavior for quantum signatures,
+    preventing the system from silently degrading to insecure placeholders.
+
+    Inherits from PQCUnavailableError for catch-all handling.
+    """
+
+    pass
+
+
+class CryptoConfigError(Exception):
+    """
+    Raised when cryptographic configuration is invalid.
+
+    This includes invalid algorithm selections, incompatible parameters,
+    or missing required configuration values.
+    """
+
+    pass
+
+
+class KeyManagementError(Exception):
+    """
+    Base exception for key management operations.
+
+    Raised for errors in key derivation, rotation, storage, or retrieval.
+    """
+
+    pass
+
+
+class SignatureVerificationError(Exception):
+    """
+    Raised when signature verification fails.
+
+    This indicates the signature is invalid, the data was tampered with,
+    or the wrong public key was used for verification.
+    """
+
+    pass
+
+
+class IntegrityError(Exception):
+    """
+    Raised when data integrity verification fails.
+
+    This includes HMAC verification failures, hash mismatches, or
+    other integrity check failures.
+    """
+
+    pass
+
+
+__all__ = [
+    "SecurityWarning",
+    "PQCUnavailableError",
+    "QuantumSignatureUnavailableError",
+    "CryptoConfigError",
+    "KeyManagementError",
+    "SignatureVerificationError",
+    "IntegrityError",
+]

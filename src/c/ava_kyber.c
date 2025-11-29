@@ -5,7 +5,7 @@
  * @file ava_kyber.c
  * @brief CRYSTALS-Kyber-1024 Key Encapsulation Mechanism - Native C Implementation
  * @author Andrew E. A., Steel Security Advisors LLC
- * @date 2025-11-24
+ * @date 2025-11-29
  *
  * IMPLEMENTATION STATUS: LIBOQS INTEGRATION
  * ==========================================
