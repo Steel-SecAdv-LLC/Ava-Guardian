@@ -51,6 +51,7 @@ Novel in assimilation, the system combines cutting-edge NIST-approved post-quant
 > - FIPS 140-2 Level 3+ HSM for master secrets (no software-only keys in high-security environments)
 > - Independent security review by qualified cryptographers
 > - Constant-time implementation verification for side-channel resistance
+> - Secure file permissions for key files and cryptographic packages (store on encrypted volumes with restricted access)
 >
 > **Status:** Experimental | Community-tested | Not externally audited
 > **Last Updated:** 2025-11-28
@@ -227,6 +228,8 @@ Future-proof cryptography:
 | pqcrypto | No (Pure Python) | Development/testing only |
 
 > **WARNING:** The pure Python PQC fallback (pqcrypto) is NOT constant-time and may be vulnerable to timing side-channel attacks. For production environments where timing attacks are a concern, install liboqs-python: `pip install liboqs-python`. Set the environment variable `AVA_REQUIRE_CONSTANT_TIME=true` to refuse non-constant-time backends at runtime.
+
+> **Note:** liboqs-python may show version mismatch warnings (e.g., "liboqs version differs from liboqs-python version"). This is typically harmless and occurs when the native liboqs library version differs from the Python bindings. The cryptographic operations remain correct.
 
 </details>
 
@@ -565,6 +568,8 @@ docker-compose exec ava-guardian python -m pytest
 
 ---
 ## Testing and Quality Assurance
+
+> **Note:** Running the full test suite requires dev dependencies. Install with: `pip install -e ".[dev]"` or `pip install -r requirements-dev.txt`
 
 <details>
 <summary><strong>Test Suite</strong></summary>
