@@ -38,7 +38,7 @@ AI Co-Architects: Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | De
 
 import os
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Optional, cast
 
@@ -73,16 +73,8 @@ class SphincsUnavailableError(PQCUnavailableError):
     pass
 
 
-class SecurityWarning(UserWarning):
-    """
-    Security-related warning for potentially unsafe cryptographic configurations.
-
-    This warning is raised when using PQC backends that are not guaranteed to be
-    constant-time, which may be vulnerable to timing side-channel attacks.
-    """
-
-    pass
-
+# Import from centralized exceptions module
+from ava_guardian.exceptions import SecurityWarning  # noqa: E402, F401
 
 # Environment variable to require constant-time backends
 # Set AVA_REQUIRE_CONSTANT_TIME=true to refuse non-constant-time backends
@@ -304,7 +296,7 @@ class DilithiumKeyPair:
     Standard: NIST FIPS 204 (ML-DSA)
     """
 
-    private_key: bytes  # 4032 bytes for ML-DSA-65
+    private_key: bytes = field(repr=False)  # 4032 bytes for ML-DSA-65 (excluded from repr)
     public_key: bytes  # 1952 bytes for ML-DSA-65
 
 
@@ -323,7 +315,7 @@ class KyberKeyPair:
     Standard: NIST FIPS 203 (ML-KEM)
     """
 
-    secret_key: bytes  # 3168 bytes for Kyber-1024
+    secret_key: bytes = field(repr=False)  # 3168 bytes for Kyber-1024 (excluded from repr)
     public_key: bytes  # 1568 bytes for Kyber-1024
 
 
@@ -356,7 +348,7 @@ class SphincsKeyPair:
     hash-based security with no risk of key reuse vulnerabilities.
     """
 
-    secret_key: bytes  # 128 bytes for SPHINCS+-256f
+    secret_key: bytes = field(repr=False)  # 128 bytes for SPHINCS+-256f (excluded from repr)
     public_key: bytes  # 64 bytes for SPHINCS+-256f
 
 

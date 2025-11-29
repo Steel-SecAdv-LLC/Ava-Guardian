@@ -19,7 +19,7 @@
  * @brief Ava Guardian ♱ (AG♱) - Core C API for Post-Quantum Cryptography
  * @version 1.1.0
  * @author Andrew E. A., Steel Security Advisors LLC
- * @date 2025-11-24
+ * @date 2025-11-29
  *
  * High-performance C implementation of quantum-resistant cryptographic primitives.
  */

@@ -87,65 +87,23 @@ except ImportError:
     print("  pip install cryptography")
     raise
 
+# Import centralized exception classes
+from ava_guardian.exceptions import QuantumSignatureUnavailableError
+
 # Quantum-resistant cryptography (CRYSTALS-Dilithium)
-# Type annotation for DILITHIUM_BACKEND (can be None if no backend available)
-DILITHIUM_BACKEND: Optional[str]
-
-try:
-    # Try liboqs-python first (recommended)
-    import oqs
-
-    DILITHIUM_AVAILABLE = True
-    DILITHIUM_BACKEND = "liboqs"
-except BaseException:
-    # BaseException catches:
-    # - ImportError: package not installed
-    # - RuntimeError: package installed but shared library missing
-    # - OSError: library loading issues
-    # - SystemExit: liboqs-python auto-install failure (critical for CI)
-    # We use BaseException here specifically to catch SystemExit which
-    # liboqs-python raises when it fails to auto-install the native library.
-    oqs = None  # Ensure oqs is defined even on failure
-    try:
-        # Fall back to pqcrypto
-        from pqcrypto.sign import dilithium3
-
-        DILITHIUM_AVAILABLE = True
-        DILITHIUM_BACKEND = "pqcrypto"
-    except BaseException:
-        # Same reasoning - catch all failures including SystemExit
-        DILITHIUM_AVAILABLE = False
-        DILITHIUM_BACKEND = None
-        # Loud warning for classical-only mode - quantum signatures are required by default
-        print("\n" + "=" * 70)
-        print("SECURITY WARNING: QUANTUM-RESISTANT SIGNATURES NOT AVAILABLE")
-        print("=" * 70)
-        print("\nThe system is running in CLASSICAL-ONLY mode without post-quantum")
-        print("protection. This configuration is vulnerable to 'harvest now,")
-        print("decrypt later' attacks from future quantum computers.")
-        print("\nTo enable quantum-resistant signatures, install one of:")
-        print("  pip install liboqs-python    # Recommended")
-        print("  pip install pqcrypto         # Alternative")
-        print("\nFor production deployments, quantum signatures are STRONGLY")
-        print("recommended to ensure long-term security (50+ years).")
-        print("=" * 70 + "\n")
-
+# Import from centralized PQC backends module (DRY principle)
+from ava_guardian.pqc_backends import (
+    DILITHIUM_AVAILABLE,
+    DilithiumKeyPair,
+    dilithium_sign,
+    dilithium_verify,
+    generate_dilithium_keypair,
+)
 
 # ============================================================================
 # EXCEPTIONS
 # ============================================================================
-
-
-class QuantumSignatureUnavailableError(Exception):
-    """
-    Raised when quantum-resistant signature operations are requested but
-    the required libraries (liboqs-python or pqcrypto) are not available.
-
-    This exception ensures fail-closed behavior for quantum signatures,
-    preventing the system from silently degrading to insecure placeholders.
-    """
-
-    pass
+# NOTE: QuantumSignatureUnavailableError is imported from ava_guardian.exceptions
 
 
 class QuantumSignatureRequiredError(Exception):
@@ -731,284 +689,10 @@ def ed25519_verify(
 # ============================================================================
 # CRYSTALS-DILITHIUM QUANTUM-RESISTANT SIGNATURES
 # ============================================================================
-
-
-@dataclass
-class DilithiumKeyPair:
-    """
-    CRYSTALS-Dilithium post-quantum key pair.
-
-    Cryptographic Foundation:
-    -------------------------
-    Dilithium is a lattice-based signature scheme based on the hardness
-    of the Module Learning With Errors (MLWE) problem.
-
-    MLWE Problem:
-        Given (A, t = As + e) where:
-        - A ∈ R_q^(k×ℓ) is a random matrix
-        - s ∈ R_q^ℓ is secret vector (small coefficients)
-        - e ∈ R_q^k is error vector (small coefficients)
-        - R_q = Z_q[X]/(X^256 + 1) is polynomial ring
-
-        Find s given (A, t).
-
-    Security Assumption: MLWE is hard even for quantum computers.
-
-    Parameter Sets (NIST PQC):
-    --------------------------
-    Dilithium2: 128-bit quantum security (NIST Security Level 2)
-        - Public key: 1312 bytes
-        - Private key: 2528 bytes
-        - Signature: 2420 bytes
-        - Equivalent: AES-128, SHA-256
-
-    Dilithium3: 192-bit quantum security (NIST Security Level 3) [RECOMMENDED]
-        - Public key: 1952 bytes
-        - Private key: 4032 bytes (per liboqs ML-DSA-65)
-        - Signature: 3309 bytes (per liboqs ML-DSA-65)
-        - Equivalent: AES-192, SHA-384
-
-    Dilithium5: 256-bit quantum security (NIST Security Level 5)
-        - Public key: 2592 bytes
-        - Private key: 4864 bytes
-        - Signature: 4595 bytes
-        - Equivalent: AES-256, SHA-512
-
-    Standard: NIST FIPS 204 (expected 2024)
-    Reference: Ducas et al., "CRYSTALS-Dilithium: Algorithm Specifications
-               and Supporting Documentation", NIST PQC Round 3, 2021
-
-    Signature Algorithm:
-    --------------------
-    KeyGen():
-        1. Generate random matrix A ∈ R_q^(k×ℓ)
-        2. Sample secret vectors s₁, s₂
-        3. Compute t = As₁ + s₂
-        4. Return pk = (A, t), sk = (A, t, s₁, s₂)
-
-    Sign(sk, M):
-        1. Compute μ = H(tr || M) (message hash)
-        2. Sample y from distribution D_η
-        3. Compute w = Ay
-        4. Extract high-order bits: w₁ = HighBits(w)
-        5. Compute challenge: c = H(μ || w₁)
-        6. Compute z = y + cs₁
-        7. If ||z|| or ||w - cs₂|| too large, restart
-        8. Return signature: (z, h, c)
-
-    Verify(pk, M, σ):
-        1. Compute μ = H(tr || M)
-        2. Parse σ = (z, h, c)
-        3. Compute w' = Az - ct
-        4. Check ||z|| is small
-        5. Check w₁' = HighBits(w') matches c
-        6. Accept if all checks pass
-
-    Security Proof (Lyubashevsky, 2012):
-    ------------------------------------
-    Dilithium is EUF-CMA (Existentially Unforgeable under Chosen Message
-    Attack) in the Quantum Random Oracle Model (QROM), assuming MLWE hardness.
-
-    Theorem: For adversary A making q_H hash queries and q_S signing queries:
-        Adv_EUF-CMA(A) ≤ q_H · Adv_MLWE + q_H²/2^λ
-
-    Where:
-        - Adv_MLWE ≈ 2^-192 for Dilithium3
-        - λ = 256 (hash output size)
-
-    Quantum Resistance:
-    -------------------
-    Best known quantum attack: BKZ reduction on MLWE lattice
-        - Classical: 2^192 operations for Dilithium3
-        - Quantum: 2^160 operations for Dilithium3 (Grover speedup)
-
-    This provides strong post-quantum security.
-
-    Performance (Dilithium3, typical):
-    -----------------------------------
-    - KeyGen: ~200 μs
-    - Sign: ~800 μs (1,250 signatures/second)
-    - Verify: ~150 μs (6,700 verifications/second)
-
-    Comparison to Ed25519:
-    ----------------------
-    - Slower: 13x slower signing, 10x slower verification
-    - Larger: 30x larger keys, 50x larger signatures
-    - Quantum-safe: Secure against quantum computers (Ed25519 is not)
-
-    References:
-    -----------
-    1. Ducas, L., et al. (2021). "CRYSTALS-Dilithium: Algorithm
-       Specifications and Supporting Documentation (Version 3.1)."
-       NIST PQC Round 3 Submission.
-
-    2. Lyubashevsky, V. (2012). "Lattice signatures without trapdoors."
-       EUROCRYPT 2012, LNCS 7237, pp. 738-755.
-
-    3. Bai, S., & Galbraith, S. D. (2014). "Lattice decoding attacks on
-       binary LWE." ACISP 2014, LNCS 8544, pp. 322-337.
-    """
-
-    private_key: bytes = field(
-        repr=False
-    )  # 4032 bytes for ML-DSA-65 (Dilithium3) - excluded from repr
-    public_key: bytes  # 1952 bytes for Dilithium3
-
-
-def generate_dilithium_keypair() -> DilithiumKeyPair:
-    """
-    Generate CRYSTALS-Dilithium key pair (Level 3).
-
-    Implementation Options:
-    -----------------------
-    1. liboqs-python (RECOMMENDED):
-       - Maintained by Open Quantum Safe project
-       - C implementation (fast)
-       - Easy installation: pip install liboqs-python
-       - Usage: import oqs; sig = oqs.Signature("ML-DSA-65")
-
-    2. pqcrypto:
-       - Pure Python implementation
-       - Slower but no C dependencies
-       - Installation: pip install pqcrypto
-       - Usage: from pqcrypto.sign import dilithium3
-
-    3. Fallback (INSECURE):
-       - Generates random bytes as placeholder
-       - Only for testing/development
-       - NOT cryptographically secure
-       - DO NOT use in production
-
-    Args:
-        None (uses OS CSPRNG)
-
-    Returns:
-        DilithiumKeyPair with Dilithium3 keys
-
-    Raises:
-        RuntimeError: If Dilithium libraries not available (prints installation guide)
-    """
-    if DILITHIUM_AVAILABLE:
-        if DILITHIUM_BACKEND == "liboqs":
-            # Use liboqs (fast C implementation)
-            sig = oqs.Signature("ML-DSA-65")
-            public_key = sig.generate_keypair()
-            private_key = sig.export_secret_key()
-            return DilithiumKeyPair(private_key=private_key, public_key=public_key)
-
-        elif DILITHIUM_BACKEND == "pqcrypto":
-            # Use pqcrypto (pure Python)
-            public_key, private_key = dilithium3.generate_keypair()
-            return DilithiumKeyPair(private_key=private_key, public_key=public_key)
-
-    # Fail-closed: Do not generate fake keys
-    raise QuantumSignatureUnavailableError(
-        "Dilithium quantum-resistant signatures are not available.\n"
-        "To enable quantum-resistant signatures, install one of:\n"
-        "  Option 1 (Recommended): pip install liboqs-python\n"
-        "  Option 2 (Alternative): pip install pqcrypto\n"
-        "Without Dilithium, the system cannot provide quantum resistance."
-    )
-
-
-def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
-    """
-    Sign message with CRYSTALS-Dilithium (ML-DSA-65).
-
-    Cryptographic Foundation:
-    -------------------------
-    CRYSTALS-Dilithium is a lattice-based digital signature scheme selected
-    by NIST for post-quantum cryptography standardization. ML-DSA-65 provides
-    NIST Security Level 3 (128-bit classical, 128-bit quantum security).
-
-    Standard: NIST FIPS 204 (Module-Lattice-Based Digital Signature Standard)
-    Reference: Ducas et al., "CRYSTALS-Dilithium: A Lattice-Based Digital
-               Signature Scheme", IACR TCHES 2018(1), pp. 238-268
-
-    Args:
-        message: Data to sign (must be bytes)
-        private_key: Dilithium private key (4032 bytes for ML-DSA-65)
-
-    Returns:
-        Dilithium signature (3309 bytes for ML-DSA-65)
-
-    Raises:
-        QuantumSignatureUnavailableError: If Dilithium libraries not available
-        TypeError: If message or private_key is not bytes
-        ValueError: If private_key has incorrect length
-    """
-    # Input validation
-    if not isinstance(message, bytes):
-        raise TypeError(f"message must be bytes, got {type(message).__name__}")
-    if not isinstance(private_key, bytes):
-        raise TypeError(f"private_key must be bytes, got {type(private_key).__name__}")
-
-    # ML-DSA-65 (Dilithium3) secret key is 4032 bytes per liboqs
-    EXPECTED_KEY_SIZE = 4032
-    if len(private_key) != EXPECTED_KEY_SIZE:
-        raise ValueError(
-            f"private_key must be {EXPECTED_KEY_SIZE} bytes for ML-DSA-65, "
-            f"got {len(private_key)} bytes"
-        )
-
-    if DILITHIUM_AVAILABLE:
-        if DILITHIUM_BACKEND == "liboqs":
-            sig = oqs.Signature("ML-DSA-65")
-            sig.secret_key = private_key
-            return cast(bytes, sig.sign(message))
-
-        elif DILITHIUM_BACKEND == "pqcrypto":
-            return cast(bytes, dilithium3.sign(message, private_key))
-
-    # Fail-closed: Do not return fake signatures
-    raise QuantumSignatureUnavailableError(
-        "Cannot sign with Dilithium: quantum-resistant libraries not available."
-    )
-
-
-def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
-    """
-    Verify CRYSTALS-Dilithium (ML-DSA-65) signature.
-
-    Cryptographic Foundation:
-    -------------------------
-    Verification uses the Fiat-Shamir with Aborts paradigm over Module-LWE.
-    Security relies on the hardness of the Module Learning With Errors problem.
-
-    Standard: NIST FIPS 204 (Module-Lattice-Based Digital Signature Standard)
-    Reference: Ducas et al., "CRYSTALS-Dilithium: A Lattice-Based Digital
-               Signature Scheme", IACR TCHES 2018(1), pp. 238-268
-
-    Args:
-        message: Original data
-        signature: Dilithium signature
-        public_key: Dilithium public key (1952 bytes)
-
-    Returns:
-        True if signature is valid, False otherwise
-
-    Raises:
-        QuantumSignatureUnavailableError: If Dilithium libraries not available
-    """
-    if DILITHIUM_AVAILABLE:
-        if DILITHIUM_BACKEND == "liboqs":
-            try:
-                sig = oqs.Signature("ML-DSA-65")
-                return cast(bool, sig.verify(message, signature, public_key))
-            except Exception:
-                return False
-
-        elif DILITHIUM_BACKEND == "pqcrypto":
-            try:
-                dilithium3.verify(message, signature, public_key)
-                return True
-            except Exception:
-                return False
-
-    # Fail-closed: Do not return True without verification
-    raise QuantumSignatureUnavailableError(
-        "Cannot verify Dilithium signature: quantum-resistant libraries not available."
-    )
+# NOTE: DilithiumKeyPair, generate_dilithium_keypair, dilithium_sign, and
+# dilithium_verify are now imported from ava_guardian.pqc_backends (DRY).
+# See that module for the authoritative implementation and documentation.
+# ============================================================================
 
 
 # ============================================================================
@@ -1909,7 +1593,30 @@ def create_crypto_package(
 
     Returns:
         CryptoPackage with all signatures and timestamps
+
+    Raises:
+        TypeError: If codes is not a string or helix_params is not a list
+        ValueError: If codes is empty, author is empty, or helix_params is invalid
     """
+    # Input validation
+    if not isinstance(codes, str):
+        raise TypeError(f"codes must be a string, got {type(codes).__name__}")
+    if not codes.strip():
+        raise ValueError("codes cannot be empty")
+    if not isinstance(helix_params, list):
+        raise TypeError(f"helix_params must be a list, got {type(helix_params).__name__}")
+    if not helix_params:
+        raise ValueError("helix_params cannot be empty")
+    for i, param in enumerate(helix_params):
+        if not isinstance(param, (tuple, list)) or len(param) != 2:
+            raise ValueError(f"helix_params[{i}] must be a (radius, pitch) tuple")
+        if not all(isinstance(v, (int, float)) for v in param):
+            raise ValueError(f"helix_params[{i}] values must be numeric")
+    if not isinstance(author, str):
+        raise TypeError(f"author must be a string, got {type(author).__name__}")
+    if not author.strip():
+        raise ValueError("author cannot be empty")
+
     # 1. Compute canonical hash
     if monitor:
         start_time = time.time()

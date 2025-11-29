@@ -31,11 +31,8 @@ from typing import Any, Dict, Optional, Tuple, cast
 # Configure module logger
 logger = logging.getLogger(__name__)
 
-
-class SecurityWarning(UserWarning):
-    """Warning for security-related issues."""
-
-    pass
+# Import from centralized exceptions module
+from ava_guardian.exceptions import SecurityWarning  # noqa: E402, F401
 
 
 class KeyStatus(Enum):
@@ -480,6 +477,9 @@ class SecureKeyStorage:
         # Key derivation parameters (versioned for future upgrades)
         self.KDF_VERSION = 2
         self.KDF_ITERATIONS = 600000  # OWASP 2024 recommendation
+        self.KDF_LEGACY_ITERATIONS = 100000  # Pre-v2 default iterations
+        self.KDF_SALT_BYTES = 32  # Salt size in bytes
+        self.KDF_KEY_BYTES = 32  # Derived key size (AES-256)
 
         # Salt file with secure permissions
         self.salt_file = self.storage_path / ".salt"
@@ -503,15 +503,15 @@ class SecureKeyStorage:
             if self.metadata_file.exists():
                 with open(self.metadata_file, "r") as f:
                     metadata = json.load(f)
-                iterations = metadata.get("iterations", 100000)  # Legacy default
+                iterations = metadata.get("iterations", self.KDF_LEGACY_ITERATIONS)
                 version = metadata.get("version", 1)
             else:
                 # Legacy mode: no metadata means old 100k iterations
-                iterations = 100000
+                iterations = self.KDF_LEGACY_ITERATIONS
                 version = 1
         else:
             # New installation: generate random salt
-            self.salt = secrets.token_bytes(32)
+            self.salt = secrets.token_bytes(self.KDF_SALT_BYTES)
 
             # Save salt with secure permissions (0600)
             with open(self.salt_file, "wb") as f:
@@ -523,7 +523,7 @@ class SecureKeyStorage:
                 "version": self.KDF_VERSION,
                 "algorithm": "PBKDF2-HMAC-SHA256",
                 "iterations": self.KDF_ITERATIONS,
-                "salt_bytes": 32,
+                "salt_bytes": self.KDF_SALT_BYTES,
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
             with open(self.metadata_file, "w") as f:
@@ -537,7 +537,7 @@ class SecureKeyStorage:
             master_password.encode("utf-8"),
             self.salt,
             iterations,
-            32,
+            self.KDF_KEY_BYTES,
         )
 
         # Warn if using legacy parameters
@@ -571,7 +571,7 @@ class SecureKeyStorage:
                 old_keys[key_id] = (key_data, metadata)
 
         # Generate new salt
-        new_salt = secrets.token_bytes(32)
+        new_salt = secrets.token_bytes(self.KDF_SALT_BYTES)
 
         # Derive new key
         new_encryption_key = hashlib.pbkdf2_hmac(
@@ -579,7 +579,7 @@ class SecureKeyStorage:
             master_password.encode("utf-8"),
             new_salt,
             self.KDF_ITERATIONS,
-            32,
+            self.KDF_KEY_BYTES,
         )
 
         # Re-encrypt all keys
@@ -601,7 +601,7 @@ class SecureKeyStorage:
                 "version": self.KDF_VERSION,
                 "algorithm": "PBKDF2-HMAC-SHA256",
                 "iterations": self.KDF_ITERATIONS,
-                "salt_bytes": 32,
+                "salt_bytes": self.KDF_SALT_BYTES,
                 "migrated_at": datetime.now(timezone.utc).isoformat(),
             }
             with open(self.metadata_file, "w") as f:
