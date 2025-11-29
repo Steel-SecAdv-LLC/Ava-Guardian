@@ -183,31 +183,117 @@ def create_performance_comparison():
 
 
 def create_full_package_performance():
-    """Create full package throughput visualization."""
-    fig, ax = plt.subplots(figsize=(10, 5))
-    
+    """Create comprehensive full package performance visualization with layer breakdown."""
+    fig, (ax_layers, ax_total) = plt.subplots(1, 2, figsize=(16, 7),
+                                               gridspec_kw={'width_ratios': [2, 1]})
+
+    # Overall figure title
+    fig.suptitle('Full 6-Layer Package Performance Breakdown',
+                 fontsize=16, fontweight='bold', y=0.98)
+    fig.text(0.5, 0.93,
+             'Component latencies and end-to-end throughput for the complete Ava Guardian package',
+             ha='center', fontsize=11, color='#6B7280')
+
+    # === LEFT PANEL: Per-layer latency breakdown ===
+    # Data from BENCHMARK_RESULTS.md (approximate per-operation latencies)
+    components = [
+        ("HKDF Key Derivation", 0.144, "#8B5CF6"),
+        ("ML-DSA-65 Signature", 0.109, "#3B82F6"),
+        ("Ed25519 Signature", 0.100, "#0EA5E9"),
+        ("HMAC-SHA3-256 Auth", 0.004, "#22C55E"),
+        ("SHA3-256 + Canonical Encoding", 0.003, "#10B981"),
+        ("3R Monitoring", 0.006, "#6366F1"),
+    ]
+
+    names = [c[0] for c in components]
+    times = [c[1] for c in components]
+    colors_layers = [c[2] for c in components]
+
+    y_pos = range(len(names))
+    bars = ax_layers.barh(y_pos, times, color=colors_layers, edgecolor='white',
+                          linewidth=1.5, height=0.6)
+
+    ax_layers.set_yticks(y_pos)
+    ax_layers.set_yticklabels(names, fontsize=10)
+    ax_layers.set_xlabel('Approximate latency per component (ms)', fontsize=10)
+    ax_layers.set_title('Where the Time Goes (Per Operation)', fontsize=12,
+                        fontweight='bold', pad=10)
+    ax_layers.set_xlim(0, 0.18)
+    ax_layers.invert_yaxis()
+
+    # Add value labels to bars
+    for i, (name, t, _) in enumerate(components):
+        if "3R" in name:
+            label = "<0.006 ms"
+        else:
+            label = f"{t:.3f} ms"
+        ax_layers.text(t + 0.003, i, label, va='center', fontsize=9,
+                       color='#374151', fontweight='bold')
+
+    # Add percentage annotations
+    total_measured = sum(times)
+    for i, (name, t, _) in enumerate(components):
+        pct = (t / total_measured) * 100
+        ax_layers.text(0.001, i, f"{pct:.1f}%", va='center', fontsize=8,
+                       color='white', fontweight='bold')
+
+    # RFC 3161 annotation (optional, external)
+    ax_layers.text(0.12, 5.8,
+                   "RFC 3161 Timestamp (optional)\nExternal TSA latency, not included\nin core 0.278 ms measurement",
+                   fontsize=8, color='#6B7280', style='italic',
+                   bbox=dict(boxstyle='round,pad=0.3', facecolor='#F9FAFB',
+                            edgecolor='#E5E7EB', linestyle='--'))
+
+    # Note about component times
+    ax_layers.text(0.5, -0.12,
+                   "Component times are approximate per-operation latencies from BENCHMARK_RESULTS.md;\n"
+                   "they represent isolated primitive costs, not exact fractions of end-to-end time.",
+                   transform=ax_layers.transAxes, ha='center', fontsize=8,
+                   color='#9CA3AF', style='italic')
+
+    # === RIGHT PANEL: End-to-end throughput ===
     operations = ['Package\nCreate', 'Package\nVerify']
     throughput = [3595, 5029]
-    latency = ['0.278ms', '0.199ms']
-    colors = ['#3B82F6', '#22C55E']
-    
-    bars = ax.bar(operations, throughput, color=colors, edgecolor='white', linewidth=2, width=0.5)
-    
-    ax.set_ylabel('Operations per Second', fontsize=12)
-    ax.set_title('Full 6-Layer Package Performance', fontsize=14, fontweight='bold')
-    ax.set_ylim(0, 6000)
-    
-    for bar, val, lat in zip(bars, throughput, latency):
-        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100, 
-                f'{val:,} ops/sec\n({lat})', ha='center', va='bottom', fontsize=11, fontweight='bold')
-    
-    # Add layer breakdown annotation
-    ax.text(0.98, 0.95, 
-            "Includes all 6 layers:\nSHA3-256 + HMAC + Ed25519\n+ ML-DSA-65 + HKDF + Timestamp",
-            transform=ax.transAxes, ha='right', va='top', fontsize=10,
-            bbox=dict(boxstyle='round', facecolor='#F3F4F6', edgecolor='#D1D5DB'))
-    
-    plt.tight_layout()
+    latency_ms = [0.278, 0.199]
+    colors_total = ['#3B82F6', '#22C55E']
+
+    bars_total = ax_total.bar(operations, throughput, color=colors_total,
+                              edgecolor='white', linewidth=2, width=0.5)
+
+    ax_total.set_ylabel('Operations per Second', fontsize=10)
+    ax_total.set_title('End-to-End Throughput\n(All 6 Layers Enabled)', fontsize=12,
+                       fontweight='bold', pad=10)
+    ax_total.set_ylim(0, 6500)
+
+    # Add value labels
+    for bar, ops, ms in zip(bars_total, throughput, latency_ms):
+        ax_total.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 150,
+                      f'{ops:,}\nops/sec\n({ms:.3f} ms)',
+                      ha='center', va='bottom', fontsize=11, fontweight='bold',
+                      color='#1F2937')
+
+    # Layer summary box
+    ax_total.text(0.5, 0.35,
+                  "All 6 layers:\n"
+                  "1. SHA3-256 Hash\n"
+                  "2. HMAC-SHA3-256\n"
+                  "3. Ed25519 Sig\n"
+                  "4. ML-DSA-65 Sig\n"
+                  "5. HKDF Derivation\n"
+                  "6. RFC 3161 (opt)",
+                  transform=ax_total.transAxes, ha='center', va='top', fontsize=9,
+                  bbox=dict(boxstyle='round,pad=0.4', facecolor='#F3F4F6',
+                           edgecolor='#D1D5DB'))
+
+    # Bottom caption
+    fig.text(0.5, 0.02,
+             "Dual signatures (Ed25519 + ML-DSA-65) and HKDF dominate package latency; "
+             "hashing, HMAC, canonical encoding, and 3R monitoring are negligible by comparison.\n"
+             "Even with all six layers enabled, Ava Guardian sustains 3,595 create and "
+             "5,029 verify operations per second on reference hardware (16-core Linux, 13GB RAM).",
+             ha='center', fontsize=9, color='#6B7280', style='italic')
+
+    plt.tight_layout(rect=[0, 0.08, 1, 0.90])
     plt.savefig(ASSETS_DIR / "package_performance.png", dpi=150, bbox_inches='tight',
                 facecolor='white', edgecolor='none')
     plt.close()
