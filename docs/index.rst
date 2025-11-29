@@ -5,18 +5,16 @@ Welcome to the Ava Guardian ♱ documentation. This system provides quantum-resi
 cryptographic protection with a multi-language architecture optimized for both
 security and performance.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+.. note::
 
-   quickstart
-   architecture
-   api/index
-   algorithms
-   performance
-   deployment
-   security
-   contributing
+   Comprehensive documentation is available in the repository root as Markdown files:
+
+   * `README.md <https://github.com/Steel-SecAdv-LLC/Ava-Guardian/blob/main/README.md>`_ - Quick start and overview
+   * `ARCHITECTURE.md <https://github.com/Steel-SecAdv-LLC/Ava-Guardian/blob/main/ARCHITECTURE.md>`_ - System architecture
+   * `IMPLEMENTATION_GUIDE.md <https://github.com/Steel-SecAdv-LLC/Ava-Guardian/blob/main/IMPLEMENTATION_GUIDE.md>`_ - Deployment guide
+   * `SECURITY_ANALYSIS.md <https://github.com/Steel-SecAdv-LLC/Ava-Guardian/blob/main/SECURITY_ANALYSIS.md>`_ - Security analysis
+   * `CRYPTOGRAPHY.md <https://github.com/Steel-SecAdv-LLC/Ava-Guardian/blob/main/CRYPTOGRAPHY.md>`_ - Cryptographic details
+   * `CONTRIBUTING.md <https://github.com/Steel-SecAdv-LLC/Ava-Guardian/blob/main/CONTRIBUTING.md>`_ - Contribution guidelines
 
 Quick Links
 -----------

@@ -29,7 +29,7 @@ Ava Guardian ♱ 1.0 introduces a multi-language architecture that combines the 
                                |
 +------------------------------v------------------------------+
 |                  PYTHON BINDINGS & API                      |
-|            src/python/  (High-level interface)              |
+|            ava_guardian/  (High-level interface)            |
 +----+--------------------------------------------+------------+
      |                                            |
 +----v----------------------------+   +-----------v-----------+

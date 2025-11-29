@@ -8,7 +8,8 @@ import os
 import sys
 
 # Add source to path
-sys.path.insert(0, os.path.abspath("../src/python"))
+# Add parent directory to path so autodoc can find ava_guardian package
+sys.path.insert(0, os.path.abspath(".."))
 
 # Project information
 project = "Ava Guardian ♱"
