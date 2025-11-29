@@ -184,72 +184,60 @@ def create_performance_comparison():
 
 def create_full_package_performance():
     """Create comprehensive full package performance visualization with layer breakdown."""
-    fig, (ax_layers, ax_total) = plt.subplots(1, 2, figsize=(16, 7),
-                                               gridspec_kw={'width_ratios': [2, 1]})
+    fig, (ax_layers, ax_total) = plt.subplots(1, 2, figsize=(18, 8),
+                                               gridspec_kw={'width_ratios': [2.2, 1]})
 
     # Overall figure title
     fig.suptitle('Full 6-Layer Package Performance Breakdown',
-                 fontsize=16, fontweight='bold', y=0.98)
-    fig.text(0.5, 0.93,
+                 fontsize=16, fontweight='bold', y=0.96)
+    fig.text(0.5, 0.91,
              'Component latencies and end-to-end throughput for the complete Ava Guardian package',
              ha='center', fontsize=11, color='#6B7280')
 
     # === LEFT PANEL: Per-layer latency breakdown ===
     # Data from BENCHMARK_RESULTS.md (approximate per-operation latencies)
     components = [
-        ("HKDF Key Derivation", 0.144, "#8B5CF6"),
-        ("ML-DSA-65 Signature", 0.109, "#3B82F6"),
-        ("Ed25519 Signature", 0.100, "#0EA5E9"),
-        ("HMAC-SHA3-256 Auth", 0.004, "#22C55E"),
-        ("SHA3-256 + Canonical Encoding", 0.003, "#10B981"),
-        ("3R Monitoring", 0.006, "#6366F1"),
+        ("HKDF Key Derivation", 0.144, "#8B5CF6", "39.3%"),
+        ("ML-DSA-65 Signature", 0.109, "#3B82F6", "29.8%"),
+        ("Ed25519 Signature", 0.100, "#0EA5E9", "27.3%"),
+        ("HMAC-SHA3-256 Auth", 0.004, "#22C55E", "1.1%"),
+        ("SHA3-256 + Encoding", 0.003, "#10B981", "0.8%"),
+        ("3R Monitoring", 0.006, "#6366F1", "1.6%"),
     ]
 
     names = [c[0] for c in components]
     times = [c[1] for c in components]
     colors_layers = [c[2] for c in components]
+    percentages = [c[3] for c in components]
 
     y_pos = range(len(names))
     bars = ax_layers.barh(y_pos, times, color=colors_layers, edgecolor='white',
-                          linewidth=1.5, height=0.6)
+                          linewidth=1.5, height=0.55)
 
     ax_layers.set_yticks(y_pos)
     ax_layers.set_yticklabels(names, fontsize=10)
-    ax_layers.set_xlabel('Approximate latency per component (ms)', fontsize=10)
+    ax_layers.set_xlabel('Latency (ms)', fontsize=10, labelpad=10)
     ax_layers.set_title('Where the Time Goes (Per Operation)', fontsize=12,
-                        fontweight='bold', pad=10)
-    ax_layers.set_xlim(0, 0.18)
+                        fontweight='bold', pad=15)
+    ax_layers.set_xlim(0, 0.22)
     ax_layers.invert_yaxis()
 
-    # Add value labels to bars
-    for i, (name, t, _) in enumerate(components):
+    # Add value labels to bars - percentage and ms together, positioned after bar
+    for i, (name, t, _, pct) in enumerate(components):
         if "3R" in name:
-            label = "<0.006 ms"
+            label = f"{pct}  |  <0.006 ms"
         else:
-            label = f"{t:.3f} ms"
-        ax_layers.text(t + 0.003, i, label, va='center', fontsize=9,
+            label = f"{pct}  |  {t:.3f} ms"
+        ax_layers.text(t + 0.005, i, label, va='center', fontsize=9,
                        color='#374151', fontweight='bold')
 
-    # Add percentage annotations
-    total_measured = sum(times)
-    for i, (name, t, _) in enumerate(components):
-        pct = (t / total_measured) * 100
-        ax_layers.text(0.001, i, f"{pct:.1f}%", va='center', fontsize=8,
-                       color='white', fontweight='bold')
-
-    # RFC 3161 annotation (optional, external)
-    ax_layers.text(0.12, 5.8,
-                   "RFC 3161 Timestamp (optional)\nExternal TSA latency, not included\nin core 0.278 ms measurement",
+    # RFC 3161 annotation (optional, external) - moved to avoid overlap
+    ax_layers.text(0.95, 0.05,
+                   "RFC 3161 Timestamp: optional, external TSA latency\nnot included in 0.278 ms measurement",
+                   transform=ax_layers.transAxes, ha='right', va='bottom',
                    fontsize=8, color='#6B7280', style='italic',
                    bbox=dict(boxstyle='round,pad=0.3', facecolor='#F9FAFB',
                             edgecolor='#E5E7EB', linestyle='--'))
-
-    # Note about component times
-    ax_layers.text(0.5, -0.12,
-                   "Component times are approximate per-operation latencies from BENCHMARK_RESULTS.md;\n"
-                   "they represent isolated primitive costs, not exact fractions of end-to-end time.",
-                   transform=ax_layers.transAxes, ha='center', fontsize=8,
-                   color='#9CA3AF', style='italic')
 
     # === RIGHT PANEL: End-to-end throughput ===
     operations = ['Package\nCreate', 'Package\nVerify']
@@ -262,7 +250,7 @@ def create_full_package_performance():
 
     ax_total.set_ylabel('Operations per Second', fontsize=10)
     ax_total.set_title('End-to-End Throughput\n(All 6 Layers Enabled)', fontsize=12,
-                       fontweight='bold', pad=10)
+                       fontweight='bold', pad=15)
     ax_total.set_ylim(0, 6500)
 
     # Add value labels
@@ -285,15 +273,14 @@ def create_full_package_performance():
                   bbox=dict(boxstyle='round,pad=0.4', facecolor='#F3F4F6',
                            edgecolor='#D1D5DB'))
 
-    # Bottom caption
-    fig.text(0.5, 0.02,
-             "Dual signatures (Ed25519 + ML-DSA-65) and HKDF dominate package latency; "
-             "hashing, HMAC, canonical encoding, and 3R monitoring are negligible by comparison.\n"
-             "Even with all six layers enabled, Ava Guardian sustains 3,595 create and "
-             "5,029 verify operations per second on reference hardware (16-core Linux, 13GB RAM).",
+    # Bottom caption - simplified and moved up
+    fig.text(0.5, 0.03,
+             "Dual signatures (Ed25519 + ML-DSA-65) and HKDF dominate latency. "
+             "Hashing, HMAC, and 3R monitoring are negligible (<2% combined).\n"
+             "Data from BENCHMARK_RESULTS.md. Reference hardware: 16-core Linux, 13GB RAM.",
              ha='center', fontsize=9, color='#6B7280', style='italic')
 
-    plt.tight_layout(rect=[0, 0.08, 1, 0.90])
+    plt.tight_layout(rect=[0, 0.08, 1, 0.88])
     plt.savefig(ASSETS_DIR / "package_performance.png", dpi=150, bbox_inches='tight',
                 facecolor='white', edgecolor='none')
     plt.close()
