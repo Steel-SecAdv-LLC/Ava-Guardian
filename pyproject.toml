@@ -64,6 +64,11 @@ hsm = [
     # PKCS#11 support for hardware security modules
     "PyKCS11>=1.5.0",
 ]
+secure-memory = [
+    # PyNaCl for enhanced secure memory operations (libsodium bindings)
+    # Provides memory locking, secure zeroing, and constant-time comparison
+    "pynacl>=1.5.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
@@ -131,10 +136,10 @@ warn_unreachable = true
 strict_equality = true
 ignore_missing_imports = true
 
-# Pytest configuration
+# Pytest configuration (consolidated from pytest.ini)
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --strict-markers --cov=. --cov-report=term-missing"
+addopts = "-ra --strict-markers --strict-config --showlocals --tb=short"
 testpaths = [
     "tests",
 ]
@@ -142,9 +147,18 @@ python_files = [
     "test_*.py",
     "*_test.py",
 ]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "quantum: marks tests that require quantum libraries",
+    "quantum: marks tests that require quantum-resistant libraries",
+    "integration: marks integration tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore:liboqs version.*differs from liboqs-python:UserWarning",
 ]
 
 # Coverage configuration
