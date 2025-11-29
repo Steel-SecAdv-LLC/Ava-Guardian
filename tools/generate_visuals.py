@@ -466,7 +466,7 @@ def create_ethical_binding_flow():
             ("omnificent", "Key generation"),
             ("omniactive", "Real-time protection"),
         ]),
-        ("Triad 3: Coverage", "#0EA5E9", "Defense-in-Depth", [
+        ("Triad 3: Horizon", "#0EA5E9", "Defense-in-Depth", [
             ("omnipresent", "Multi-layer defense"),
             ("omnitemporal", "Temporal integrity"),
             ("omnidirectional", "Attack surface coverage"),
