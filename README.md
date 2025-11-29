@@ -61,49 +61,12 @@ Novel in assimilation, the system combines cutting-edge NIST-approved post-quant
 
 ---
 
-## Visual Overview
-
-Understanding Ava Guardian at a glance through visual representations of its architecture, performance, and security model.
-
-### 6-Layer Defense-in-Depth Architecture
-
-![6-Layer Defense Architecture](assets/defense_layers.png)
-
-*An attacker must defeat ALL 6 independent cryptographic layers to forge a package. Most systems use only 1-2 layers.*
-
-### Quantum vs Classical Security
-
-![Quantum Security Comparison](assets/quantum_comparison.png)
-
-*Classical algorithms (RSA, ECDSA, Ed25519) are broken by quantum computers. ML-DSA-65 provides 192-bit security against both classical and quantum attacks.*
-
-### Full Package Throughput
-
-![Package Performance](assets/package_performance.png)
-
-*Complete 6-layer cryptographic packages can be created at 3,595 ops/sec and verified at 5,029 ops/sec.*
-
-### 3R Monitoring Overhead
-
-![Monitoring Overhead](assets/monitoring_overhead.png)
-
-*Comprehensive runtime security monitoring with less than 2% performance overhead.*
-
-### Ethical Vector Binding
-
-![Ethical Binding Flow](assets/ethical_binding.png)
-
-*Keys and signatures are cryptographically bound to an explicit ethical profile hash via HKDF domain separation. This makes policy explicit and verifiable.*
-
----
-
 ## Table of Contents
 
 <details>
 <summary><strong>Click to expand navigation</strong></summary>
 
 - [Executive Summary](#executive-summary)
-- [Visual Overview](#visual-overview)
 - [Key Capabilities](#key-capabilities-)
 - [Use Cases by Sector](#use-cases-by-sector-)
 - [Performance Metrics](#performance-metrics-)
@@ -173,6 +136,10 @@ See [Use Cases by Sector](#use-cases-by-sector-) for detailed scenarios.
 | 6. RFC 3161 | Timestamping | Third-party proof of existence |
 
 **Why 6 layers matter:** Overall security is bounded by the weakest cryptographic layer (~128-bit classical, ~192-bit quantum). Defense-in-depth ensures continued protection if one layer is compromised. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed analysis.
+
+![6-Layer Defense Architecture](assets/defense_layers.png)
+
+*An attacker must defeat ALL 6 independent cryptographic layers to forge a package. Most systems use only 1-2 layers.*
 
 ### 3R Runtime Security Monitoring
 
@@ -385,6 +352,10 @@ Complete security package with all defense layers:
 
 **6 Layers:** SHA3-256, HMAC-SHA3-256, Ed25519, ML-DSA-65, HKDF, RFC 3161 (optional)
 
+![Package Performance](assets/package_performance.png)
+
+*Complete 6-layer cryptographic packages can be created at 3,595 ops/sec and verified at 5,029 ops/sec.*
+
 ### Core Cryptographic Primitives
 
 | Operation | Standard (bytes) | Optimized (key objects) |
@@ -435,6 +406,10 @@ Complete security package with all defense layers:
 | Context Creation | - | 0.011ms | - |
 
 The ethical integration adds cryptographic binding to the 12 DNA Code Ethical Pillars with minimal impact on overall system performance.
+
+![Monitoring Overhead](assets/monitoring_overhead.png)
+
+*Comprehensive runtime security monitoring with less than 2% performance overhead.*
 
 </details>
 
@@ -678,6 +653,10 @@ GitHub Actions automatically tests:
 | 3R Monitoring | Runtime security analysis (less than 2% overhead) |
 
 See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for complete cryptographic analysis.
+
+![Quantum Security Comparison](assets/quantum_comparison.png)
+
+*Classical algorithms (RSA, ECDSA, Ed25519) are broken by quantum computers. ML-DSA-65 provides 192-bit security against both classical and quantum attacks.*
 
 </details>
 
@@ -988,6 +967,10 @@ The ethical integration achieves:
 - **SHA3-256 ethical signatures** in key derivation context
 - **Zero performance impact**: <4% overhead, >1,000 ops/sec maintained
 - **Survivor-first principles** with bias audits and dynamic compliance
+
+![Ethical Binding Flow](assets/ethical_binding.png)
+
+*Keys and signatures are cryptographically bound to an explicit ethical profile hash via HKDF domain separation. This makes policy explicit and verifiable.*
 
 </details>
 
