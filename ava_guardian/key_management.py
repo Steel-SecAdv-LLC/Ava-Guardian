@@ -620,6 +620,9 @@ class SecureKeyStorage:
         storage.storage_path = Path(storage_path)
         storage.KDF_VERSION = 2
         storage.KDF_ITERATIONS = 600000
+        storage.KDF_LEGACY_ITERATIONS = 100000  # Pre-v2 default iterations
+        storage.KDF_SALT_BYTES = 32  # Salt size in bytes
+        storage.KDF_KEY_BYTES = 32  # Derived key size (AES-256)
         storage.salt_file = storage.storage_path / ".salt"
         storage.metadata_file = storage.storage_path / ".kdf_metadata.json"
 
