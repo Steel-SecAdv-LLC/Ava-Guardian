@@ -1686,7 +1686,7 @@ def generate_key_management_system(
         dilithium_keypair=dilithium_keypair,
         creation_date=datetime.now(timezone.utc).isoformat(),
         rotation_schedule="quarterly",
-        version="1.0.0",
+        version="1.1.0",
         ethical_vector=ethical_vector,
         quantum_signatures_enabled=quantum_signatures_enabled,
     )
@@ -1995,7 +1995,7 @@ def create_crypto_package(
         author=author,
         ed25519_pubkey=kms.ed25519_keypair.public_key.hex(),
         dilithium_pubkey=dilithium_pubkey,
-        version="1.0.0",
+        version="1.1.0",
         ethical_vector=ethical_vector,
         ethical_hash=ethical_hash_hex,
         quantum_signatures_enabled=quantum_signatures_enabled,

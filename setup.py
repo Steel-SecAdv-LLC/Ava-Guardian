@@ -277,12 +277,12 @@ setup(
     ],
     python_requires=">=3.8",
     packages=find_packages(exclude=["tests", "tests.*", "examples", "examples.*", "src", "src.*"]),
+    # Note: pyproject.toml is the authoritative source for dependencies.
+    # This section is kept in sync for compatibility with older tools.
     install_requires=[
         "cryptography>=41.0.0",
-        'numpy>=1.24.0,<2.0.0; python_version < "3.9"',
-        'numpy>=1.24.0; python_version >= "3.9"',
-        'scipy>=1.10.0,<1.11.0; python_version < "3.9"',
-        'scipy>=1.11.0; python_version >= "3.9"',
+        "numpy>=1.21.0,<2.0.0",
+        "scipy>=1.7.0",
     ],
     extras_require={
         # Note: The PyPI package is 'liboqs-python' which provides the 'oqs' module

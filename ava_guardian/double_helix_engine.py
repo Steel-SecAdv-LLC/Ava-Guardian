@@ -51,6 +51,7 @@ AI Co-Architects:
     Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 """
 
+import logging
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -67,6 +68,9 @@ from ava_guardian.equations import (
     lyapunov_derivative,
     lyapunov_function,
 )
+
+# Configure module logger
+logger = logging.getLogger(__name__)
 
 __version__ = "1.1.0"
 __author__ = "Andrew E. A., Steel Security Advisors LLC"
@@ -533,43 +537,46 @@ class AvaEquationEngine:
 
 
 if __name__ == "__main__":
-    print("=" * 70)
-    print("Ava Guardian ♱ (AG♱) - Double-Helix Evolution Engine Demo")
-    print("=" * 70)
+    # Configure logging for demo
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    logger.info("=" * 70)
+    logger.info("Ava Guardian ♱ (AG♱) - Double-Helix Evolution Engine Demo")
+    logger.info("=" * 70)
 
     # Create engine with default configuration
     engine = AvaEquationEngine(state_dim=50, random_seed=42)
 
-    print("\nEngine Configuration:")
-    print(f"  State dimension: {engine.state_dim}")
-    print(f"  Target state norm: {np.linalg.norm(engine.target_state):.4f}")
-    print(
+    logger.info("\nEngine Configuration:")
+    logger.info(f"  State dimension: {engine.state_dim}")
+    logger.info(f"  Target state norm: {np.linalg.norm(engine.target_state):.4f}")
+    logger.info(
         f"  Ethical matrix eigenvalues: [{np.min(np.linalg.eigvals(engine.ethical_matrix).real):.2f}, "
         f"{np.max(np.linalg.eigvals(engine.ethical_matrix).real):.2f}]"
     )
 
     # Run convergence
-    print("\nRunning Double-Helix evolution...")
+    logger.info("\nRunning Double-Helix evolution...")
     initial_state = np.random.randn(50) * 0.5
     final_state, history = engine.converge(initial_state, max_steps=50)
 
-    print("\nConvergence Results:")
-    print(f"  Initial Lyapunov V(x₀): {history[0]:.6f}")
-    print(f"  Final Lyapunov V(xₙ):   {history[-1]:.6f}")
-    print(f"  Convergence steps: {len(history)}")
-    print(f"  Final state norm: {np.linalg.norm(final_state):.6f}")
-    print(f"  Target state norm: {np.linalg.norm(engine.target_state):.6f}")
-    print(f"  Distance to target: {np.linalg.norm(final_state - engine.target_state):.6f}")
+    logger.info("\nConvergence Results:")
+    logger.info(f"  Initial Lyapunov V(x₀): {history[0]:.6f}")
+    logger.info(f"  Final Lyapunov V(xₙ):   {history[-1]:.6f}")
+    logger.info(f"  Convergence steps: {len(history)}")
+    logger.info(f"  Final state norm: {np.linalg.norm(final_state):.6f}")
+    logger.info(f"  Target state norm: {np.linalg.norm(engine.target_state):.6f}")
+    logger.info(f"  Distance to target: {np.linalg.norm(final_state - engine.target_state):.6f}")
 
     # Verify σ_quadratic
     sigma = calculate_sigma_quadratic(final_state, engine.ethical_matrix)
-    print("\nEthical Constraints:")
-    print(f"  σ_quadratic: {sigma:.6f}")
-    print(
+    logger.info("\nEthical Constraints:")
+    logger.info(f"  σ_quadratic: {sigma:.6f}")
+    logger.info(
         f"  {'✓' if sigma >= SIGMA_QUADRATIC_THRESHOLD else '✗'} Threshold (≥ 0.96): "
         f"{sigma >= SIGMA_QUADRATIC_THRESHOLD}"
     )
 
-    print("\n" + "=" * 70)
-    print("✓ Double-Helix Evolution Engine operational")
-    print("=" * 70)
+    logger.info("\n" + "=" * 70)
+    logger.info("✓ Double-Helix Evolution Engine operational")
+    logger.info("=" * 70)

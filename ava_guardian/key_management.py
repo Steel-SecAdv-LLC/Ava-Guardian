@@ -18,6 +18,7 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 import os
 import secrets
 import warnings
@@ -26,6 +27,9 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, cast
+
+# Configure module logger
+logger = logging.getLogger(__name__)
 
 
 class SecurityWarning(UserWarning):
@@ -1071,41 +1075,44 @@ class HSMKeyStorage:
 
 # Example usage
 if __name__ == "__main__":
-    print("=" * 70)
-    print("Ava Guardian ♱ Key Management Demonstration")
-    print("=" * 70)
+    # Configure logging for demo
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    logger.info("=" * 70)
+    logger.info("Ava Guardian ♱ Key Management Demonstration")
+    logger.info("=" * 70)
 
     # HD Key Derivation
-    print("\n1. Hierarchical Deterministic Key Derivation")
-    print("-" * 70)
+    logger.info("\n1. Hierarchical Deterministic Key Derivation")
+    logger.info("-" * 70)
     hd = HDKeyDerivation()
 
     # Derive keys for different purposes
     signing_key = hd.derive_key(purpose=44, account=0, change=0, index=0)
     encryption_key = hd.derive_key(purpose=44, account=0, change=0, index=1)
 
-    print(f"Signing key:    {signing_key.hex()[:32]}...")
-    print(f"Encryption key: {encryption_key.hex()[:32]}...")
+    logger.info(f"Signing key:    {signing_key.hex()[:32]}...")
+    logger.info(f"Encryption key: {encryption_key.hex()[:32]}...")
 
     # Key Rotation
-    print("\n2. Key Rotation Management")
-    print("-" * 70)
+    logger.info("\n2. Key Rotation Management")
+    logger.info("-" * 70)
     rotation_mgr = KeyRotationManager(rotation_period=timedelta(days=90))
 
     # Register keys
     key1_meta = rotation_mgr.register_key("key-v1", "signing", max_usage=1000)
     key2_meta = rotation_mgr.register_key("key-v2", "signing")
 
-    print(f"Active key: {rotation_mgr.get_active_key()}")
-    print(f"Should rotate: {rotation_mgr.should_rotate('key-v1')}")
+    logger.info(f"Active key: {rotation_mgr.get_active_key()}")
+    logger.info(f"Should rotate: {rotation_mgr.should_rotate('key-v1')}")
 
     # Simulate key rotation
     rotation_mgr.initiate_rotation("key-v1", "key-v2")
-    print(f"After rotation, active key: {rotation_mgr.get_active_key()}")
+    logger.info(f"After rotation, active key: {rotation_mgr.get_active_key()}")
 
     # Secure Storage
-    print("\n3. Secure Key Storage")
-    print("-" * 70)
+    logger.info("\n3. Secure Key Storage")
+    logger.info("-" * 70)
     import tempfile
 
     demo_storage_path = Path(tempfile.gettempdir()) / "ava_keys_demo"
@@ -1114,12 +1121,12 @@ if __name__ == "__main__":
     # Store a key
     test_key = secrets.token_bytes(32)
     storage.store_key("master-key-001", test_key, metadata={"purpose": "signing"})
-    print("✓ Key stored securely")
+    logger.info("✓ Key stored securely")
 
     # Retrieve key
     retrieved_key = storage.retrieve_key("master-key-001")
-    print(f"✓ Key retrieved: {retrieved_key == test_key}")
+    logger.info(f"✓ Key retrieved: {retrieved_key == test_key}")
 
-    print("\n" + "=" * 70)
-    print("✓ Key Management System operational")
-    print("=" * 70)
+    logger.info("\n" + "=" * 70)
+    logger.info("✓ Key Management System operational")
+    logger.info("=" * 70)
