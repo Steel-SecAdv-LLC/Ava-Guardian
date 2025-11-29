@@ -61,12 +61,61 @@ Novel in assimilation, the system combines cutting-edge NIST-approved post-quant
 
 ---
 
+## Visual Overview
+
+Understanding Ava Guardian at a glance through visual representations of its architecture, performance, and security model.
+
+### 6-Layer Defense-in-Depth Architecture
+
+![6-Layer Defense Architecture](assets/defense_layers.png)
+
+*An attacker must defeat ALL 6 independent cryptographic layers to forge a package. Most systems use only 1-2 layers.*
+
+### Quantum vs Classical Security
+
+![Quantum Security Comparison](assets/quantum_comparison.png)
+
+*Classical algorithms (RSA, ECDSA, Ed25519) are broken by quantum computers. ML-DSA-65 provides 192-bit security against both classical and quantum attacks.*
+
+### Performance Comparison
+
+![Performance Comparison](assets/performance_comparison.png)
+
+*Ava Guardian achieves competitive performance with OpenSSL+liboqs while providing 6 layers of defense instead of 1-2.*
+
+### Full Package Throughput
+
+![Package Performance](assets/package_performance.png)
+
+*Complete 6-layer cryptographic packages can be created at 3,595 ops/sec and verified at 5,029 ops/sec.*
+
+### Test Coverage
+
+![Test Coverage](assets/test_coverage.png)
+
+*729 tests across 25 test files (~11,000 lines) covering core crypto, PQC backends, key management, memory security, and monitoring.*
+
+### 3R Monitoring Overhead
+
+![Monitoring Overhead](assets/monitoring_overhead.png)
+
+*Comprehensive runtime security monitoring with less than 2% performance overhead.*
+
+### Ethical Vector Binding
+
+![Ethical Binding Flow](assets/ethical_binding.png)
+
+*Keys and signatures are cryptographically bound to an explicit ethical profile hash via HKDF domain separation. This makes policy explicit and verifiable.*
+
+---
+
 ## Table of Contents
 
 <details>
 <summary><strong>Click to expand navigation</strong></summary>
 
 - [Executive Summary](#executive-summary)
+- [Visual Overview](#visual-overview)
 - [Key Capabilities](#key-capabilities-)
 - [Use Cases by Sector](#use-cases-by-sector-)
 - [Performance Metrics](#performance-metrics-)
