@@ -373,6 +373,10 @@ Future-proof cryptography:
 
 \*Optimized performance uses cached Ed25519 key objects, eliminating reconstruction overhead.
 
+![Hybrid Signing and Verification Performance](assets/performance_comparison.png)
+
+*Visual comparison of hybrid signing and verification throughput for Ava Guardian (standard vs optimized) and OpenSSL+liboqs on reference hardware (Linux x86_64, 16 cores, 13GB RAM).*
+
 ### ML-DSA-65 (Post-Quantum) Operations
 
 | Operation | Ava Guardian | liboqs-python | Performance |
@@ -646,6 +650,10 @@ The test suite includes:
 - Integration tests for package creation and verification
 - Edge case testing for error handling
 - Performance regression tests
+
+![Test Suite Coverage](assets/test_coverage.png)
+
+*729 tests across 25 files (~11,000 lines) covering core crypto and NIST KATs, PQC backends, key management, memory security, and performance/monitoring.*
 
 </details>
 
