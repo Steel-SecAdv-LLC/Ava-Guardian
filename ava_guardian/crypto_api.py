@@ -72,8 +72,8 @@ try:
     from code_guardian_secure import (
         derive_keys,
         hmac_authenticate,
-        hmac_verify,
     )
+
     HMAC_HKDF_AVAILABLE = True
 except ImportError:
     HMAC_HKDF_AVAILABLE = False
@@ -1245,7 +1245,7 @@ def create_crypto_package(
         hkdf_salt = secrets.token_bytes(32)
         derived_keys = []
         for i in range(config.num_derived_keys):
-            key_material = hashlib.sha3_256(hkdf_salt + content + i.to_bytes(4, 'big')).digest()
+            key_material = hashlib.sha3_256(hkdf_salt + content + i.to_bytes(4, "big")).digest()
             derived_keys.append(key_material)
         warnings.warn(
             "HKDF not available, using simple key derivation fallback. "
@@ -1283,13 +1283,12 @@ def create_crypto_package(
             timestamp_result = get_timestamp(
                 data=content,
                 tsa_url=config.tsa_url,
-                hash_algorithm='sha3-256',
+                hash_algorithm="sha3-256",
             )
             timestamp_token = timestamp_result.token
         except TimestampError as e:
             warnings.warn(
-                f"Failed to obtain RFC 3161 timestamp: {str(e)}. "
-                "Continuing without timestamp.",
+                f"Failed to obtain RFC 3161 timestamp: {str(e)}. " "Continuing without timestamp.",
                 category=UserWarning,
             )
             timestamp_token = None
