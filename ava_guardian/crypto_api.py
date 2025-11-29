@@ -717,8 +717,8 @@ class HybridSignatureProvider(CryptoProvider):
             raise PQCUnavailableError("PQC_UNAVAILABLE: Hybrid signatures require ML-DSA-65.")
 
         # Split keys
-        classical_sk_bytes = secret_key[: self.ED25519_SK_SIZE]
-        pqc_sk = secret_key[self.ED25519_SK_SIZE :]
+        classical_sk_bytes = secret_key[:self.ED25519_SK_SIZE]
+        pqc_sk = secret_key[self.ED25519_SK_SIZE:]
 
         # Optimize: Reconstruct Ed25519 key object once and pass to provider
         from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -766,10 +766,10 @@ class HybridSignatureProvider(CryptoProvider):
             raise PQCUnavailableError("PQC_UNAVAILABLE: Hybrid signatures require ML-DSA-65.")
 
         # Split keys and signatures
-        classical_pk_bytes = public_key[: self.ED25519_PK_SIZE]
-        pqc_pk = public_key[self.ED25519_PK_SIZE :]
-        classical_sig = signature[: self.ED25519_SIG_SIZE]
-        pqc_sig = signature[self.ED25519_SIG_SIZE :]
+        classical_pk_bytes = public_key[:self.ED25519_PK_SIZE]
+        pqc_pk = public_key[self.ED25519_PK_SIZE:]
+        classical_sig = signature[:self.ED25519_SIG_SIZE]
+        pqc_sig = signature[self.ED25519_SIG_SIZE:]
 
         # Optimize: Reconstruct Ed25519 key object once and pass to provider
         from cryptography.hazmat.primitives.asymmetric import ed25519
