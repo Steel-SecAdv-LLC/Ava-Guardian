@@ -369,7 +369,7 @@ def create_ethical_binding_flow():
             ("omnipercipient", "Multi-dimensional detection"),
             ("omnilegent", "Data validation"),
         ]),
-        ("Triad 2: Power", "#22C55E", "Cryptographic Generation", [
+        ("Triad 2: Authority", "#22C55E", "Cryptographic Generation", [
             ("omnipotent", "Maximum strength"),
             ("omnificent", "Key generation"),
             ("omniactive", "Real-time protection"),
