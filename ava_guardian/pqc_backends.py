@@ -50,15 +50,13 @@ class PQCStatus(Enum):
     UNAVAILABLE = "UNAVAILABLE"
 
 
-class PQCUnavailableError(RuntimeError):
-    """
-    Raised when a PQC algorithm is requested but no backend is available.
-
-    This error is raised instead of silently falling back to classical
-    algorithms, ensuring users are aware when PQC protection is not active.
-    """
-
-    pass
+# Import from centralized exceptions module (DRY principle)
+# PQCUnavailableError and QuantumSignatureUnavailableError are defined there
+from ava_guardian.exceptions import (  # noqa: E402, F401
+    PQCUnavailableError,
+    QuantumSignatureUnavailableError,
+    SecurityWarning,
+)
 
 
 class KyberUnavailableError(PQCUnavailableError):
@@ -72,9 +70,6 @@ class SphincsUnavailableError(PQCUnavailableError):
 
     pass
 
-
-# Import from centralized exceptions module
-from ava_guardian.exceptions import SecurityWarning  # noqa: E402, F401
 
 # Environment variable to require constant-time backends
 # Set AVA_REQUIRE_CONSTANT_TIME=true to refuse non-constant-time backends
@@ -360,10 +355,10 @@ def generate_dilithium_keypair() -> DilithiumKeyPair:
         DilithiumKeyPair with ML-DSA-65 keys
 
     Raises:
-        PQCUnavailableError: If no Dilithium backend is available
+        QuantumSignatureUnavailableError: If no Dilithium backend is available
     """
     if not DILITHIUM_AVAILABLE:
-        raise PQCUnavailableError(
+        raise QuantumSignatureUnavailableError(
             "PQC_UNAVAILABLE: Dilithium backend not available. "
             "Install liboqs-python (recommended) or pqcrypto: "
             "pip install liboqs-python"
@@ -380,7 +375,7 @@ def generate_dilithium_keypair() -> DilithiumKeyPair:
         return DilithiumKeyPair(private_key=private_key, public_key=public_key)
 
     # Should not reach here if DILITHIUM_AVAILABLE is True
-    raise PQCUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
+    raise QuantumSignatureUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
 
 
 def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
@@ -395,10 +390,10 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
         Dilithium signature (3293 bytes)
 
     Raises:
-        PQCUnavailableError: If no Dilithium backend is available
+        QuantumSignatureUnavailableError: If no Dilithium backend is available
     """
     if not DILITHIUM_AVAILABLE:
-        raise PQCUnavailableError(
+        raise QuantumSignatureUnavailableError(
             "PQC_UNAVAILABLE: Dilithium backend not available. "
             "Install liboqs-python (recommended) or pqcrypto."
         )
@@ -411,7 +406,7 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
     elif DILITHIUM_BACKEND == "pqcrypto" and _dilithium3_module is not None:
         return cast(bytes, _dilithium3_module.sign(message, private_key))
 
-    raise PQCUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
+    raise QuantumSignatureUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
 
 
 def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
@@ -427,10 +422,10 @@ def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> boo
         True if signature is valid, False otherwise
 
     Raises:
-        PQCUnavailableError: If no Dilithium backend is available
+        QuantumSignatureUnavailableError: If no Dilithium backend is available
     """
     if not DILITHIUM_AVAILABLE:
-        raise PQCUnavailableError(
+        raise QuantumSignatureUnavailableError(
             "PQC_UNAVAILABLE: Dilithium backend not available. "
             "Install liboqs-python (recommended) or pqcrypto."
         )
@@ -449,7 +444,7 @@ def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> boo
         except Exception:
             return False
 
-    raise PQCUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
+    raise QuantumSignatureUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
 
 
 # ============================================================================
