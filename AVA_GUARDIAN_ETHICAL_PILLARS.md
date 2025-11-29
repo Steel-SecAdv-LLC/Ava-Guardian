@@ -76,7 +76,7 @@ P(detect) ≥ 1 - (0.001)³ = 0.999999999
 
 **Cryptographic Mapping:**
 - Length-prefixed canonical encoding eliminates concatenation attacks
-- UTF-8 validation for DNA codes
+- UTF-8 validation for Omni-Codes
 - Helix parameter bounds checking (radius, pitch)
 
 **Mathematical Proof:**
@@ -271,7 +271,7 @@ Coverage:
 **Definition:** Cryptographic operations serve protective, non-malicious purposes.
 
 **Cryptographic Mapping:**
-- DNA codes honor individuals (ethical constraint)
+- Omni-Codes honor individuals (ethical constraint)
 - Humanitarian crisis monitoring (CIΨIS integration option)
 - Prevents weaponization through transparent audit trails
 
@@ -643,7 +643,7 @@ def benchmark_ethical_integration(iterations: int = 1000) -> Dict[str, float]:
 ### Complete Workflow with Ethical Integration
 
 ```python
-from dna_guardian_secure import *
+from code_guardian_secure import *
 import json
 
 # 1. Define ethical vector (12 pillars, balanced weighting)

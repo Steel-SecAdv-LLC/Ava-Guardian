@@ -119,7 +119,7 @@ class ComparativeBenchmark:
         print("=" * 70)
 
         try:
-            from dna_guardian_secure import (
+            from code_guardian_secure import (
                 ed25519_sign,
                 ed25519_verify,
                 generate_ed25519_keypair,
@@ -148,7 +148,7 @@ class ComparativeBenchmark:
 
             # Try Dilithium if available
             try:
-                from dna_guardian_secure import (
+                from code_guardian_secure import (
                     dilithium_sign,
                     dilithium_verify,
                     generate_dilithium_keypair,

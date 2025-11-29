@@ -41,7 +41,7 @@ This document provides a comprehensive technical reference for system architects
 
 ### Purpose
 
-Ava Guardian ♱ provides cryptographic protection for structured data (referred to as "DNA Codes" within the system) using a hybrid classical/quantum-resistant signature scheme. The system is designed for long-term data integrity assurance (50+ years) in environments where quantum computing threats must be considered.
+Ava Guardian ♱ provides cryptographic protection for structured data (referred to as "Omni-Codes" within the system) using a hybrid classical/quantum-resistant signature scheme. The system is designed for long-term data integrity assurance (50+ years) in environments where quantum computing threats must be considered.
 
 ### Scope
 
@@ -564,12 +564,12 @@ The security analysis assumes:
 
 **Library Integration**: Import directly into Python applications
 ```python
-from dna_guardian_secure import create_crypto_package, verify_crypto_package
+from code_guardian_secure import create_crypto_package, verify_crypto_package
 ```
 
 **Command-Line Interface**: Execute as standalone script
 ```bash
-python dna_guardian_secure.py
+python code_guardian_secure.py
 ```
 
 **Containerized Deployment**: Docker images available
@@ -669,7 +669,7 @@ Cryptographic implementations are validated against:
 
 ### Implementation References
 
-- `dna_guardian_secure.py`: Core cryptographic implementation
+- `code_guardian_secure.py`: Core cryptographic implementation
 - `SECURITY_ANALYSIS.md`: Detailed security proofs and analysis
 - `BENCHMARKS.md`: Performance measurement methodology and results
 - `IMPLEMENTATION_GUIDE.md`: Deployment and integration guide

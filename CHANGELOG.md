@@ -125,7 +125,7 @@ The `derive_keys()` function now uses `HKDF-SHA3-256` instead of `HKDF-SHA256` f
 
 #### Changes
 
-- **Code (`dna_guardian_secure.py`):**
+- **Code (`code_guardian_secure.py`):**
   - `derive_keys()`: Changed `algorithm=hashes.SHA256()` to `algorithm=hashes.SHA3_256()`
   - Updated docstring to reflect SHA3-256 usage
   - Added explanatory comment about RFC 5869 and HMAC-SHA3-256 as secure PRF
@@ -281,7 +281,7 @@ These changes are planned for **v2.0.0** release due to breaking changes in `Cry
 
 **First Public Release - Apache License 2.0**
 
-This release represents the first public open-source release of Ava Guardian ♱ (AG♱) under Apache License 2.0. The system provides secure, tested quantum-resistant cryptographic protection for helical mathematical DNA codes.
+This release represents the first public open-source release of Ava Guardian ♱ (AG♱) under Apache License 2.0. The system provides secure, tested quantum-resistant cryptographic protection for helical mathematical Omni-Codes.
 
 ### Added
 - **Apache License 2.0:** Full open-source licensing with proper headers
@@ -312,7 +312,7 @@ This release represents the first public open-source release of Ava Guardian ♱
 
 ### Changed
 - Updated Python source file with Apache License 2.0 header
-- Updated license reference in `dna_guardian_secure.py` docstring
+- Updated license reference in `code_guardian_secure.py` docstring
 - Enhanced README.md documentation references
 
 ### Security

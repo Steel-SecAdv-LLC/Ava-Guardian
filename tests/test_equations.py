@@ -55,7 +55,7 @@ from ava_guardian.equations import (  # noqa: E402
     lyapunov_derivative,
     lyapunov_function,
     lyapunov_stability_proof,
-    verify_all_dna_codes,
+    verify_all_codes,
     verify_fundamental_relation,
     verify_mathematical_foundations,
 )
@@ -84,10 +84,10 @@ class TestHelicalGeometricInvariants(unittest.TestCase):
         error = verify_fundamental_relation(r, c)
         self.assertLess(error, 1e-10, "Fundamental relation error too large")
 
-    def test_all_dna_codes(self):
-        """Test all 7 DNA codes verify κ² + τ² = 1/(r²+c²)."""
-        results = verify_all_dna_codes()
-        self.assertEqual(len(results), 7, "Should verify all 7 DNA codes")
+    def test_all_codes(self):
+        """Test all 7 Omni-Codes verify κ² + τ² = 1/(r²+c²)."""
+        results = verify_all_codes()
+        self.assertEqual(len(results), 7, "Should verify all 7 Omni-Codes")
 
         for code, data in results.items():
             with self.subTest(code=code):

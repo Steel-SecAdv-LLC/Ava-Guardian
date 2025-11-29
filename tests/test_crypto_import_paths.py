@@ -36,7 +36,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import dna_guardian_secure as dgs
+import code_guardian_secure as dgs
 
 # ============================================================================
 # CRYPTO_AVAILABLE=False TESTS
@@ -208,9 +208,9 @@ class TestRFC3161SuccessPath:
         """Test package creation with successful RFC 3161 timestamp."""
         kms = dgs.generate_key_management_system("test_author")
 
-        with patch("dna_guardian_secure.get_rfc3161_timestamp", return_value=b"TSR"):
+        with patch("code_guardian_secure.get_rfc3161_timestamp", return_value=b"TSR"):
             pkg = dgs.create_crypto_package(
-                dgs.MASTER_DNA_CODES,
+                dgs.MASTER_CODES,
                 dgs.MASTER_HELIX_PARAMS,
                 kms,
                 "author",
@@ -277,9 +277,7 @@ class TestDilithiumUnavailablePaths:
 
         monkeypatch.setattr(dgs, "dilithium_sign", boom)
 
-        pkg = dgs.create_crypto_package(
-            dgs.MASTER_DNA_CODES, dgs.MASTER_HELIX_PARAMS, kms, "author"
-        )
+        pkg = dgs.create_crypto_package(dgs.MASTER_CODES, dgs.MASTER_HELIX_PARAMS, kms, "author")
         assert pkg.dilithium_signature is None
         assert pkg.quantum_signatures_enabled is False
 
@@ -292,9 +290,9 @@ class TestDilithiumUnavailablePaths:
         monkeypatch.setattr(dgs, "dilithium_verify", boom)
 
         kms = dgs.generate_key_management_system("test_author")
-        pkg = dgs.create_crypto_package(dgs.MASTER_DNA_CODES, dgs.MASTER_HELIX_PARAMS, kms, "test")
+        pkg = dgs.create_crypto_package(dgs.MASTER_CODES, dgs.MASTER_HELIX_PARAMS, kms, "test")
 
-        computed_hash = dgs.canonical_hash_dna(dgs.MASTER_DNA_CODES, dgs.MASTER_HELIX_PARAMS)
+        computed_hash = dgs.canonical_hash_code(dgs.MASTER_CODES, dgs.MASTER_HELIX_PARAMS)
         result = dgs._verify_dilithium_with_policy(
             computed_hash, pkg, monitor=None, require_quantum_signatures=False
         )
@@ -309,9 +307,9 @@ class TestDilithiumUnavailablePaths:
         monkeypatch.setattr(dgs, "dilithium_verify", boom)
 
         kms = dgs.generate_key_management_system("test_author")
-        pkg = dgs.create_crypto_package(dgs.MASTER_DNA_CODES, dgs.MASTER_HELIX_PARAMS, kms, "test")
+        pkg = dgs.create_crypto_package(dgs.MASTER_CODES, dgs.MASTER_HELIX_PARAMS, kms, "test")
 
-        computed_hash = dgs.canonical_hash_dna(dgs.MASTER_DNA_CODES, dgs.MASTER_HELIX_PARAMS)
+        computed_hash = dgs.canonical_hash_code(dgs.MASTER_CODES, dgs.MASTER_HELIX_PARAMS)
         with pytest.raises(dgs.QuantumSignatureRequiredError):
             dgs._verify_dilithium_with_policy(
                 computed_hash, pkg, monitor=None, require_quantum_signatures=True
@@ -333,7 +331,7 @@ class TestMainFunctionDirect:
         out = capsys.readouterr().out
         assert "Ava Guardian" in out
         assert "ALL VERIFICATIONS PASSED" in out
-        assert (tmp_path / "DNA_CRYPTO_PACKAGE.json").exists()
+        assert (tmp_path / "CRYPTO_PACKAGE.json").exists()
         assert (tmp_path / "public_keys").is_dir()
 
 

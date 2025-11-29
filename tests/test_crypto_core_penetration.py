@@ -45,13 +45,13 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from dna_guardian_secure import (
+from code_guardian_secure import (
     DILITHIUM_AVAILABLE,
     ETHICAL_VECTOR,
-    MASTER_DNA_CODES,
+    MASTER_CODES,
     MASTER_HELIX_PARAMS,
     QuantumSignatureUnavailableError,
-    canonical_hash_dna,
+    canonical_hash_code,
     create_crypto_package,
     create_ethical_hkdf_context,
     derive_keys,
@@ -92,7 +92,7 @@ class TestLengthPrefixedEncoding:
 
     def test_encoding_unicode_characters(self):
         """Unicode characters should be properly encoded."""
-        result = length_prefixed_encode("test", MASTER_DNA_CODES)
+        result = length_prefixed_encode("test", MASTER_CODES)
         assert len(result) > 0
 
     def test_encoding_length_prefix_format(self):
@@ -114,39 +114,39 @@ class TestCanonicalHashDNA:
     """Penetration tests for DNA hashing."""
 
     def test_hash_deterministic(self):
-        """Same DNA codes produce same hash."""
-        hash1 = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
-        hash2 = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
+        """Same Omni-Codes produce same hash."""
+        hash1 = canonical_hash_code(MASTER_CODES, MASTER_HELIX_PARAMS)
+        hash2 = canonical_hash_code(MASTER_CODES, MASTER_HELIX_PARAMS)
         assert hash1 == hash2
 
     def test_hash_length(self):
         """SHA3-256 produces 32-byte hash."""
-        result = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
+        result = canonical_hash_code(MASTER_CODES, MASTER_HELIX_PARAMS)
         assert len(result) == 32
 
     def test_hash_different_codes_different_hash(self):
-        """Different DNA codes produce different hashes."""
-        hash1 = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
-        hash2 = canonical_hash_dna(MASTER_DNA_CODES + "X", MASTER_HELIX_PARAMS)
+        """Different Omni-Codes produce different hashes."""
+        hash1 = canonical_hash_code(MASTER_CODES, MASTER_HELIX_PARAMS)
+        hash2 = canonical_hash_code(MASTER_CODES + "X", MASTER_HELIX_PARAMS)
         assert hash1 != hash2
 
     def test_hash_different_params_different_hash(self):
         """Different helix params produce different hashes."""
-        hash1 = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
+        hash1 = canonical_hash_code(MASTER_CODES, MASTER_HELIX_PARAMS)
         modified_params = [(r + 0.001, p) for r, p in MASTER_HELIX_PARAMS]
-        hash2 = canonical_hash_dna(MASTER_DNA_CODES, modified_params)
+        hash2 = canonical_hash_code(MASTER_CODES, modified_params)
         assert hash1 != hash2
 
     def test_hash_empty_codes(self):
-        """Empty DNA codes should raise ValueError for input validation."""
-        with pytest.raises(ValueError, match="dna_codes cannot be empty"):
-            canonical_hash_dna("", [])
+        """Empty Omni-Codes should raise ValueError for input validation."""
+        with pytest.raises(ValueError, match="codes cannot be empty"):
+            canonical_hash_code("", [])
 
     def test_hash_single_bit_change_avalanche(self):
         """Single character change should produce completely different hash."""
         codes = "ABCDEFGHIJ"
-        hash1 = canonical_hash_dna(codes, [(1.0, 1.0)])
-        hash2 = canonical_hash_dna("ABCDEFGHIK", [(1.0, 1.0)])
+        hash1 = canonical_hash_code(codes, [(1.0, 1.0)])
+        hash2 = canonical_hash_code("ABCDEFGHIK", [(1.0, 1.0)])
         # Count differing bytes - should be many (avalanche effect)
         diff_bytes = sum(1 for a, b in zip(hash1, hash2) if a != b)
         assert diff_bytes > 10, "Avalanche effect not observed"
@@ -525,26 +525,26 @@ class TestCryptoPackageCreation:
 
     def test_package_creation(self, kms):
         """Package creation produces valid package."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         assert pkg.content_hash is not None
         assert pkg.hmac_tag is not None
         assert pkg.ed25519_signature is not None
         assert pkg.timestamp is not None
 
     def test_package_deterministic_hash(self, kms):
-        """Same DNA codes produce same content hash."""
-        pkg1 = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
-        pkg2 = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        """Same Omni-Codes produce same content hash."""
+        pkg1 = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg2 = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         assert pkg1.content_hash == pkg2.content_hash
 
     def test_package_includes_public_keys(self, kms):
         """Package should include public keys for verification."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         assert pkg.ed25519_pubkey == kms.ed25519_keypair.public_key.hex()
 
     def test_package_ethical_vector_included(self, kms):
         """Package should include ethical vector."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         assert pkg.ethical_vector == kms.ethical_vector
         assert pkg.ethical_hash is not None
 
@@ -560,22 +560,22 @@ class TestCryptoPackageVerification:
     @pytest.fixture
     def valid_package(self, kms):
         """Create valid package for testing."""
-        return create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        return create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
 
     def test_verify_valid_package(self, kms, valid_package):
         """Valid package should pass all verifications."""
         results = verify_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, valid_package, kms.hmac_key
+            MASTER_CODES, MASTER_HELIX_PARAMS, valid_package, kms.hmac_key
         )
         assert results["content_hash"] is True
         assert results["hmac"] is True
         assert results["ed25519"] is True
         assert results["timestamp"] is True
 
-    def test_verify_tampered_dna_codes_fails(self, kms, valid_package):
-        """Tampered DNA codes should fail content hash verification."""
+    def test_verify_tampered_codes_fails(self, kms, valid_package):
+        """Tampered Omni-Codes should fail content hash verification."""
         results = verify_crypto_package(
-            MASTER_DNA_CODES + "TAMPERED",
+            MASTER_CODES + "TAMPERED",
             MASTER_HELIX_PARAMS,
             valid_package,
             kms.hmac_key,
@@ -587,7 +587,7 @@ class TestCryptoPackageVerification:
         """Tampered helix params should fail content hash verification."""
         tampered_params = [(r + 1.0, p) for r, p in MASTER_HELIX_PARAMS]
         results = verify_crypto_package(
-            MASTER_DNA_CODES,
+            MASTER_CODES,
             tampered_params,
             valid_package,
             kms.hmac_key,
@@ -598,9 +598,7 @@ class TestCryptoPackageVerification:
     def test_verify_wrong_hmac_key_fails(self, valid_package):
         """Wrong HMAC key should fail HMAC verification."""
         wrong_key = secrets.token_bytes(32)
-        results = verify_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, valid_package, wrong_key
-        )
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, valid_package, wrong_key)
         assert results["hmac"] is False
 
     def test_verify_tampered_content_hash_fails(self, kms, valid_package):
@@ -608,9 +606,7 @@ class TestCryptoPackageVerification:
         tampered = copy.copy(valid_package)
         # Flip first character of hash
         tampered.content_hash = "f" + valid_package.content_hash[1:]
-        results = verify_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key
-        )
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key)
         assert results["content_hash"] is False
 
     def test_verify_tampered_hmac_tag_fails(self, kms, valid_package):
@@ -621,9 +617,7 @@ class TestCryptoPackageVerification:
         tampered_bytes = bytearray(original_bytes)
         tampered_bytes[16] ^= 0xFF  # Flip all bits in middle byte
         tampered.hmac_tag = tampered_bytes.hex()
-        results = verify_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key
-        )
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key)
         assert results["hmac"] is False
 
     def test_verify_tampered_ed25519_signature_fails(self, kms, valid_package):
@@ -634,9 +628,7 @@ class TestCryptoPackageVerification:
         tampered_bytes = bytearray(original_bytes)
         tampered_bytes[0] ^= 0xFF  # Flip all bits in first byte
         tampered.ed25519_signature = tampered_bytes.hex()
-        results = verify_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key
-        )
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key)
         assert results["ed25519"] is False
 
     def test_verify_wrong_ed25519_pubkey_fails(self, kms, valid_package):
@@ -644,9 +636,7 @@ class TestCryptoPackageVerification:
         tampered = copy.copy(valid_package)
         other_kp = generate_ed25519_keypair()
         tampered.ed25519_pubkey = other_kp.public_key.hex()
-        results = verify_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key
-        )
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, tampered, kms.hmac_key)
         assert results["ed25519"] is False
 
     @pytest.mark.skipif(not DILITHIUM_AVAILABLE, reason="Dilithium not available")
@@ -661,7 +651,7 @@ class TestCryptoPackageVerification:
         tampered_bytes[len(tampered_bytes) // 2] ^= 0xFF  # Flip bits in middle byte
         tampered.dilithium_signature = tampered_bytes.hex()
         results = verify_crypto_package(
-            MASTER_DNA_CODES,
+            MASTER_CODES,
             MASTER_HELIX_PARAMS,
             tampered,
             kms.hmac_key,
@@ -679,33 +669,33 @@ class TestTimestampValidation:
 
     def test_valid_timestamp_passes(self, kms):
         """Current timestamp should pass validation."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
-        results = verify_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
         assert results["timestamp"] is True
 
     def test_future_timestamp_fails(self, kms):
         """Future timestamp should fail validation."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         # Set timestamp to tomorrow
         future = datetime.now(timezone.utc) + timedelta(days=1)
         pkg.timestamp = future.isoformat()
-        results = verify_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
         assert results["timestamp"] is False
 
     def test_very_old_timestamp_fails(self, kms):
         """Timestamp older than 10 years should fail."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         # Set timestamp to 11 years ago
         old = datetime.now(timezone.utc) - timedelta(days=4000)
         pkg.timestamp = old.isoformat()
-        results = verify_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
         assert results["timestamp"] is False
 
     def test_malformed_timestamp_fails(self, kms):
         """Malformed timestamp should fail gracefully."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         pkg.timestamp = "not-a-valid-timestamp"
-        results = verify_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
         assert results["timestamp"] is False
 
 
@@ -718,13 +708,11 @@ class TestMalformedInputHandling:
 
     def test_invalid_hex_in_content_hash(self, kms):
         """Invalid hex in content_hash should not crash."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         pkg.content_hash = "not_valid_hex!!!"
         # Should not raise, should return False for content_hash
         try:
-            results = verify_crypto_package(
-                MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key
-            )
+            results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
             # If it doesn't crash, content_hash should be False
             assert results["content_hash"] is False
         except ValueError:
@@ -733,36 +721,30 @@ class TestMalformedInputHandling:
 
     def test_invalid_hex_in_hmac_tag(self, kms):
         """Invalid hex in hmac_tag should not crash."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         pkg.hmac_tag = "ZZZZ_invalid"
         try:
-            results = verify_crypto_package(
-                MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key
-            )
+            results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
             assert results["hmac"] is False
         except ValueError:
             pass
 
     def test_truncated_signature(self, kms):
         """Truncated signature should not crash."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         pkg.ed25519_signature = pkg.ed25519_signature[:32]  # Truncate to half
         try:
-            results = verify_crypto_package(
-                MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key
-            )
+            results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
             assert results["ed25519"] is False
         except ValueError:
             pass
 
     def test_empty_signature(self, kms):
         """Empty signature should not crash."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         pkg.ed25519_signature = ""
         try:
-            results = verify_crypto_package(
-                MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key
-            )
+            results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
             assert results["ed25519"] is False
         except ValueError:
             pass
@@ -774,7 +756,7 @@ class TestKeySecurityProperties:
     def test_crypto_package_does_not_contain_private_keys(self):
         """CryptoPackage should never contain private keys."""
         kms = generate_key_management_system("test")
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         pkg_dict = asdict(pkg)
         pkg_json = json.dumps(pkg_dict)
 
@@ -786,7 +768,7 @@ class TestKeySecurityProperties:
     def test_crypto_package_does_not_contain_master_secret(self):
         """Master secret should never be in package."""
         kms = generate_key_management_system("test")
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         pkg_dict = asdict(pkg)
 
         # Check all string values
@@ -801,7 +783,7 @@ class TestDowngradeAttacks:
     def test_package_without_dilithium_clearly_marked(self):
         """Package without Dilithium should be clearly marked."""
         kms = generate_key_management_system("test")
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         # If Dilithium is disabled, quantum_signatures_enabled should be False
         if not DILITHIUM_AVAILABLE:
             assert pkg.quantum_signatures_enabled is False
@@ -810,8 +792,8 @@ class TestDowngradeAttacks:
     def test_verification_distinguishes_missing_vs_invalid_dilithium(self):
         """Verification should distinguish missing vs invalid Dilithium."""
         kms = generate_key_management_system("test")
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
-        results = verify_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
         # dilithium should be True (valid), False (invalid), or None (not present)
         assert results["dilithium"] in [True, False, None]
 
@@ -822,13 +804,11 @@ class TestConcurrencyAndConsistency:
     def test_multiple_verifications_consistent(self):
         """Multiple verifications of same package should be consistent."""
         kms = generate_key_management_system("test")
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
 
         results_list = []
         for _ in range(10):
-            results = verify_crypto_package(
-                MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key
-            )
+            results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
             results_list.append(results)
 
         # All results should be identical
@@ -840,7 +820,7 @@ class TestConcurrencyAndConsistency:
         kms = generate_key_management_system("test")
         timestamps = set()
         for _ in range(5):
-            pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+            pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
             timestamps.add(pkg.timestamp)
         # Timestamps should be unique (or at least mostly unique)
         assert len(timestamps) >= 1

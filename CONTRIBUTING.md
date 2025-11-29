@@ -102,7 +102,7 @@ pip install -e ".[dev]"  # Installs pytest, black, flake8, mypy, isort
 
 ```bash
 # Run the demonstration
-python dna_guardian_secure.py
+python code_guardian_secure.py
 
 # Expected output should include "ALL VERIFICATIONS PASSED"
 ```
@@ -286,7 +286,7 @@ All tests must:
 
 ```python
 import pytest
-from dna_guardian_secure import generate_ed25519_keypair, sign_data
+from code_guardian_secure import generate_ed25519_keypair, sign_data
 
 class TestEd25519Signatures:
     """Test Ed25519 signature generation and verification."""
@@ -332,7 +332,7 @@ class TestEd25519Signatures:
    black .
    isort .
    flake8 .
-   mypy dna_guardian_secure.py
+   mypy code_guardian_secure.py
    pytest
    ```
 

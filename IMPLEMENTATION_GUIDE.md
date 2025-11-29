@@ -26,7 +26,7 @@ Choose the appropriate verification profile for your use case:
 
 **Example: Strict profile verification**
 ```python
-results = verify_crypto_package(dna_codes, helix_params, pkg, hmac_key)
+results = verify_crypto_package(codes, helix_params, pkg, hmac_key)
 
 # Strict profile: require all checks
 if not (results["content_hash"] and results["hmac"] and results["ed25519"]
@@ -57,7 +57,7 @@ pip install pqcrypto
 ### 2. Run Demo
 
 ```bash
-python3 dna_guardian_secure.py
+python3 code_guardian_secure.py
 ```
 
 Expected output:
@@ -141,7 +141,7 @@ print(oqs.get_enabled_sig_mechanisms())
 #### Generate Keys
 
 ```python
-from dna_guardian_secure import *
+from code_guardian_secure import *
 
 # Generate key management system
 kms = generate_key_management_system("YourOrganization")
@@ -298,14 +298,14 @@ store_master_secret_encrypted(kms.master_secret)
 
 ```python
 def create_package_with_timestamp(
-    dna_codes: str,
+    codes: str,
     helix_params: List[Tuple[float, float]],
     kms: KeyManagementSystem
 ) -> CryptoPackage:
     """Create package with RFC 3161 timestamp."""
     
     return create_crypto_package(
-        dna_codes,
+        codes,
         helix_params,
         kms,
         author="Steel-SecAdv-LLC",
@@ -415,17 +415,17 @@ if should_rotate_keys(kms):
 ### Step 5: Sign DNA Code Packages
 
 ```python
-def sign_dna_codes(
-    dna_codes: str,
+def sign_codes(
+    codes: str,
     helix_params: List[Tuple[float, float]],
     kms: KeyManagementSystem,
     output_file: str = "DNA_CRYPTO_PACKAGE.json"
 ) -> CryptoPackage:
-    """Sign DNA codes and save package."""
+    """Sign Omni-Codes and save package."""
     
     # Create cryptographic package
     pkg = create_crypto_package(
-        dna_codes,
+        codes,
         helix_params,
         kms,
         author="Steel-SecAdv-LLC",
@@ -439,8 +439,8 @@ def sign_dna_codes(
     print(f"✓ Package signed and saved: {output_file}")
     return pkg
 
-# Sign master DNA codes
-pkg = sign_dna_codes(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms)
+# Sign master Omni-Codes
+pkg = sign_codes(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms)
 ```
 
 ### Step 6: Verify DNA Code Packages
@@ -448,7 +448,7 @@ pkg = sign_dna_codes(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms)
 ```python
 def verify_dna_package(
     package_file: str,
-    dna_codes: str,
+    codes: str,
     helix_params: List[Tuple[float, float]],
     hmac_key: bytes
 ) -> bool:
@@ -462,7 +462,7 @@ def verify_dna_package(
     
     # Verify all layers
     results = verify_crypto_package(
-        dna_codes,
+        codes,
         helix_params,
         pkg,
         hmac_key
@@ -497,11 +497,11 @@ is_valid = verify_dna_package(
 
 ## Advanced Usage
 
-### Custom DNA Codes
+### Custom Omni-Codes
 
 ```python
-# Define your own DNA codes
-custom_dna_codes = (
+# Define your own Omni-Codes
+custom_codes = (
     "Ψ10B05α_YΩZΛY_β15C12Δ"
     "Δ12A08β_ΦΛNΩΦ_γ18D21Ε"
 )
@@ -513,7 +513,7 @@ custom_helix_params = [
 
 # Sign custom codes
 pkg = create_crypto_package(
-    custom_dna_codes,
+    custom_codes,
     custom_helix_params,
     kms,
     author="Steel-SecAdv-LLC"
@@ -521,7 +521,7 @@ pkg = create_crypto_package(
 
 # Verify custom codes
 results = verify_crypto_package(
-    custom_dna_codes,
+    custom_codes,
     custom_helix_params,
     pkg,
     kms.hmac_key
@@ -532,7 +532,7 @@ results = verify_crypto_package(
 
 ```python
 def create_multi_signed_package(
-    dna_codes: str,
+    codes: str,
     helix_params: List[Tuple[float, float]],
     signers: List[Tuple[str, KeyManagementSystem]]
 ) -> Dict[str, Any]:
@@ -540,7 +540,7 @@ def create_multi_signed_package(
     
     # Create base package with first signer
     author1, kms1 = signers[0]
-    pkg = create_crypto_package(dna_codes, helix_params, kms1, author1)
+    pkg = create_crypto_package(codes, helix_params, kms1, author1)
     
     # Add additional signatures
     multi_pkg = {
@@ -735,17 +735,17 @@ pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, ...)
 ### Batch Processing
 
 ```python
-def sign_multiple_dna_codes(
+def sign_multiple_codes(
     dna_list: List[Tuple[str, List[Tuple[float, float]]]],
     kms: KeyManagementSystem
 ) -> List[CryptoPackage]:
-    """Sign multiple DNA codes efficiently."""
+    """Sign multiple Omni-Codes efficiently."""
     
     packages = []
     
-    for i, (dna_codes, helix_params) in enumerate(dna_list):
+    for i, (codes, helix_params) in enumerate(dna_list):
         pkg = create_crypto_package(
-            dna_codes,
+            codes,
             helix_params,
             kms,
             author="Steel-SecAdv-LLC"
@@ -760,7 +760,7 @@ def sign_multiple_dna_codes(
 
 # Usage: Sign 1000 DNA code sets
 dna_list = [(MASTER_DNA_CODES, MASTER_HELIX_PARAMS) for _ in range(1000)]
-packages = sign_multiple_dna_codes(dna_list, kms)
+packages = sign_multiple_codes(dna_list, kms)
 
 # Performance: ~1000 packages/second (with Dilithium)
 ```
@@ -772,12 +772,12 @@ from concurrent.futures import ProcessPoolExecutor
 
 def verify_package_worker(args):
     """Worker function for parallel verification."""
-    pkg, dna_codes, helix_params, hmac_key = args
-    return verify_crypto_package(dna_codes, helix_params, pkg, hmac_key)
+    pkg, codes, helix_params, hmac_key = args
+    return verify_crypto_package(codes, helix_params, pkg, hmac_key)
 
 def verify_multiple_packages(
     packages: List[CryptoPackage],
-    dna_codes: str,
+    codes: str,
     helix_params: List[Tuple[float, float]],
     hmac_key: bytes,
     workers: int = 4
@@ -785,7 +785,7 @@ def verify_multiple_packages(
     """Verify multiple packages in parallel."""
     
     args_list = [
-        (pkg, dna_codes, helix_params, hmac_key)
+        (pkg, codes, helix_params, hmac_key)
         for pkg in packages
     ]
     
@@ -900,10 +900,10 @@ class CryptoPackage:
 **Best for:** New deployments, systems with few existing packages
 
 ```python
-from dna_guardian_secure import *
+from code_guardian_secure import *
 
-# Load your DNA codes and helix parameters
-dna_codes = "..."  # Your DNA codes
+# Load your Omni-Codes and helix parameters
+codes = "..."  # Your Omni-Codes
 helix_params = [...]  # Your helix parameters
 
 # Generate new KMS with ethical integration
@@ -911,7 +911,7 @@ kms = generate_key_management_system("YourOrganization")
 
 # Create new package with ethical integration
 pkg = create_crypto_package(
-    dna_codes,
+    codes,
     helix_params,
     kms,
     author="YourOrganization",
@@ -955,7 +955,7 @@ def load_package_any_version(package_file: str) -> CryptoPackage:
 pkg = load_package_any_version("DNA_CRYPTO_PACKAGE.json")
 
 # Verify with warning if no ethical binding
-results = verify_crypto_package(dna_codes, helix_params, pkg, hmac_key)
+results = verify_crypto_package(codes, helix_params, pkg, hmac_key)
 
 if pkg.version == "1.0.0":
     print("⚠ Package verified but lacks ethical binding")
@@ -974,7 +974,7 @@ def migrate_package_directory(
     input_dir: str,
     output_dir: str,
     kms: KeyManagementSystem,
-    dna_codes: str,
+    codes: str,
     helix_params: List[Tuple[float, float]]
 ):
     """Migrate all packages in directory to v2.0.0."""
@@ -993,7 +993,7 @@ def migrate_package_directory(
         
         # Create new package with ethical integration
         new_pkg = create_crypto_package(
-            dna_codes,
+            codes,
             helix_params,
             kms,
             author=kms.author if hasattr(kms, 'author') else "Unknown",
@@ -1014,7 +1014,7 @@ migrate_package_directory(
     input_dir="packages_v1",
     output_dir="packages_v2",
     kms=kms,
-    dna_codes=MASTER_DNA_CODES,
+    codes=MASTER_DNA_CODES,
     helix_params=MASTER_HELIX_PARAMS
 )
 ```

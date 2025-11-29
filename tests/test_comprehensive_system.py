@@ -50,10 +50,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from dna_guardian_secure import (
+from code_guardian_secure import (
     DILITHIUM_AVAILABLE,
     ETHICAL_VECTOR,
-    MASTER_DNA_CODES,
+    MASTER_CODES,
     MASTER_HELIX_PARAMS,
     SIGNATURE_FORMAT_V1,
     SIGNATURE_FORMAT_V2,
@@ -63,7 +63,7 @@ from dna_guardian_secure import (
     _verify_rfc3161_token,
     _verify_timestamp_value,
     build_signature_message,
-    canonical_hash_dna,
+    canonical_hash_code,
     create_crypto_package,
     create_ethical_hkdf_context,
     derive_keys,
@@ -300,11 +300,11 @@ class TestDilithiumPolicyEnforcement:
     @pytest.fixture
     def valid_package(self, kms):
         """Create valid package for testing."""
-        return create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        return create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
 
     def _build_signature_message_for_package(self, package):
         """Helper to build the correct signature message based on package format version."""
-        computed_hash = canonical_hash_dna(MASTER_DNA_CODES, MASTER_HELIX_PARAMS)
+        computed_hash = canonical_hash_code(MASTER_CODES, MASTER_HELIX_PARAMS)
         sig_format = getattr(package, "signature_format_version", SIGNATURE_FORMAT_V1)
         if sig_format == SIGNATURE_FORMAT_V2:
             ethical_hash_bytes = bytes.fromhex(package.ethical_hash)
@@ -380,12 +380,12 @@ class TestVerifyCryptoPackageWithPolicy:
     @pytest.fixture
     def valid_package(self, kms):
         """Create valid package for testing."""
-        return create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        return create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
 
     def test_verify_without_policy_succeeds(self, kms, valid_package):
         """Test verification without quantum policy succeeds."""
         results = verify_crypto_package(
-            MASTER_DNA_CODES,
+            MASTER_CODES,
             MASTER_HELIX_PARAMS,
             valid_package,
             kms.hmac_key,
@@ -402,7 +402,7 @@ class TestVerifyCryptoPackageWithPolicy:
             pytest.skip("Quantum signatures not enabled")
 
         results = verify_crypto_package(
-            MASTER_DNA_CODES,
+            MASTER_CODES,
             MASTER_HELIX_PARAMS,
             valid_package,
             kms.hmac_key,
@@ -419,7 +419,7 @@ class TestVerifyCryptoPackageWithPolicy:
 
         with pytest.raises(QuantumSignatureRequiredError):
             verify_crypto_package(
-                MASTER_DNA_CODES,
+                MASTER_CODES,
                 MASTER_HELIX_PARAMS,
                 valid_package,
                 kms.hmac_key,
@@ -438,7 +438,7 @@ class TestCryptoPackageWithRFC3161:
     def test_package_without_rfc3161(self, kms):
         """Test package creation without RFC 3161 timestamp."""
         pkg = create_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test", use_rfc3161=False
+            MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test", use_rfc3161=False
         )
         assert pkg.timestamp_token is None
 
@@ -446,7 +446,7 @@ class TestCryptoPackageWithRFC3161:
         """Test package creation with RFC 3161 failure is graceful."""
         # Use invalid TSA URL to force failure
         pkg = create_crypto_package(
-            MASTER_DNA_CODES,
+            MASTER_CODES,
             MASTER_HELIX_PARAMS,
             kms,
             "test",
@@ -461,10 +461,10 @@ class TestCryptoPackageWithRFC3161:
     def test_verify_rfc3161_returns_none_when_no_token(self, kms):
         """Test RFC 3161 verification returns None when no token present."""
         pkg = create_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test", use_rfc3161=False
+            MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test", use_rfc3161=False
         )
         results = verify_crypto_package(
-            MASTER_DNA_CODES,
+            MASTER_CODES,
             MASTER_HELIX_PARAMS,
             pkg,
             kms.hmac_key,
@@ -488,10 +488,10 @@ class TestCryptoPackageWithRFC3161:
     def test_verify_results_include_rfc3161_key(self, kms):
         """Test that verification results include rfc3161 key."""
         pkg = create_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test", use_rfc3161=False
+            MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test", use_rfc3161=False
         )
         results = verify_crypto_package(
-            MASTER_DNA_CODES,
+            MASTER_CODES,
             MASTER_HELIX_PARAMS,
             pkg,
             kms.hmac_key,
@@ -535,7 +535,7 @@ class TestMainFunction:
 
     def test_main_runs_successfully(self):
         """Test that main function runs without errors."""
-        script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
+        script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
         result = subprocess.run(
             [sys.executable, str(script_path)],
             capture_output=True,
@@ -546,7 +546,7 @@ class TestMainFunction:
 
     def test_main_produces_expected_output(self):
         """Test that main function produces expected output."""
-        script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
+        script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
         result = subprocess.run(
             [sys.executable, str(script_path)],
             capture_output=True,
@@ -562,13 +562,13 @@ class TestMainFunction:
 
     def test_main_creates_output_files(self):
         """Test that main function creates expected output files."""
-        script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
+        script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
         # Run from temp directory to avoid polluting repo
         with tempfile.TemporaryDirectory() as tmpdir:
             # Copy script to temp dir
             import shutil
 
-            temp_script = Path(tmpdir) / "dna_guardian_secure.py"
+            temp_script = Path(tmpdir) / "code_guardian_secure.py"
             shutil.copy(script_path, temp_script)
 
             result = subprocess.run(
@@ -581,17 +581,17 @@ class TestMainFunction:
             assert result.returncode == 0
 
             # Check output files
-            assert (Path(tmpdir) / "DNA_CRYPTO_PACKAGE.json").exists()
+            assert (Path(tmpdir) / "CRYPTO_PACKAGE.json").exists()
             assert (Path(tmpdir) / "public_keys").exists()
             assert (Path(tmpdir) / "public_keys" / "ed25519_public.key").exists()
 
     def test_main_output_package_is_valid_json(self):
         """Test that output package is valid JSON."""
-        script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
+        script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
         with tempfile.TemporaryDirectory() as tmpdir:
             import shutil
 
-            temp_script = Path(tmpdir) / "dna_guardian_secure.py"
+            temp_script = Path(tmpdir) / "code_guardian_secure.py"
             shutil.copy(script_path, temp_script)
 
             subprocess.run(
@@ -601,7 +601,7 @@ class TestMainFunction:
                 cwd=tmpdir,
             )
 
-            package_path = Path(tmpdir) / "DNA_CRYPTO_PACKAGE.json"
+            package_path = Path(tmpdir) / "CRYPTO_PACKAGE.json"
             with open(package_path, "r") as f:
                 pkg_data = json.load(f)
 
@@ -629,7 +629,7 @@ class TestCryptoPackageWithMonitor:
         mock_monitor.record_package_signing = MagicMock()
 
         pkg = create_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test", monitor=mock_monitor
+            MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test", monitor=mock_monitor
         )
 
         # Verify monitor methods were called
@@ -642,13 +642,13 @@ class TestCryptoPackageWithMonitor:
 
     def test_verify_package_with_mock_monitor(self, kms):
         """Test package verification with mock monitor."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
 
         mock_monitor = MagicMock()
         mock_monitor.monitor_crypto_operation = MagicMock()
 
         results = verify_crypto_package(
-            MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key, monitor=mock_monitor
+            MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key, monitor=mock_monitor
         )
 
         # Verify monitor methods were called
@@ -708,50 +708,50 @@ class TestCryptoPackageFields:
 
     def test_package_content_hash_is_64_hex_chars(self, kms):
         """Test that content hash is 64 hex characters (32 bytes)."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         assert len(pkg.content_hash) == 64
         # Verify it's valid hex
         bytes.fromhex(pkg.content_hash)
 
     def test_package_hmac_tag_is_64_hex_chars(self, kms):
         """Test that HMAC tag is 64 hex characters (32 bytes)."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         assert len(pkg.hmac_tag) == 64
         bytes.fromhex(pkg.hmac_tag)
 
     def test_package_ed25519_signature_is_128_hex_chars(self, kms):
         """Test that Ed25519 signature is 128 hex characters (64 bytes)."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         assert len(pkg.ed25519_signature) == 128
         bytes.fromhex(pkg.ed25519_signature)
 
     def test_package_ed25519_pubkey_is_64_hex_chars(self, kms):
         """Test that Ed25519 public key is 64 hex characters (32 bytes)."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         assert len(pkg.ed25519_pubkey) == 64
         bytes.fromhex(pkg.ed25519_pubkey)
 
     def test_package_ethical_hash_is_64_hex_chars(self, kms):
         """Test that ethical hash is 64 hex characters (32 bytes)."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         assert len(pkg.ethical_hash) == 64
         bytes.fromhex(pkg.ethical_hash)
 
     def test_package_timestamp_is_iso_format(self, kms):
         """Test that timestamp is in ISO format."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         from datetime import datetime
 
         datetime.fromisoformat(pkg.timestamp)
 
     def test_package_version_is_set(self, kms):
         """Test that package version is set."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         assert pkg.version == "1.0.0"
 
     def test_package_author_is_set(self, kms):
         """Test that package author is set correctly."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test_author")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test_author")
         assert pkg.author == "test_author"
 
 
@@ -787,7 +787,7 @@ class TestDataclassConversion:
 
     def test_crypto_package_to_dict(self, kms):
         """Test CryptoPackage can be converted to dict."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         pkg_dict = asdict(pkg)
         assert isinstance(pkg_dict, dict)
         assert "content_hash" in pkg_dict
@@ -795,7 +795,7 @@ class TestDataclassConversion:
 
     def test_crypto_package_to_json(self, kms):
         """Test CryptoPackage can be serialized to JSON."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         pkg_dict = asdict(pkg)
         json_str = json.dumps(pkg_dict)
         assert isinstance(json_str, str)
@@ -809,14 +809,14 @@ class TestEd25519ErrorPaths:
 
     def test_ed25519_sign_wrong_key_length(self):
         """Test that signing with wrong key length raises ValueError."""
-        from dna_guardian_secure import ed25519_sign
+        from code_guardian_secure import ed25519_sign
 
         with pytest.raises(ValueError, match="32 bytes"):
             ed25519_sign(b"test", b"short_key")
 
     def test_ed25519_verify_wrong_signature_length(self):
         """Test that verifying with wrong signature length raises ValueError."""
-        from dna_guardian_secure import ed25519_verify
+        from code_guardian_secure import ed25519_verify
 
         keypair = generate_ed25519_keypair()
         with pytest.raises(ValueError, match="64 bytes"):
@@ -824,7 +824,7 @@ class TestEd25519ErrorPaths:
 
     def test_ed25519_verify_wrong_pubkey_length(self):
         """Test that verifying with wrong public key length raises ValueError."""
-        from dna_guardian_secure import ed25519_verify
+        from code_guardian_secure import ed25519_verify
 
         with pytest.raises(ValueError, match="32 bytes"):
             ed25519_verify(b"test", b"x" * 64, b"short_pubkey")
@@ -845,7 +845,7 @@ class TestVerificationExceptionHandling:
 
     def test_verify_catches_general_exceptions(self, kms):
         """Test that verification catches general exceptions gracefully."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
 
         # Corrupt the package in a way that causes exceptions
         pkg.content_hash = "invalid"
@@ -854,17 +854,17 @@ class TestVerificationExceptionHandling:
         pkg.ed25519_pubkey = "invalid"
 
         # Should not raise, should return False for failed verifications
-        results = verify_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
         # At least content_hash should be False due to invalid hex
         assert results["content_hash"] is False
 
 
 class TestDNACodesAndHelixParams:
-    """Tests for DNA codes and helix parameters constants."""
+    """Tests for Omni-Codes and helix parameters constants."""
 
-    def test_master_dna_codes_not_empty(self):
-        """Test that MASTER_DNA_CODES is not empty."""
-        assert len(MASTER_DNA_CODES) > 0
+    def test_master_codes_not_empty(self):
+        """Test that MASTER_CODES is not empty."""
+        assert len(MASTER_CODES) > 0
 
     def test_master_helix_params_has_seven_entries(self):
         """Test that MASTER_HELIX_PARAMS has 7 entries."""
@@ -892,21 +892,21 @@ class TestCanonicalHashEdgeCases:
     def test_hash_with_empty_helix_params(self):
         """Test hashing with empty helix params list raises ValueError."""
         with pytest.raises(ValueError, match="helix_params cannot be empty"):
-            canonical_hash_dna("test_codes", [])
+            canonical_hash_code("test_codes", [])
 
     def test_hash_with_single_helix_param(self):
         """Test hashing with single helix param."""
-        result = canonical_hash_dna("test_codes", [(1.0, 2.0)])
+        result = canonical_hash_code("test_codes", [(1.0, 2.0)])
         assert len(result) == 32
 
     def test_hash_with_extreme_helix_values(self):
         """Test hashing with extreme helix values."""
-        result = canonical_hash_dna("test", [(0.0001, 0.0001), (99999.9999, 99999.9999)])
+        result = canonical_hash_code("test", [(0.0001, 0.0001), (99999.9999, 99999.9999)])
         assert len(result) == 32
 
     def test_hash_with_negative_helix_values(self):
         """Test hashing with negative helix values."""
-        result = canonical_hash_dna("test", [(-1.0, -2.0)])
+        result = canonical_hash_code("test", [(-1.0, -2.0)])
         assert len(result) == 32
 
 
@@ -918,20 +918,20 @@ class TestPackageCreationEdgeCases:
         """Create KMS for testing."""
         return generate_key_management_system("test_author")
 
-    def test_package_with_empty_dna_codes(self, kms):
-        """Test package creation with empty DNA codes raises ValueError."""
-        with pytest.raises(ValueError, match="dna_codes cannot be empty"):
+    def test_package_with_empty_codes(self, kms):
+        """Test package creation with empty Omni-Codes raises ValueError."""
+        with pytest.raises(ValueError, match="codes cannot be empty"):
             create_crypto_package("", [], kms, "test")
 
     def test_package_with_unicode_author(self, kms):
         """Test package creation with Unicode author name."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "")
         assert pkg.author == ""
 
     def test_package_with_long_author(self, kms):
         """Test package creation with very long author name."""
         long_author = "A" * 10000
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, long_author)
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, long_author)
         assert pkg.author == long_author
 
 
@@ -971,7 +971,7 @@ class TestHMACEdgeCases:
 
     def test_hmac_with_empty_message(self):
         """Test HMAC with empty message."""
-        from dna_guardian_secure import hmac_authenticate, hmac_verify
+        from code_guardian_secure import hmac_authenticate, hmac_verify
 
         key = secrets.token_bytes(32)
         tag = hmac_authenticate(b"", key)
@@ -980,7 +980,7 @@ class TestHMACEdgeCases:
 
     def test_hmac_with_large_message(self):
         """Test HMAC with large message."""
-        from dna_guardian_secure import hmac_authenticate, hmac_verify
+        from code_guardian_secure import hmac_authenticate, hmac_verify
 
         key = secrets.token_bytes(32)
         large_message = secrets.token_bytes(1000000)  # 1MB
@@ -989,7 +989,7 @@ class TestHMACEdgeCases:
 
     def test_hmac_with_64_byte_key(self):
         """Test HMAC with 64-byte key (recommended size)."""
-        from dna_guardian_secure import hmac_authenticate, hmac_verify
+        from code_guardian_secure import hmac_authenticate, hmac_verify
 
         key = secrets.token_bytes(64)
         message = b"test message"
@@ -1008,7 +1008,7 @@ class TestQuantumSignatureAvailability:
     @pytest.mark.skipif(not DILITHIUM_AVAILABLE, reason="Dilithium not available")
     def test_dilithium_operations_work_when_available(self):
         """Test that Dilithium operations work when available."""
-        from dna_guardian_secure import (
+        from code_guardian_secure import (
             dilithium_sign,
             dilithium_verify,
             generate_dilithium_keypair,
@@ -1030,16 +1030,16 @@ class TestCryptoPackageIntegrity:
 
     def test_package_self_verification(self, kms):
         """Test that a package can verify itself."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
-        results = verify_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        results = verify_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, pkg, kms.hmac_key)
         # All non-None results should be True
         for key, value in results.items():
             if value is not None:
                 assert value is True, f"{key} verification failed"
 
-    def test_package_different_dna_codes_fails(self, kms):
-        """Test that different DNA codes fail verification."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+    def test_package_different_codes_fails(self, kms):
+        """Test that different Omni-Codes fail verification."""
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         results = verify_crypto_package(
             "different_codes",
             MASTER_HELIX_PARAMS,
@@ -1051,10 +1051,10 @@ class TestCryptoPackageIntegrity:
 
     def test_package_different_helix_params_fails(self, kms):
         """Test that different helix params fail verification."""
-        pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, "test")
+        pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
         different_params = [(1.0, 1.0)]
         results = verify_crypto_package(
-            MASTER_DNA_CODES,
+            MASTER_CODES,
             different_params,
             pkg,
             kms.hmac_key,

@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from cryptography.hazmat.primitives.asymmetric import ed25519  # noqa: E402
 
-from dna_guardian_secure import (  # noqa: E402
+from code_guardian_secure import (  # noqa: E402
     ed25519_sign,
     ed25519_verify,
     generate_ed25519_keypair,

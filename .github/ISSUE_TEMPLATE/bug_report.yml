@@ -60,7 +60,7 @@ body:
       description: Provide a minimal code example that reproduces the issue
       placeholder: |
         ```python
-        from dna_guardian_secure import *
+        from code_guardian_secure import *
 
         # Your code here
         ```

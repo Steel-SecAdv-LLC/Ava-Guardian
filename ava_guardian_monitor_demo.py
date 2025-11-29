@@ -41,8 +41,8 @@ AI Co-Architects:
 import time
 
 from ava_guardian_monitor import AvaGuardianMonitor
-from dna_guardian_secure import (
-    MASTER_DNA_CODES_STR,
+from code_guardian_secure import (
+    MASTER_CODES_STR,
     MASTER_HELIX_PARAMS,
     create_crypto_package,
     generate_key_management_system,
@@ -66,7 +66,7 @@ def demo_timing_monitoring() -> None:
 
     print("\n[1/4] Creating packages with normal timing...")
     # Use first 3 codes for faster demo
-    test_codes = "\n".join(MASTER_DNA_CODES_STR.split("\n")[:3])
+    test_codes = "\n".join(MASTER_CODES_STR.split("\n")[:3])
     test_params = MASTER_HELIX_PARAMS[:3]
 
     for i in range(25):
@@ -116,7 +116,7 @@ def demo_pattern_analysis() -> None:
     print("\n[1/3] Creating normal package series...")
     for i in range(15):
         _ = create_crypto_package(
-            MASTER_DNA_CODES_STR, MASTER_HELIX_PARAMS, kms, "demo", monitor=monitor
+            MASTER_CODES_STR, MASTER_HELIX_PARAMS, kms, "demo", monitor=monitor
         )
         if (i + 1) % 5 == 0:
             print(f"  ✓ {i + 1}/15 packages created")
@@ -124,7 +124,7 @@ def demo_pattern_analysis() -> None:
 
     print("\n[2/3] Simulating unusual activity...")
     # Rapid burst of packages (unusual pattern)
-    test_codes = "\n".join(MASTER_DNA_CODES_STR.split("\n")[:2])
+    test_codes = "\n".join(MASTER_CODES_STR.split("\n")[:2])
     test_params = MASTER_HELIX_PARAMS[:2]
     for i in range(5):
         _ = create_crypto_package(test_codes, test_params, kms, "demo", monitor=monitor)
@@ -165,7 +165,7 @@ def demo_resonance_detection() -> None:
     kms = generate_key_management_system("Demo-Resonance")
 
     print("\n[1/2] Creating packages for frequency analysis...")
-    test_codes = "\n".join(MASTER_DNA_CODES_STR.split("\n")[:3])
+    test_codes = "\n".join(MASTER_CODES_STR.split("\n")[:3])
     test_params = MASTER_HELIX_PARAMS[:3]
 
     for i in range(50):
@@ -199,11 +199,11 @@ def demo_security_report() -> None:
     print("\n[1/2] Simulating production workload...")
     for i in range(20):
         pkg = create_crypto_package(
-            MASTER_DNA_CODES_STR, MASTER_HELIX_PARAMS, kms, "demo", monitor=monitor
+            MASTER_CODES_STR, MASTER_HELIX_PARAMS, kms, "demo", monitor=monitor
         )
         # Verify packages too
         verify_crypto_package(
-            MASTER_DNA_CODES_STR,
+            MASTER_CODES_STR,
             MASTER_HELIX_PARAMS,
             pkg,
             kms.hmac_key,

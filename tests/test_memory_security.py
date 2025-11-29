@@ -14,7 +14,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from dna_guardian_secure import secure_wipe
+from code_guardian_secure import secure_wipe
 
 
 class TestSecureWipe:
@@ -76,7 +76,7 @@ class TestMemoryGrowth:
 
     def test_hash_no_memory_growth(self):
         """Repeated hashing doesn't leak memory."""
-        from dna_guardian_secure import canonical_hash_dna
+        from code_guardian_secure import canonical_hash_code
 
         gc.collect()
         baseline = self._get_memory_usage()
@@ -84,7 +84,7 @@ class TestMemoryGrowth:
         for _ in range(1000):
             dna = "ACGT" * 100
             params = [(1.0, 1.0)]
-            canonical_hash_dna(dna, params)
+            canonical_hash_code(dna, params)
 
         gc.collect()
         final = self._get_memory_usage()
@@ -95,7 +95,7 @@ class TestMemoryGrowth:
 
     def test_hmac_no_memory_growth(self):
         """Repeated HMAC operations don't leak memory."""
-        from dna_guardian_secure import hmac_authenticate
+        from code_guardian_secure import hmac_authenticate
 
         gc.collect()
         baseline = self._get_memory_usage()
@@ -113,7 +113,7 @@ class TestMemoryGrowth:
 
     def test_keygen_no_memory_growth(self):
         """Repeated key generation doesn't leak memory."""
-        from dna_guardian_secure import generate_ed25519_keypair
+        from code_guardian_secure import generate_ed25519_keypair
 
         gc.collect()
         baseline = self._get_memory_usage()

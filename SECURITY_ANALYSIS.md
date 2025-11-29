@@ -90,7 +90,7 @@ Ava Guardian ♱ provides cryptographic protection for DNA Code (helical mathema
 The system implements multiple independent security layers. When verification requires all checks to pass, a cryptographic forgery requires breaking at least one primitive at its advertised security level (assuming keys remain secure):
 
 ```
-DNA Codes + Helix Parameters
+Omni-Codes + Helix Parameters
     ↓
 [Layer 1] Length-Prefixed Canonical Encoding
     ↓ (eliminates concatenation attacks)
@@ -537,7 +537,7 @@ P(OKM(i₁) = OKM(i₂)) ≤ 2^-256
 ### 5.1. Ethically-Bound HKDF Context
 
 **Enhancement:** Ethical Integration Layer  
-**Implementation:** `create_ethical_hkdf_context()` and `derive_keys()` in `dna_guardian_secure.py`
+**Implementation:** `create_ethical_hkdf_context()` and `derive_keys()` in `code_guardian_secure.py`
 
 #### Ethical Vector Definition
 
@@ -851,7 +851,7 @@ Interpretation: Even knowing K₂, adversary has ≤ 2^-128 advantage in predict
 ### Threat Model Assumptions
 
 **Attacker Capabilities:**
-1. Can observe all public data (DNA codes, signatures, public keys)
+1. Can observe all public data (Omni-Codes, signatures, public keys)
 2. Can submit arbitrary messages for signing (chosen message attack)
 3. Has access to quantum computer (for Dilithium analysis)
 4. Has 2^80 classical computation budget
@@ -1162,14 +1162,14 @@ Throughput: ~4,717 packages/second
 
 ### Performance Scaling
 
-| DNA Codes | Create (ms) | Verify (ms) |
+| Omni-Codes | Create (ms) | Verify (ms) |
 |-----------|-------------|-------------|
 | 7 (current) | 0.896 | 0.212 |
 | 100 | 0.920 | 0.225 |
 | 1000 | 1.105 | 0.318 |
 | 10000 | 3.450 | 1.125 |
 
-**Conclusion:** Performance scales well. System can handle thousands of DNA codes with sub-second latency.
+**Conclusion:** Performance scales well. System can handle thousands of Omni-Codes with sub-second latency.
 
 ---
 

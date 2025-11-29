@@ -51,7 +51,7 @@ class TestDemonstration:
         - All cryptographic operations complete
         """
         # Get the path to the main script
-        script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
+        script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
         assert script_path.exists(), f"Script not found: {script_path}"
 
         # Run the demonstration
@@ -83,7 +83,7 @@ class TestDemonstration:
         - Final success message is displayed
         """
         # Get the path to the main script
-        script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
+        script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
 
         # Run the demonstration
         result = subprocess.run(
@@ -129,7 +129,7 @@ class TestDemonstration:
         don't indicate errors in our code.
         """
         # Get the path to the main script
-        script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
+        script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
 
         # Run the demonstration
         result = subprocess.run(
@@ -182,7 +182,7 @@ class TestDemonstration:
         Note: This test may be skipped if quantum libraries are not installed.
         """
         # Test quantum library availability in subprocess to avoid import warnings affecting pytest
-        script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
+        script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
 
         # Check if quantum libraries work by running a quick test
         test_script = """
@@ -264,7 +264,7 @@ class TestErrorHandling:
         - Quantum-resistant signatures are generated
         - All verifications pass
         """
-        script_path = Path(__file__).parent.parent / "dna_guardian_secure.py"
+        script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
 
         result = subprocess.run(
             [sys.executable, str(script_path)],

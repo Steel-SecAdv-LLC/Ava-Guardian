@@ -32,7 +32,7 @@ class TestHKDFSHA3256:
 
     def test_hkdf_sha3_256_deterministic(self):
         """Test that HKDF-SHA3-256 produces deterministic outputs with same salt."""
-        from dna_guardian_secure import derive_keys
+        from code_guardian_secure import derive_keys
 
         master_secret = b"test_master_secret_32_bytes_long"
         info = "test_context"
@@ -50,7 +50,7 @@ class TestHKDFSHA3256:
 
     def test_hkdf_sha3_256_different_info_produces_different_keys(self):
         """Test that different info parameters produce different keys."""
-        from dna_guardian_secure import derive_keys
+        from code_guardian_secure import derive_keys
 
         master_secret = b"test_master_secret_32_bytes_long"
         fixed_salt = b"fixed_salt_for_testing_32_bytes!"
@@ -63,7 +63,7 @@ class TestHKDFSHA3256:
 
     def test_hkdf_sha3_256_different_master_produces_different_keys(self):
         """Test that different master secrets produce different keys."""
-        from dna_guardian_secure import derive_keys
+        from code_guardian_secure import derive_keys
 
         master1 = b"master_secret_one_32_bytes_long!"
         master2 = b"master_secret_two_32_bytes_long!"
@@ -78,7 +78,7 @@ class TestHKDFSHA3256:
 
     def test_hkdf_sha3_256_key_independence(self):
         """Test that derived keys are independent of each other."""
-        from dna_guardian_secure import derive_keys
+        from code_guardian_secure import derive_keys
 
         master_secret = b"test_master_secret_32_bytes_long"
         info = "test_context"
@@ -99,7 +99,7 @@ class TestHKDFSHA3256:
 
     def test_hkdf_sha3_256_minimum_master_secret_length(self):
         """Test that master secret must be at least 32 bytes."""
-        from dna_guardian_secure import derive_keys
+        from code_guardian_secure import derive_keys
 
         # Should raise ValueError for short master secret
         with pytest.raises(ValueError, match="at least 32 bytes"):
@@ -115,7 +115,7 @@ class TestEthicalHKDFContext:
 
     def test_ethical_context_creation(self):
         """Test that ethical context is properly created."""
-        from dna_guardian_secure import create_ethical_hkdf_context
+        from code_guardian_secure import create_ethical_hkdf_context
 
         base_context = b"base_context"
         enhanced = create_ethical_hkdf_context(base_context)
@@ -127,7 +127,7 @@ class TestEthicalHKDFContext:
 
     def test_ethical_context_deterministic(self):
         """Test that ethical context creation is deterministic."""
-        from dna_guardian_secure import create_ethical_hkdf_context
+        from code_guardian_secure import create_ethical_hkdf_context
 
         base_context = b"base_context"
 
@@ -138,7 +138,7 @@ class TestEthicalHKDFContext:
 
     def test_ethical_context_different_vectors_produce_different_contexts(self):
         """Test that different ethical vectors produce different contexts."""
-        from dna_guardian_secure import create_ethical_hkdf_context
+        from code_guardian_secure import create_ethical_hkdf_context
 
         base_context = b"base_context"
 
@@ -167,7 +167,7 @@ class TestEthicalHKDFContext:
 
     def test_ethical_vector_affects_derived_keys(self):
         """Test that ethical vector changes affect derived keys."""
-        from dna_guardian_secure import derive_keys
+        from code_guardian_secure import derive_keys
 
         master_secret = b"test_master_secret_32_bytes_long"
         info = "test_context"
@@ -204,7 +204,7 @@ class TestHMACSHA3256:
 
     def test_hmac_sha3_256_deterministic(self):
         """Test that HMAC-SHA3-256 produces deterministic outputs."""
-        from dna_guardian_secure import hmac_authenticate
+        from code_guardian_secure import hmac_authenticate
 
         key = b"x" * 32
         message = b"test message"
@@ -217,7 +217,7 @@ class TestHMACSHA3256:
 
     def test_hmac_sha3_256_verification(self):
         """Test HMAC-SHA3-256 verification."""
-        from dna_guardian_secure import hmac_authenticate, hmac_verify
+        from code_guardian_secure import hmac_authenticate, hmac_verify
 
         key = b"x" * 32
         message = b"test message"
@@ -236,7 +236,7 @@ class TestHMACSHA3256:
 
     def test_hmac_sha3_256_minimum_key_length(self):
         """Test that HMAC key must be at least 32 bytes."""
-        from dna_guardian_secure import hmac_authenticate
+        from code_guardian_secure import hmac_authenticate
 
         # Should raise ValueError for short key
         with pytest.raises(ValueError, match="at least 32 bytes"):
@@ -423,7 +423,7 @@ class TestProjectSpecificVectors:
         The ethical signature is SHA3-256(JSON(ETHICAL_VECTOR))[:16].
         This test validates the ethical vector constraints and signature.
         """
-        from dna_guardian_secure import ETHICAL_VECTOR
+        from code_guardian_secure import ETHICAL_VECTOR
 
         # Verify the ethical vector constraint
         assert sum(ETHICAL_VECTOR.values()) == 12.0, "Ethical vector sum != 12.0"
@@ -448,7 +448,7 @@ class TestKeyManagementSystem:
 
     def test_kms_generation_uses_hkdf_sha3_256(self):
         """Test that KMS generation uses HKDF-SHA3-256."""
-        from dna_guardian_secure import generate_key_management_system
+        from code_guardian_secure import generate_key_management_system
 
         kms = generate_key_management_system("test_author")
 
@@ -462,7 +462,7 @@ class TestKeyManagementSystem:
 
     def test_kms_deterministic_with_same_master_secret(self):
         """Test that KMS derivation is deterministic given same master secret and salt."""
-        from dna_guardian_secure import derive_keys
+        from code_guardian_secure import derive_keys
 
         # Fixed master secret and salt for testing
         master_secret = b"fixed_master_secret_32_bytes_lo!"

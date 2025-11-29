@@ -47,7 +47,7 @@ from ava_guardian.crypto_api import (  # noqa: E402
     AvaGuardianCrypto,
     get_pqc_capabilities,
 )
-from dna_guardian_secure import (  # noqa: E402
+from code_guardian_secure import (  # noqa: E402
     create_crypto_package,
     generate_key_management_system,
 )
