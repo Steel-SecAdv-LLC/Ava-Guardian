@@ -92,8 +92,10 @@ from ava_guardian.exceptions import QuantumSignatureUnavailableError
 
 # Quantum-resistant cryptography (CRYSTALS-Dilithium)
 # Import from centralized PQC backends module (DRY principle)
-from ava_guardian.pqc_backends import (
+# DILITHIUM_BACKEND is re-exported for backward compatibility with tests
+from ava_guardian.pqc_backends import (  # noqa: F401
     DILITHIUM_AVAILABLE,
+    DILITHIUM_BACKEND,
     DilithiumKeyPair,
     dilithium_sign,
     dilithium_verify,
@@ -1561,7 +1563,7 @@ class CryptoPackage:
     signature_format_version: str = SIGNATURE_FORMAT_V2  # Signature binding format
 
 
-def create_crypto_package(
+def create_crypto_package(  # noqa: C901 - high-level orchestrator; refactor would be invasive
     codes: str,
     helix_params: List[Tuple[float, float]],
     kms: KeyManagementSystem,
