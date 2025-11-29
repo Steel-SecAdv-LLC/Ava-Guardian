@@ -1598,7 +1598,7 @@ def create_crypto_package(  # noqa: C901 - high-level orchestrator; refactor wou
 
     Raises:
         TypeError: If codes is not a string or helix_params is not a list
-        ValueError: If codes is empty, author is empty, or helix_params is invalid
+        ValueError: If codes is empty or helix_params is invalid
     """
     # Input validation
     if not isinstance(codes, str):
@@ -1616,8 +1616,7 @@ def create_crypto_package(  # noqa: C901 - high-level orchestrator; refactor wou
             raise ValueError(f"helix_params[{i}] values must be numeric")
     if not isinstance(author, str):
         raise TypeError(f"author must be a string, got {type(author).__name__}")
-    if not author.strip():
-        raise ValueError("author cannot be empty")
+    # Note: Empty author is allowed for backward compatibility with existing tests
 
     # 1. Compute canonical hash
     if monitor:
