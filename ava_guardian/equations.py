@@ -43,17 +43,21 @@ Frameworks:
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-11-27
+Date: 2025-11-29
 Version: 1.1.0
 
 AI Co-Architects:
     Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 """
 
+import logging
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
+
+# Configure module logger
+logger = logging.getLogger(__name__)
 
 __version__ = "1.1.0"
 __author__ = "Andrew E. A., Steel Security Advisors LLC"
@@ -522,55 +526,58 @@ def verify_mathematical_foundations() -> Dict[str, bool]:
 
 
 if __name__ == "__main__":
-    print("=" * 70)
-    print("Ava Guardian ♱ (AG♱) - Mathematical Foundations Verification")
-    print("=" * 70)
+    # Configure logging for demo
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    logger.info("=" * 70)
+    logger.info("Ava Guardian ♱ (AG♱) - Mathematical Foundations Verification")
+    logger.info("=" * 70)
 
     # Verify all frameworks
     results = verify_mathematical_foundations()
 
-    print("\n[1/5] Helical Geometric Invariants:")
+    logger.info("\n[1/5] Helical Geometric Invariants:")
     dna_results = verify_all_codes()
     for code, data in dna_results.items():
         status = "✓" if data["valid"] else "✗"
-        print(f"  {status} {code[:15]}: error = {data['fundamental_error']:.2e}")
+        logger.info(f"  {status} {code[:15]}: error = {data['fundamental_error']:.2e}")
 
-    print("\n[2/5] Lyapunov Stability Theory:")
+    logger.info("\n[2/5] Lyapunov Stability Theory:")
     test_state = np.array([0.5, 0.3, 0.2])
     stable, V, proof = lyapunov_stability_proof(test_state)
-    print(f"  {'✓' if stable else '✗'} Asymptotic stability: {stable}")
-    print(f"  V(x) = {V:.6f}")
-    print(f"  V̇(x) = {proof['V_dot']:.6f} (≤ 0 required)")
-    print(f"  Time to 99%: {proof['time_to_99']:.2f} time units")
+    logger.info(f"  {'✓' if stable else '✗'} Asymptotic stability: {stable}")
+    logger.info(f"  V(x) = {V:.6f}")
+    logger.info(f"  V̇(x) = {proof['V_dot']:.6f} (≤ 0 required)")
+    logger.info(f"  Time to 99%: {proof['time_to_99']:.2f} time units")
 
-    print("\n[3/5] Golden Ratio Harmonics:")
+    logger.info("\n[3/5] Golden Ratio Harmonics:")
     converged, ratio, proof = golden_ratio_convergence_proof(30)
-    print(f"  {'✓' if converged else '✗'} Fibonacci convergence: {converged}")
-    print(f"  F₃₁/F₃₀ = {ratio:.15f}")
-    print(f"  φ       = {PHI:.15f}")
-    print(f"  Error   = {proof['error']:.2e}")
+    logger.info(f"  {'✓' if converged else '✗'} Fibonacci convergence: {converged}")
+    logger.info(f"  F₃₁/F₃₀ = {ratio:.15f}")
+    logger.info(f"  φ       = {PHI:.15f}")
+    logger.info(f"  Error   = {proof['error']:.2e}")
 
-    print("\n[4/5] Quadratic Form Constraints:")
+    logger.info("\n[4/5] Quadratic Form Constraints:")
     test_state_4d = np.array([1.0, 1.0, 1.0, 1.0])
     E = initialize_ethical_matrix(4)
     sigma = calculate_sigma_quadratic(test_state_4d, E)
     valid, corrected = enforce_sigma_quadratic_threshold(test_state_4d, E, 0.96)
-    print(f"  σ_quadratic = {sigma:.6f}")
-    print(f"  {'✓' if valid else '✗'} Threshold (≥ 0.96): {valid}")
+    logger.info(f"  σ_quadratic = {sigma:.6f}")
+    logger.info(f"  {'✓' if valid else '✗'} Threshold (≥ 0.96): {valid}")
     if not valid:
         sigma_corrected = calculate_sigma_quadratic(corrected, E)
-        print(f"  σ_quadratic (corrected) = {sigma_corrected:.6f}")
+        logger.info(f"  σ_quadratic (corrected) = {sigma_corrected:.6f}")
 
-    print("\n[5/5] Overall Framework Status:")
+    logger.info("\n[5/5] Overall Framework Status:")
     for framework, framework_status in results.items():
         if framework != "frameworks_ready":
-            print(f"  {'✓' if framework_status else '✗'} {framework}: {framework_status}")
+            logger.info(f"  {'✓' if framework_status else '✗'} {framework}: {framework_status}")
 
-    print("\n" + "=" * 70)
+    logger.info("\n" + "=" * 70)
     if results["frameworks_ready"]:
-        print("✓ ALL MATHEMATICAL FRAMEWORKS VERIFIED")
-        print("\nMachine-precision foundations ready for cryptographic integration.")
+        logger.info("✓ ALL MATHEMATICAL FRAMEWORKS VERIFIED")
+        logger.info("\nMachine-precision foundations ready for cryptographic integration.")
     else:
-        print("✗ SOME FRAMEWORKS FAILED VERIFICATION")
-        print("\nPlease review framework implementation.")
-    print("=" * 70)
+        logger.warning("✗ SOME FRAMEWORKS FAILED VERIFICATION")
+        logger.warning("\nPlease review framework implementation.")
+    logger.info("=" * 70)

@@ -38,7 +38,7 @@ security review - it does not guarantee side-channel resistance.
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-11-27
+Date: 2025-11-29
 Version: 1.1.0
 Project: Ava Guardian ♱ 3R Runtime Monitoring
 
@@ -515,7 +515,7 @@ class ResonanceTimingMonitor:
         # Convert deque to numpy array for FFT (on-demand, not hot path)
         # Use list() for efficient conversion, then slice for window_size
         history_list = list(self.timing_history[operation])
-        timings = np.array(history_list[-self.window_size :])
+        timings = np.array(history_list[-self.window_size:])
 
         if len(timings) < 8:
             return {}
@@ -1049,7 +1049,7 @@ class AvaGuardianMonitor:
     def _prune_alerts(self) -> None:
         """Limit memory usage by pruning old alerts."""
         if len(self.alerts) > self.alert_retention:
-            self.alerts = self.alerts[-self.alert_retention :]
+            self.alerts = self.alerts[-self.alert_retention:]
 
 
 # Module-level convenience functions

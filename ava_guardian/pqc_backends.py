@@ -38,7 +38,7 @@ AI Co-Architects: Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | De
 
 import os
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Optional, cast
 
@@ -50,15 +50,13 @@ class PQCStatus(Enum):
     UNAVAILABLE = "UNAVAILABLE"
 
 
-class PQCUnavailableError(RuntimeError):
-    """
-    Raised when a PQC algorithm is requested but no backend is available.
-
-    This error is raised instead of silently falling back to classical
-    algorithms, ensuring users are aware when PQC protection is not active.
-    """
-
-    pass
+# Import from centralized exceptions module (DRY principle)
+# PQCUnavailableError and QuantumSignatureUnavailableError are defined there
+from ava_guardian.exceptions import (  # noqa: E402, F401
+    PQCUnavailableError,
+    QuantumSignatureUnavailableError,
+    SecurityWarning,
+)
 
 
 class KyberUnavailableError(PQCUnavailableError):
@@ -69,17 +67,6 @@ class KyberUnavailableError(PQCUnavailableError):
 
 class SphincsUnavailableError(PQCUnavailableError):
     """Raised when SPHINCS+-256f is requested but not available."""
-
-    pass
-
-
-class SecurityWarning(UserWarning):
-    """
-    Security-related warning for potentially unsafe cryptographic configurations.
-
-    This warning is raised when using PQC backends that are not guaranteed to be
-    constant-time, which may be vulnerable to timing side-channel attacks.
-    """
 
     pass
 
@@ -304,7 +291,7 @@ class DilithiumKeyPair:
     Standard: NIST FIPS 204 (ML-DSA)
     """
 
-    private_key: bytes  # 4032 bytes for ML-DSA-65
+    private_key: bytes = field(repr=False)  # 4032 bytes for ML-DSA-65 (excluded from repr)
     public_key: bytes  # 1952 bytes for ML-DSA-65
 
 
@@ -323,7 +310,7 @@ class KyberKeyPair:
     Standard: NIST FIPS 203 (ML-KEM)
     """
 
-    secret_key: bytes  # 3168 bytes for Kyber-1024
+    secret_key: bytes = field(repr=False)  # 3168 bytes for Kyber-1024 (excluded from repr)
     public_key: bytes  # 1568 bytes for Kyber-1024
 
 
@@ -356,7 +343,7 @@ class SphincsKeyPair:
     hash-based security with no risk of key reuse vulnerabilities.
     """
 
-    secret_key: bytes  # 128 bytes for SPHINCS+-256f
+    secret_key: bytes = field(repr=False)  # 128 bytes for SPHINCS+-256f (excluded from repr)
     public_key: bytes  # 64 bytes for SPHINCS+-256f
 
 
@@ -368,10 +355,10 @@ def generate_dilithium_keypair() -> DilithiumKeyPair:
         DilithiumKeyPair with ML-DSA-65 keys
 
     Raises:
-        PQCUnavailableError: If no Dilithium backend is available
+        QuantumSignatureUnavailableError: If no Dilithium backend is available
     """
     if not DILITHIUM_AVAILABLE:
-        raise PQCUnavailableError(
+        raise QuantumSignatureUnavailableError(
             "PQC_UNAVAILABLE: Dilithium backend not available. "
             "Install liboqs-python (recommended) or pqcrypto: "
             "pip install liboqs-python"
@@ -388,7 +375,7 @@ def generate_dilithium_keypair() -> DilithiumKeyPair:
         return DilithiumKeyPair(private_key=private_key, public_key=public_key)
 
     # Should not reach here if DILITHIUM_AVAILABLE is True
-    raise PQCUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
+    raise QuantumSignatureUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
 
 
 def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
@@ -403,10 +390,10 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
         Dilithium signature (3293 bytes)
 
     Raises:
-        PQCUnavailableError: If no Dilithium backend is available
+        QuantumSignatureUnavailableError: If no Dilithium backend is available
     """
     if not DILITHIUM_AVAILABLE:
-        raise PQCUnavailableError(
+        raise QuantumSignatureUnavailableError(
             "PQC_UNAVAILABLE: Dilithium backend not available. "
             "Install liboqs-python (recommended) or pqcrypto."
         )
@@ -419,7 +406,7 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
     elif DILITHIUM_BACKEND == "pqcrypto" and _dilithium3_module is not None:
         return cast(bytes, _dilithium3_module.sign(message, private_key))
 
-    raise PQCUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
+    raise QuantumSignatureUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
 
 
 def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
@@ -435,10 +422,10 @@ def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> boo
         True if signature is valid, False otherwise
 
     Raises:
-        PQCUnavailableError: If no Dilithium backend is available
+        QuantumSignatureUnavailableError: If no Dilithium backend is available
     """
     if not DILITHIUM_AVAILABLE:
-        raise PQCUnavailableError(
+        raise QuantumSignatureUnavailableError(
             "PQC_UNAVAILABLE: Dilithium backend not available. "
             "Install liboqs-python (recommended) or pqcrypto."
         )
@@ -457,7 +444,7 @@ def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> boo
         except Exception:
             return False
 
-    raise PQCUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
+    raise QuantumSignatureUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
 
 
 # ============================================================================

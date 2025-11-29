@@ -18,7 +18,7 @@
  * @file ava_consttime.c
  * @brief Constant-time cryptographic operations
  * @author Andrew E. A., Steel Security Advisors LLC
- * @date 2025-11-24
+ * @date 2025-11-29
  *
  * Timing-attack resistant implementations of critical cryptographic primitives.
  * All operations execute in constant time regardless of input values.

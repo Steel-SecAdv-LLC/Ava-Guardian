@@ -5,7 +5,7 @@
 | Property | Value |
 |----------|-------|
 | Document Version | 1.1.0 |
-| Last Updated | 2025-11-28 |
+| Last Updated | 2025-11-29 |
 | Classification | Public |
 | Maintainer | Steel Security Advisors LLC |
 
@@ -311,8 +311,8 @@ Ava Guardian ♱ delivers **high-performance cryptography** with:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2025-11-26 | Initial professional release |
-| 1.1.0 | 2025-11-27 | Updated benchmarks with fresh measurements from Python 3.12 |
-| 1.2.0 | 2025-11-27 | Added tiered tolerance approach for CI regression detection |
+| 1.1.0 | 2025-11-29 | Updated benchmarks with fresh measurements from Python 3.12 |
+| 1.2.0 | 2025-11-29 | Added tiered tolerance approach for CI regression detection |
 
 ---
 

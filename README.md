@@ -616,7 +616,7 @@ The test suite includes:
 
 ![Test Suite Coverage](assets/test_coverage.png)
 
-*729 tests across 25 files (~11,000 lines) covering core crypto and NIST KATs, PQC backends, key management, memory security, and performance/monitoring.*
+*798 tests across 23 files (~11,000 lines) covering core crypto and NIST KATs, PQC backends, key management, memory security, and performance/monitoring.*
 
 </details>
 

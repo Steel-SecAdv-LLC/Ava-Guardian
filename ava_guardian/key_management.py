@@ -18,6 +18,7 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 import os
 import secrets
 import warnings
@@ -27,11 +28,11 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, cast
 
+# Configure module logger
+logger = logging.getLogger(__name__)
 
-class SecurityWarning(UserWarning):
-    """Warning for security-related issues."""
-
-    pass
+# Import from centralized exceptions module
+from ava_guardian.exceptions import SecurityWarning  # noqa: E402, F401
 
 
 class KeyStatus(Enum):
@@ -476,6 +477,9 @@ class SecureKeyStorage:
         # Key derivation parameters (versioned for future upgrades)
         self.KDF_VERSION = 2
         self.KDF_ITERATIONS = 600000  # OWASP 2024 recommendation
+        self.KDF_LEGACY_ITERATIONS = 100000  # Pre-v2 default iterations
+        self.KDF_SALT_BYTES = 32  # Salt size in bytes
+        self.KDF_KEY_BYTES = 32  # Derived key size (AES-256)
 
         # Salt file with secure permissions
         self.salt_file = self.storage_path / ".salt"
@@ -499,15 +503,15 @@ class SecureKeyStorage:
             if self.metadata_file.exists():
                 with open(self.metadata_file, "r") as f:
                     metadata = json.load(f)
-                iterations = metadata.get("iterations", 100000)  # Legacy default
+                iterations = metadata.get("iterations", self.KDF_LEGACY_ITERATIONS)
                 version = metadata.get("version", 1)
             else:
                 # Legacy mode: no metadata means old 100k iterations
-                iterations = 100000
+                iterations = self.KDF_LEGACY_ITERATIONS
                 version = 1
         else:
             # New installation: generate random salt
-            self.salt = secrets.token_bytes(32)
+            self.salt = secrets.token_bytes(self.KDF_SALT_BYTES)
 
             # Save salt with secure permissions (0600)
             with open(self.salt_file, "wb") as f:
@@ -519,7 +523,7 @@ class SecureKeyStorage:
                 "version": self.KDF_VERSION,
                 "algorithm": "PBKDF2-HMAC-SHA256",
                 "iterations": self.KDF_ITERATIONS,
-                "salt_bytes": 32,
+                "salt_bytes": self.KDF_SALT_BYTES,
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
             with open(self.metadata_file, "w") as f:
@@ -533,7 +537,7 @@ class SecureKeyStorage:
             master_password.encode("utf-8"),
             self.salt,
             iterations,
-            32,
+            self.KDF_KEY_BYTES,
         )
 
         # Warn if using legacy parameters
@@ -567,7 +571,7 @@ class SecureKeyStorage:
                 old_keys[key_id] = (key_data, metadata)
 
         # Generate new salt
-        new_salt = secrets.token_bytes(32)
+        new_salt = secrets.token_bytes(self.KDF_SALT_BYTES)
 
         # Derive new key
         new_encryption_key = hashlib.pbkdf2_hmac(
@@ -575,7 +579,7 @@ class SecureKeyStorage:
             master_password.encode("utf-8"),
             new_salt,
             self.KDF_ITERATIONS,
-            32,
+            self.KDF_KEY_BYTES,
         )
 
         # Re-encrypt all keys
@@ -597,7 +601,7 @@ class SecureKeyStorage:
                 "version": self.KDF_VERSION,
                 "algorithm": "PBKDF2-HMAC-SHA256",
                 "iterations": self.KDF_ITERATIONS,
-                "salt_bytes": 32,
+                "salt_bytes": self.KDF_SALT_BYTES,
                 "migrated_at": datetime.now(timezone.utc).isoformat(),
             }
             with open(self.metadata_file, "w") as f:
@@ -616,6 +620,9 @@ class SecureKeyStorage:
         storage.storage_path = Path(storage_path)
         storage.KDF_VERSION = 2
         storage.KDF_ITERATIONS = 600000
+        storage.KDF_LEGACY_ITERATIONS = 100000  # Pre-v2 default iterations
+        storage.KDF_SALT_BYTES = 32  # Salt size in bytes
+        storage.KDF_KEY_BYTES = 32  # Derived key size (AES-256)
         storage.salt_file = storage.storage_path / ".salt"
         storage.metadata_file = storage.storage_path / ".kdf_metadata.json"
 
@@ -695,7 +702,7 @@ class SecureKeyStorage:
 
             aesgcm = AESGCM(self.encryption_key)
             # Decrypt with authentication (will raise InvalidTag if tampered)
-            plaintext = aesgcm.decrypt(nonce, ciphertext, key_id.encode("utf-8"))
+            plaintext: bytes = aesgcm.decrypt(nonce, ciphertext, key_id.encode("utf-8"))
             return plaintext
 
         elif algorithm == "AES-256-CFB":
@@ -716,7 +723,8 @@ class SecureKeyStorage:
                 algorithms.AES(self.encryption_key), modes.CFB(iv), backend=default_backend()
             )
             decryptor = cipher.decryptor()
-            return decryptor.update(encrypted_data) + decryptor.finalize()
+            result: bytes = decryptor.update(encrypted_data) + decryptor.finalize()
+            return result
 
         else:
             raise ValueError(f"Unknown encryption algorithm: {algorithm}")
@@ -739,6 +747,32 @@ class SecureKeyStorage:
             key_file.unlink()
             return True
         return False
+
+    def list_keys(self) -> list:
+        """
+        List all stored key IDs.
+
+        Returns:
+            List of key IDs stored in this storage
+        """
+        key_ids = []
+        for key_file in self.storage_path.glob("*.json"):
+            if not key_file.name.startswith("."):
+                key_ids.append(key_file.stem)
+        return key_ids
+
+    def __enter__(self) -> "SecureKeyStorage":
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit - securely clear encryption key from memory."""
+        # Securely zero the encryption key
+        if hasattr(self, "encryption_key") and self.encryption_key:
+            # Overwrite with zeros before dereferencing
+            key_len = len(self.encryption_key)
+            self.encryption_key = b"\x00" * key_len
+        return None
 
 
 class HSMKeyStorage:
@@ -1071,41 +1105,44 @@ class HSMKeyStorage:
 
 # Example usage
 if __name__ == "__main__":
-    print("=" * 70)
-    print("Ava Guardian ♱ Key Management Demonstration")
-    print("=" * 70)
+    # Configure logging for demo
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    logger.info("=" * 70)
+    logger.info("Ava Guardian ♱ Key Management Demonstration")
+    logger.info("=" * 70)
 
     # HD Key Derivation
-    print("\n1. Hierarchical Deterministic Key Derivation")
-    print("-" * 70)
+    logger.info("\n1. Hierarchical Deterministic Key Derivation")
+    logger.info("-" * 70)
     hd = HDKeyDerivation()
 
     # Derive keys for different purposes
     signing_key = hd.derive_key(purpose=44, account=0, change=0, index=0)
     encryption_key = hd.derive_key(purpose=44, account=0, change=0, index=1)
 
-    print(f"Signing key:    {signing_key.hex()[:32]}...")
-    print(f"Encryption key: {encryption_key.hex()[:32]}...")
+    logger.info(f"Signing key:    {signing_key.hex()[:32]}...")
+    logger.info(f"Encryption key: {encryption_key.hex()[:32]}...")
 
     # Key Rotation
-    print("\n2. Key Rotation Management")
-    print("-" * 70)
+    logger.info("\n2. Key Rotation Management")
+    logger.info("-" * 70)
     rotation_mgr = KeyRotationManager(rotation_period=timedelta(days=90))
 
     # Register keys
     key1_meta = rotation_mgr.register_key("key-v1", "signing", max_usage=1000)
     key2_meta = rotation_mgr.register_key("key-v2", "signing")
 
-    print(f"Active key: {rotation_mgr.get_active_key()}")
-    print(f"Should rotate: {rotation_mgr.should_rotate('key-v1')}")
+    logger.info(f"Active key: {rotation_mgr.get_active_key()}")
+    logger.info(f"Should rotate: {rotation_mgr.should_rotate('key-v1')}")
 
     # Simulate key rotation
     rotation_mgr.initiate_rotation("key-v1", "key-v2")
-    print(f"After rotation, active key: {rotation_mgr.get_active_key()}")
+    logger.info(f"After rotation, active key: {rotation_mgr.get_active_key()}")
 
     # Secure Storage
-    print("\n3. Secure Key Storage")
-    print("-" * 70)
+    logger.info("\n3. Secure Key Storage")
+    logger.info("-" * 70)
     import tempfile
 
     demo_storage_path = Path(tempfile.gettempdir()) / "ava_keys_demo"
@@ -1114,12 +1151,12 @@ if __name__ == "__main__":
     # Store a key
     test_key = secrets.token_bytes(32)
     storage.store_key("master-key-001", test_key, metadata={"purpose": "signing"})
-    print("✓ Key stored securely")
+    logger.info("✓ Key stored securely")
 
     # Retrieve key
     retrieved_key = storage.retrieve_key("master-key-001")
-    print(f"✓ Key retrieved: {retrieved_key == test_key}")
+    logger.info(f"✓ Key retrieved: {retrieved_key == test_key}")
 
-    print("\n" + "=" * 70)
-    print("✓ Key Management System operational")
-    print("=" * 70)
+    logger.info("\n" + "=" * 70)
+    logger.info("✓ Key Management System operational")
+    logger.info("=" * 70)
