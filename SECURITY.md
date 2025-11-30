@@ -166,7 +166,7 @@ Users deploying Ava Guardian ♱ in production should:
 - **REQUIRED:** Implement key rotation every 90 days
 - **REQUIRED:** Use hardware security modules (AWS CloudHSM, YubiKey, etc.)
 - **NEVER:** Store private keys in plain text or version control
-- **NEVER:** Reuse keys across different DNA code packages
+- **NEVER:** Reuse keys across different Omni-Code packages
 
 ### Cryptographic Operations
 - **REQUIRED:** Install quantum-resistant libraries (`liboqs-python` or `pqcrypto`)

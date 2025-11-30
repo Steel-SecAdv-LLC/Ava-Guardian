@@ -72,14 +72,14 @@ Ava Guardian ♱ (AG♱): SHA3-256 Security Hash
   ✓ Ed25519 keypair: 32 bytes
   ✓ Dilithium keypair: 1952 bytes
 
-[2/5] Master DNA Code Helix:
+[2/5] Master Omni-Code Helix:
   1. 👁20A07∞_XΔEΛX_ϵ19A89Ϙ
      Omni-Directional System
      Helix: radius=20.0, pitch=0.7
   ...
 
 [5/5] Exporting public keys...
-  ✓ Package saved: DNA_CRYPTO_PACKAGE.json
+  ✓ Package saved: OMNI_CRYPTO_PACKAGE.json
 
 ==================================================================
 ✓ ALL VERIFICATIONS PASSED
@@ -90,10 +90,10 @@ Ava Guardian ♱ (AG♱): SHA3-256 Security Hash
 
 ```bash
 # Check files created
-ls -lh DNA_CRYPTO_PACKAGE.json public_keys/
+ls -lh OMNI_CRYPTO_PACKAGE.json public_keys/
 
 # View crypto package
-cat DNA_CRYPTO_PACKAGE.json | python3 -m json.tool
+cat OMNI_CRYPTO_PACKAGE.json | python3 -m json.tool
 
 # View public keys
 ls -lh public_keys/
@@ -177,7 +177,7 @@ def store_master_secret_hsm(master_secret: bytes, key_label: str):
 # Store master secret
 hsm_key_id = store_master_secret_hsm(
     kms.master_secret,
-    "DNA_GUARDIAN_MASTER_SECRET"
+    "OMNI_GUARDIAN_MASTER_SECRET"
 )
 print(f"Master secret stored in HSM: {hsm_key_id}")
 
@@ -315,7 +315,7 @@ def create_package_with_timestamp(
 
 # Usage
 pkg = create_package_with_timestamp(
-    MASTER_DNA_CODES,
+    MASTER_OMNI_CODES,
     MASTER_HELIX_PARAMS,
     kms
 )
@@ -331,7 +331,7 @@ else:
 ```python
 # DigiCert Timestamp Server
 pkg = create_crypto_package(
-    MASTER_DNA_CODES,
+    MASTER_OMNI_CODES,
     MASTER_HELIX_PARAMS,
     kms,
     author="Steel-SecAdv-LLC",
@@ -341,7 +341,7 @@ pkg = create_crypto_package(
 
 # GlobalSign Timestamp Server
 pkg = create_crypto_package(
-    MASTER_DNA_CODES,
+    MASTER_OMNI_CODES,
     MASTER_HELIX_PARAMS,
     kms,
     author="Steel-SecAdv-LLC",
@@ -357,12 +357,12 @@ pkg = create_crypto_package(
 pip install opentimestamps-client
 
 # Create timestamp on Bitcoin blockchain
-ots stamp DNA_CRYPTO_PACKAGE.json
+ots stamp OMNI_CRYPTO_PACKAGE.json
 
 # Wait for Bitcoin confirmation (6 blocks ≈ 1 hour)
 
 # Verify timestamp
-ots verify DNA_CRYPTO_PACKAGE.json.ots
+ots verify OMNI_CRYPTO_PACKAGE.json.ots
 ```
 
 ### Step 4: Implement Key Rotation
@@ -419,7 +419,7 @@ def sign_codes(
     codes: str,
     helix_params: List[Tuple[float, float]],
     kms: KeyManagementSystem,
-    output_file: str = "DNA_CRYPTO_PACKAGE.json"
+    output_file: str = "OMNI_CRYPTO_PACKAGE.json"
 ) -> CryptoPackage:
     """Sign Omni-Codes and save package."""
     
@@ -440,7 +440,7 @@ def sign_codes(
     return pkg
 
 # Sign master Omni-Codes
-pkg = sign_codes(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms)
+pkg = sign_codes(MASTER_OMNI_CODES, MASTER_HELIX_PARAMS, kms)
 ```
 
 ### Step 6: Verify DNA Code Packages
@@ -452,7 +452,7 @@ def verify_dna_package(
     helix_params: List[Tuple[float, float]],
     hmac_key: bytes
 ) -> bool:
-    """Verify DNA code package from file."""
+    """Verify Omni-Code package from file."""
     
     # Load package
     with open(package_file, 'r') as f:
@@ -486,8 +486,8 @@ def verify_dna_package(
 
 # Verify package
 is_valid = verify_dna_package(
-    "DNA_CRYPTO_PACKAGE.json",
-    MASTER_DNA_CODES,
+    "OMNI_CRYPTO_PACKAGE.json",
+    MASTER_OMNI_CODES,
     MASTER_HELIX_PARAMS,
     kms.hmac_key
 )
@@ -570,7 +570,7 @@ kms_org2 = generate_key_management_system("Organization2")
 kms_org3 = generate_key_management_system("Organization3")
 
 multi_pkg = create_multi_signed_package(
-    MASTER_DNA_CODES,
+    MASTER_OMNI_CODES,
     MASTER_HELIX_PARAMS,
     [
         ("Organization1", kms_org1),
@@ -689,7 +689,7 @@ brew install openssl
 4. Use OpenTimestamps instead:
 ```bash
 pip install opentimestamps-client
-ots stamp DNA_CRYPTO_PACKAGE.json
+ots stamp OMNI_CRYPTO_PACKAGE.json
 ```
 
 ### Issue: Key Import Errors
@@ -725,7 +725,7 @@ Regenerate package with correct key:
 print(f"HMAC key: {kms.hmac_key.hex()[:16]}...")
 
 # Re-sign with correct key
-pkg = create_crypto_package(MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms, ...)
+pkg = create_crypto_package(MASTER_OMNI_CODES, MASTER_HELIX_PARAMS, kms, ...)
 ```
 
 ---
@@ -758,8 +758,8 @@ def sign_multiple_codes(
     print(f"✓ Signed {len(packages)} packages total")
     return packages
 
-# Usage: Sign 1000 DNA code sets
-dna_list = [(MASTER_DNA_CODES, MASTER_HELIX_PARAMS) for _ in range(1000)]
+# Usage: Sign 1000 Omni-Code sets
+dna_list = [(MASTER_OMNI_CODES, MASTER_HELIX_PARAMS) for _ in range(1000)]
 packages = sign_multiple_codes(dna_list, kms)
 
 # Performance: ~1000 packages/second (with Dilithium)
@@ -795,7 +795,7 @@ def verify_multiple_packages(
     return results
 
 # Usage: Verify 1000 packages with 4 workers
-results = verify_multiple_packages(packages, MASTER_DNA_CODES, MASTER_HELIX_PARAMS, kms.hmac_key)
+results = verify_multiple_packages(packages, MASTER_OMNI_CODES, MASTER_HELIX_PARAMS, kms.hmac_key)
 
 # Performance: ~4000 packages/second (4 cores)
 ```
@@ -878,14 +878,14 @@ class CryptoPackage:
     ed25519_pubkey: str
     dilithium_pubkey: str
     version: str
-    ethical_vector: Dict[str, float]  # NEW: 12 DNA Code Ethical Pillars
+    ethical_vector: Dict[str, float]  # NEW: 12 Omni-Code Ethical Pillars
     ethical_hash: str                 # NEW: SHA3-256 hash of ethical vector
 ```
 
 #### Impact
 
 **Who is affected:**
-- Applications deserializing `DNA_CRYPTO_PACKAGE.json` files
+- Applications deserializing `OMNI_CRYPTO_PACKAGE.json` files
 - Systems verifying packages created with v1.0.0
 - Code that creates `CryptoPackage` instances directly
 
@@ -919,7 +919,7 @@ pkg = create_crypto_package(
 )
 
 # Save new package
-with open("DNA_CRYPTO_PACKAGE.json", 'w') as f:
+with open("OMNI_CRYPTO_PACKAGE.json", 'w') as f:
     json.dump(asdict(pkg), f, indent=2)
 
 print("✓ Package regenerated with ethical integration")
@@ -952,7 +952,7 @@ def load_package_any_version(package_file: str) -> CryptoPackage:
     return CryptoPackage(**pkg_dict)
 
 # Usage
-pkg = load_package_any_version("DNA_CRYPTO_PACKAGE.json")
+pkg = load_package_any_version("OMNI_CRYPTO_PACKAGE.json")
 
 # Verify with warning if no ethical binding
 results = verify_crypto_package(codes, helix_params, pkg, hmac_key)
@@ -1014,7 +1014,7 @@ migrate_package_directory(
     input_dir="packages_v1",
     output_dir="packages_v2",
     kms=kms,
-    codes=MASTER_DNA_CODES,
+    codes=MASTER_OMNI_CODES,
     helix_params=MASTER_HELIX_PARAMS
 )
 ```
@@ -1121,7 +1121,7 @@ def test_migration():
     # 1. Create v2.0.0 package
     kms = generate_key_management_system("TestOrg")
     pkg_v2 = create_crypto_package(
-        MASTER_DNA_CODES,
+        MASTER_OMNI_CODES,
         MASTER_HELIX_PARAMS,
         kms,
         author="TestOrg"
@@ -1138,7 +1138,7 @@ def test_migration():
     
     # 4. Verify cryptographic integrity
     results = verify_crypto_package(
-        MASTER_DNA_CODES,
+        MASTER_OMNI_CODES,
         MASTER_HELIX_PARAMS,
         pkg_v2,
         kms.hmac_key

@@ -159,7 +159,7 @@ While RFC 5869 was written for HMAC with Merkle-Damgard hashes, HMAC-SHA3-256 pr
 **⚠️ Keys derived with v1.0.0 will differ from keys derived with this version.**
 
 - Applications using `derive_keys()` must regenerate all derived keys
-- Existing `DNA_CRYPTO_PACKAGE.json` files remain valid (signatures unchanged)
+- Existing `Code_CRYPTO_PACKAGE.json` files remain valid (signatures unchanged)
 - Only key derivation is affected, not hashing or signatures
 
 #### Migration Path
@@ -178,7 +178,7 @@ While RFC 5869 was written for HMAC with Merkle-Damgard hashes, HMAC-SHA3-256 pr
 
 ### Ethical Integration (Planned)
 
-**Major Enhancement:** Mathematical integration of 12 DNA Code Ethical Pillars into cryptographic framework.
+**Major Enhancement:** Mathematical integration of 12 Code Code Ethical Pillars into cryptographic framework.
 
 #### New Features
 
@@ -193,7 +193,7 @@ While RFC 5869 was written for HMAC with Merkle-Damgard hashes, HMAC-SHA3-256 pr
   - Maintains RFC 5869 compliance and security level (2^-128)
   
 - **CryptoPackage Schema Extension:**
-  - New field: `ethical_vector` (Dict[str, float]) - 12 DNA Code Ethical Pillars
+  - New field: `ethical_vector` (Dict[str, float]) - 12 Code Code Ethical Pillars
   - New field: `ethical_hash` (str) - SHA3-256 hash of ethical vector for verification
   
 - **KeyManagementSystem Enhancement:**
@@ -256,7 +256,7 @@ The `CryptoPackage` dataclass now includes two new required fields:
 - `ethical_hash: str`
 
 **Impact:**
-- Code deserializing v1.0.0 `DNA_CRYPTO_PACKAGE.json` files will fail
+- Code deserializing v1.0.0 `Code_CRYPTO_PACKAGE.json` files will fail
 - Applications must migrate to v2.0.0 schema
 
 **Migration Path:**

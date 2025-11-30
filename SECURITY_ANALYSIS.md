@@ -29,7 +29,7 @@ Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 ## Executive Summary
 
-Ava Guardian ♱ provides cryptographic protection for DNA Code (helical mathematical data structures) through a defense-in-depth security architecture with six independent layers:
+Ava Guardian ♱ provides cryptographic protection for Omni-Code (helical mathematical data structures) through a defense-in-depth security architecture with six independent layers:
 
 1. **SHA3-256 Content Hashing** - Collision-resistant integrity verification (NIST FIPS 202)
 2. **HMAC-SHA3-256 Authentication** - Keyed message authentication (RFC 2104)
@@ -112,9 +112,9 @@ Cryptographic Package
 ```
 Master Secret (256 bits CSPRNG)
     │
-    ├─[HKDF:DNA_CODES:0]→ HMAC Key (256 bits)
-    ├─[HKDF:DNA_CODES:1]→ Ed25519 Seed → Ed25519 KeyPair
-    └─[HKDF:DNA_CODES:2]→ (Reserved for future use)
+    ├─[HKDF:OMNI_CODES:0]→ HMAC Key (256 bits)
+    ├─[HKDF:OMNI_CODES:1]→ Ed25519 Seed → Ed25519 KeyPair
+    └─[HKDF:OMNI_CODES:2]→ (Reserved for future use)
                                │
                                └─→ Dilithium KeyPair (generated independently)
 ```
@@ -1301,7 +1301,7 @@ For 256-bit keys:
 
 ## Conclusion
 
-Ava Guardian ♱ provides cryptographic protection for DNA Code (helical mathematical data structures) through a defense-in-depth architecture with strong mathematical foundations and standards compliance.
+Ava Guardian ♱ provides cryptographic protection for Omni-Code (helical mathematical data structures) through a defense-in-depth architecture with strong mathematical foundations and standards compliance.
 
 ### Key Strengths
 

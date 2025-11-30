@@ -33,7 +33,7 @@ __author__ = "Andrew E. A., Steel Security Advisors LLC"
 
 from ava_guardian.double_helix_engine import AvaEquationEngine
 from ava_guardian.equations import (
-    DNA_CODES,
+    OMNI_CODES,
     HELIX_PARAMS,
     LAMBDA_DECAY,
     PHI,
@@ -60,7 +60,7 @@ __all__ = [
     "PHI_CUBED",
     "SIGMA_QUADRATIC_THRESHOLD",
     "LAMBDA_DECAY",
-    "DNA_CODES",
+    "OMNI_CODES",
     "HELIX_PARAMS",
     "helix_curvature",
     "helix_torsion",

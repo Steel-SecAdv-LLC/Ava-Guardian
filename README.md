@@ -388,7 +388,7 @@ Complete security package with all defense layers:
 <details>
 <summary><strong>Scalability Analysis</strong></summary>
 
-| DNA Code Size | Mean Time | Throughput |
+| Omni-Code Size | Mean Time | Throughput |
 |---------------|-----------|------------|
 | 1 code | 0.29ms | 3,411 ops/sec |
 | 10 codes | 0.41ms | 2,452 ops/sec |
@@ -405,7 +405,7 @@ Complete security package with all defense layers:
 | HKDF Derivation | 0.006ms | 0.019ms | 219.67% |
 | Context Creation | - | 0.011ms | - |
 
-The ethical integration adds cryptographic binding to the 12 DNA Code Ethical Pillars with minimal impact on overall system performance.
+The ethical integration adds cryptographic binding to the 12 Omni-Code Ethical Pillars with minimal impact on overall system performance.
 
 ![Monitoring Overhead](assets/monitoring_overhead.png)
 
@@ -975,7 +975,7 @@ The ethical integration achieves:
 </details>
 
 <details>
-<summary><strong>Bio-Inspired Security</strong> - DNA Code Architecture for Data Structures</summary>
+<summary><strong>Bio-Inspired Security</strong> - Omni-Code Architecture for Data Structures</summary>
 
 AG♱ employs a revolutionary bio-inspired approach where data structures mirror the elegance and resilience of biological DNA. This metaphor extends beyond naming conventions into the actual architecture of cryptographic packages.
 

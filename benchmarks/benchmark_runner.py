@@ -172,7 +172,7 @@ def run_full_package_create_benchmark(iterations: int = 20) -> float:
     )
 
     kms = generate_key_management_system("Benchmark Test")
-    codes = "TEST_DNA_CODE_12345"
+    codes = "TEST_Code_CODE_12345"
     helix_params = [(1.0, 2.0)]
 
     def operation():
@@ -196,7 +196,7 @@ def run_full_package_verify_benchmark(iterations: int = 20) -> float:
     )
 
     kms = generate_key_management_system("Benchmark Test")
-    codes = "TEST_DNA_CODE_12345"
+    codes = "TEST_Code_CODE_12345"
     helix_params = [(1.0, 2.0)]
 
     package = create_crypto_package(

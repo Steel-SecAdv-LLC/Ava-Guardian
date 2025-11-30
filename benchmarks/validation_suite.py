@@ -85,9 +85,9 @@ class BenchmarkValidator:
             "ed25519_verify": (0.12, "ms", 100.0),  # ~0.12ms
             "dilithium_sign": (0.14, "ms", 200.0),  # ~0.14ms (higher tolerance)
             "dilithium_verify": (0.07, "ms", 200.0),  # ~0.07ms (higher tolerance)
-            # Section 1.3 - DNA Package Operations (ms)
+            # Section 1.3 - Code Package Operations (ms)
             "canonical_encoding": (0.003, "ms", 100.0),  # ~0.003ms
-            "dna_hash": (0.01, "ms", 100.0),  # ~0.01ms
+            "code_hash": (0.01, "ms", 100.0),  # ~0.01ms
             "package_creation": (0.30, "ms", 100.0),  # ~0.30ms
             "package_verification": (0.24, "ms", 100.0),  # ~0.24ms
             # Section 2.1 - 3R Monitoring Overhead (%)

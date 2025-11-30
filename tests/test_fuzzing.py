@@ -98,7 +98,7 @@ class TestLengthPrefixFuzzing:
 
 
 class TestCanonicalHashFuzzing:
-    """Fuzz tests for canonical DNA hashing."""
+    """Fuzz tests for canonical Code hashing."""
 
     @given(
         st.text(min_size=1, max_size=1000, alphabet="ACGT"),
@@ -123,7 +123,7 @@ class TestCanonicalHashFuzzing:
         st.text(min_size=1, max_size=100, alphabet="ACGT"),
     )
     def test_different_dna_different_hash(self, dna1, dna2):
-        """Different DNA sequences produce different hashes."""
+        """Different Code sequences produce different hashes."""
         assume(dna1 != dna2)
         params = [(1.0, 1.0)]
         h1 = canonical_hash_code(dna1, params)
@@ -363,13 +363,13 @@ class TestCryptoPackageFuzzing:
         pkg = create_crypto_package(dna1, params, kms, "fuzz_author")
 
         results = verify_crypto_package(
-            dna2,  # Different DNA
+            dna2,  # Different Code
             params,
             pkg,
             kms.hmac_key,
             require_quantum_signatures=False,
         )
 
-        assert not results["content_hash"], "Tampered DNA must fail content hash"
-        assert not results["hmac"], "Tampered DNA must fail HMAC"
-        assert not results["ed25519"], "Tampered DNA must fail Ed25519"
+        assert not results["content_hash"], "Tampered Code must fail content hash"
+        assert not results["hmac"], "Tampered Code must fail HMAC"
+        assert not results["ed25519"], "Tampered Code must fail Ed25519"
