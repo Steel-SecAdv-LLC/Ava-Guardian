@@ -412,7 +412,7 @@ if should_rotate_keys(kms):
     kms = rotate_keys(kms, "Steel-SecAdv-LLC")
 ```
 
-### Step 5: Sign DNA Code Packages
+### Step 5: Sign Omni-Code Packages
 
 ```python
 def sign_codes(
@@ -443,7 +443,7 @@ def sign_codes(
 pkg = sign_codes(MASTER_OMNI_CODES, MASTER_HELIX_PARAMS, kms)
 ```
 
-### Step 6: Verify DNA Code Packages
+### Step 6: Verify Omni-Code Packages
 
 ```python
 def verify_dna_package(

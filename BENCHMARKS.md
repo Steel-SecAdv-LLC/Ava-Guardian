@@ -111,7 +111,7 @@ Overhead:                    0.006 ms (1.99%)
 
 ### 3.1 Package Size Scaling
 
-| DNA Code Count | Mean (ms) | Ops/sec | Status | Scaling |
+| Omni-Code Count | Mean (ms) | Ops/sec | Status | Scaling |
 |----------------|-----------|---------|--------|---------|
 | 7 codes | 0.30 | 3,300 | Measured | Baseline |
 | 70 codes | 0.43 | 2,300 | Measured | Linear |
