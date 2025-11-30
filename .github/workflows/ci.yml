@@ -73,7 +73,7 @@ jobs:
         checks = [
             ('Ava Guardian', 'Title present'),
             ('Generating key management system', 'Key generation'),
-            ('Creating Code cryptographic package', 'Package creation'),
+            ('Creating Omni-Code cryptographic package', 'Package creation'),
             ('Signing package', 'Signing process'),
             ('Verifying cryptographic package', 'Verification'),
             ('ALL VERIFICATIONS PASSED', 'Success confirmation')
