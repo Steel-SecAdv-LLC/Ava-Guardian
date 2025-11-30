@@ -556,7 +556,7 @@ class TestMainFunction:
         output = result.stdout
         assert "Ava Guardian" in output
         assert "Generating key management system" in output
-        assert "Creating Code cryptographic package" in output
+        assert "Creating Omni-Code cryptographic package" in output
         assert "Verifying cryptographic package" in output
         assert "ALL VERIFICATIONS PASSED" in output
 

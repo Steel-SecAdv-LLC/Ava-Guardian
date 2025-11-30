@@ -54,7 +54,7 @@ Novel in assimilation, the system combines cutting-edge NIST-approved post-quant
 > - Secure file permissions for key files and cryptographic packages (store on encrypted volumes with restricted access)
 >
 > **Status:** Experimental | Community-tested | Not externally audited
-> **Last Updated:** 2025-11-29
+> **Last Updated:** 2025-11-30
 > **Audit Status:** Community-tested, not externally audited. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for self-assessment details.
 >
 > See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed security properties and threat model.
@@ -390,10 +390,12 @@ Complete security package with all defense layers:
 
 | Omni-Code Size | Mean Time | Throughput |
 |---------------|-----------|------------|
-| 1 code | 0.29ms | 3,411 ops/sec |
-| 10 codes | 0.41ms | 2,452 ops/sec |
-| 100 codes | 1.92ms | 522 ops/sec |
-| 1000 codes | 173.31ms | 5.77 ops/sec |
+| 1 code | 0.31ms | 3,230 ops/sec |
+| 10 codes | 0.50ms | 1,993 ops/sec |
+| 100 codes | 2.79ms | 359 ops/sec |
+| 1000 codes | 171.32ms | 5.84 ops/sec |
+
+*Benchmarks: Linux x86_64, Python 3.12, 8 CPU cores, 31GB RAM, 50 iterations per size.*
 
 </details>
 
@@ -402,10 +404,12 @@ Complete security package with all defense layers:
 
 | Operation | Standard | With Ethics | Overhead |
 |-----------|----------|-------------|----------|
-| HKDF Derivation | 0.006ms | 0.019ms | 219.67% |
+| HKDF Derivation | 0.006ms | 0.018ms | 213.79% |
 | Context Creation | - | 0.011ms | - |
 
 The ethical integration adds cryptographic binding to the 12 Omni-Code Ethical Pillars with minimal impact on overall system performance.
+
+*Benchmarks: Linux x86_64, Python 3.12, 8 CPU cores, 31GB RAM, 1,000 iterations.*
 
 ![Monitoring Overhead](assets/monitoring_overhead.png)
 

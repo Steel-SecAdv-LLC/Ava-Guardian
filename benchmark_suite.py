@@ -236,9 +236,9 @@ class BenchmarkSuite:
             iterations=10000,
         )
 
-        # Code hash computation
-        results["dna_hash"] = self.benchmark_operation(
-            "Code Hash Computation",
+        # Omni-Code hash computation
+        results["code_hash"] = self.benchmark_operation(
+            "Omni-Code Hash Computation",
             lambda: canonical_hash_code(MASTER_CODES, MASTER_HELIX_PARAMS),
             iterations=10000,
         )
@@ -327,7 +327,7 @@ class BenchmarkSuite:
         results = {}
         kms = generate_key_management_system("benchmark")
 
-        # Test different Code code lengths
+        # Test different Omni-Code lengths
         dna_sizes = [1, 10, 100, 1000]
         for size in dna_sizes:
             codes = MASTER_CODES * size

@@ -588,7 +588,7 @@ class RecursionPatternMonitor:
         Args:
             package_metadata: Dict containing:
                 - author: Package author identifier
-                - code_count: Number of Code codes in package
+                - code_count: Number of Omni-Codes in package
                 - content_hash: First 16 chars of content hash
                 - (optional) Additional application-specific fields
 
@@ -930,7 +930,7 @@ class AvaGuardianMonitor:
         Args:
             metadata: Package metadata dict containing:
                 - author: Package signer
-                - code_count: Number of Code codes
+                - code_count: Number of Omni-Codes
                 - content_hash: Truncated content hash
         """
         if not self.enabled:
