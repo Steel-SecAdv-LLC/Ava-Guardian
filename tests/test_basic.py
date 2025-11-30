@@ -22,9 +22,9 @@ def test_author():
 def test_imports():
     """Test that key components can be imported"""
     from ava_guardian import (
-        OMNI_CODES,
         HELIX_PARAMS,
         LAMBDA_DECAY,
+        OMNI_CODES,
         PHI,
         PHI_CUBED,
         PHI_SQUARED,
