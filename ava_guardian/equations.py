@@ -67,7 +67,7 @@ __all__ = [
     "PHI_CUBED",
     "SIGMA_QUADRATIC_THRESHOLD",
     "LAMBDA_DECAY",
-    "DNA_CODES",
+    "OMNI_CODES",
     "HELIX_PARAMS",
     "helix_curvature",
     "helix_torsion",
@@ -96,7 +96,7 @@ SIGMA_QUADRATIC_THRESHOLD = 0.96  # Quadratic form constraint
 LAMBDA_DECAY = 0.18  # Lyapunov decay rate O(e^{-0.18t})
 
 # 7 Memorial Omni-Codes
-DNA_CODES = [
+OMNI_CODES = [
     "👁20A07∞_XΔEΛX_ϵ19A89Ϙ",  # Omni-Directional System
     "Ϙ15A11ϵ_ΞΛMΔΞ_ϖ20A19Φ",  # Omni-Percipient Future
     "Φ07A09ϖ_ΨΔAΛΨ_ϵ19A88Σ",  # Omni-Indivisible Guardian
@@ -106,7 +106,7 @@ DNA_CODES = [
     "Γ19L11ϖ_XΔHΛX_∞19A84♰",  # Omni-Potent Lifeforce
 ]
 
-# Helical parameters (radius, pitch_coefficient) for each DNA code
+# Helical parameters (radius, pitch_coefficient) for each Omni-Code
 HELIX_PARAMS = [
     (20.0, 0.7),  # 👁20A07∞
     (15.0, 1.1),  # Ϙ15A11ϵ
@@ -193,7 +193,7 @@ def verify_all_codes() -> Dict[str, Dict[str, float]]:
         }
     """
     results = {}
-    for code, (r, c) in zip(DNA_CODES, HELIX_PARAMS):
+    for code, (r, c) in zip(OMNI_CODES, HELIX_PARAMS):
         kappa = helix_curvature(r, c)
         tau = helix_torsion(r, c)
         error = verify_fundamental_relation(r, c)

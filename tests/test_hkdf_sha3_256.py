@@ -466,7 +466,7 @@ class TestKeyManagementSystem:
 
         # Fixed master secret and salt for testing
         master_secret = b"fixed_master_secret_32_bytes_lo!"
-        info = "DNA_CODES"
+        info = "OMNI_CODES"
         fixed_salt = b"fixed_salt_for_testing_32_bytes!"
 
         # Derive keys twice with same salt

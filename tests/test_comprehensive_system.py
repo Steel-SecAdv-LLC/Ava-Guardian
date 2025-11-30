@@ -556,7 +556,7 @@ class TestMainFunction:
         output = result.stdout
         assert "Ava Guardian" in output
         assert "Generating key management system" in output
-        assert "Creating DNA cryptographic package" in output
+        assert "Creating Omni-Code cryptographic package" in output
         assert "Verifying cryptographic package" in output
         assert "ALL VERIFICATIONS PASSED" in output
 
@@ -859,7 +859,7 @@ class TestVerificationExceptionHandling:
         assert results["content_hash"] is False
 
 
-class TestDNACodesAndHelixParams:
+class TestCodeCodesAndHelixParams:
     """Tests for Omni-Codes and helix parameters constants."""
 
     def test_master_codes_not_empty(self):

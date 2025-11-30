@@ -801,7 +801,7 @@ def create_ethical_binding_flow():
     ax.text(
         9,
         10.9,
-        "12 Omni-DNA Ethical Pillars bound to keys and signatures via SHA3-256 + HKDF",
+        "12 Omni-Code Ethical Pillars bound to keys and signatures via SHA3-256 + HKDF",
         ha="center",
         fontsize=12,
         color="#6B7280",
@@ -1130,7 +1130,7 @@ def create_ethical_binding_flow():
     ax.text(
         9,
         0.8,
-        "The 12 Omni-DNA Ethical Pillars form a balanced vector (each w = 1.0, total = 12.0).\n"
+        "The 12 Omni-Code Ethical Pillars form a balanced vector (each w = 1.0, total = 12.0).\n"
         "This vector is hashed with SHA3-256 and a 128-bit signature is injected into HKDF context and signature messages,\n"
         "cryptographically binding keys and signatures to an explicit ethical profile. This is binding, not enforcement.",
         ha="center",

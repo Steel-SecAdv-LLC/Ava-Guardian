@@ -143,7 +143,7 @@ kms = generate_key_management_system("Steel-SecAdv-LLC")
 
 # Create monitored package
 pkg = create_crypto_package(
-    MASTER_DNA_CODES_STR,
+    MASTER_OMNI_CODES_STR,
     MASTER_HELIX_PARAMS,
     kms,
     "author",

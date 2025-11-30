@@ -1480,7 +1480,7 @@ def generate_key_management_system(
     # Derive independent keys using HKDF with ethical context
     # derive_keys now returns (keys, salt) tuple for RFC 5869 compliance
     derived_keys, hkdf_salt = derive_keys(
-        master_secret, f"DNA_CODES:{author}", num_keys=3, ethical_vector=ethical_vector
+        master_secret, f"OMNI_CODES:{author}", num_keys=3, ethical_vector=ethical_vector
     )
     hmac_key = derived_keys[0]  # For HMAC authentication (ethically bound)
     ed25519_seed = derived_keys[1]  # For Ed25519 key generation (ethically bound)
@@ -2110,7 +2110,7 @@ def main():
         print(f"     Helix: radius={r}, pitch={p}")
 
     # Create cryptographic package
-    print("\n[3/5] Creating DNA cryptographic package...")
+    print("\n[3/5] Creating Omni-Code cryptographic package...")
     crypto_pkg = create_crypto_package(
         MASTER_CODES,
         MASTER_HELIX_PARAMS,

@@ -22,9 +22,9 @@ def test_author():
 def test_imports():
     """Test that key components can be imported"""
     from ava_guardian import (
-        DNA_CODES,
         HELIX_PARAMS,
         LAMBDA_DECAY,
+        OMNI_CODES,
         PHI,
         PHI_CUBED,
         PHI_SQUARED,
@@ -46,7 +46,7 @@ def test_imports():
     assert PHI is not None
     assert PHI_SQUARED is not None
     assert PHI_CUBED is not None
-    assert DNA_CODES is not None
+    assert OMNI_CODES is not None
     assert HELIX_PARAMS is not None
     assert LAMBDA_DECAY is not None
     assert SIGMA_QUADRATIC_THRESHOLD is not None

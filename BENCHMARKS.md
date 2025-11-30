@@ -68,12 +68,12 @@ This document provides **transparent, honest performance metrics** for Ava Guard
 - SHA3-256 delivers >1M ops/sec
 - Signature operations are the bottleneck (expected for PKC)
 
-### 1.3 DNA Package Operations
+### 1.3 Code Package Operations
 
 | Operation | Mean (ms) | Ops/sec | Status | Components |
 |-----------|-----------|---------|--------|------------|
 | Canonical Encoding | ~0.003 | ~391k | Measured | Length-prefixed |
-| DNA Hash (7 codes) | ~0.02 | ~57k | Measured | SHA3-256 |
+| Code Hash (7 codes) | ~0.02 | ~57k | Measured | SHA3-256 |
 | **Package Creation** | **~0.32** | **~3.1k** | Measured | Full protection layers |
 | **Package Verification** | **~0.25** | **~4.1k** | Measured | All layers validated |
 
@@ -111,7 +111,7 @@ Overhead:                    0.006 ms (1.99%)
 
 ### 3.1 Package Size Scaling
 
-| DNA Code Count | Mean (ms) | Ops/sec | Status | Scaling |
+| Omni-Code Count | Mean (ms) | Ops/sec | Status | Scaling |
 |----------------|-----------|---------|--------|---------|
 | 7 codes | 0.30 | 3,300 | Measured | Baseline |
 | 70 codes | 0.43 | 2,300 | Measured | Linear |

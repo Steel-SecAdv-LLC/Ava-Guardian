@@ -1,8 +1,8 @@
-# Ava Guardian ♱ (AG♱): 12 DNA Code Ethical Pillars
+# Ava Guardian ♱ (AG♱): 12 Omni-Code Ethical Pillars
 ## Cryptographic Integration of Ethical Vectors with SHA3-256 Security
 
-**Copyright (C) 2025 Steel Security Advisors LLC**  
-**Project:** DNA Code Helix SHA3-256 Ethical Framework  
+**Copyright (C) 2025 Steel Security Advisors LLC**
+**Project:** Omni-Code Helix SHA3-256 Ethical Framework  
 **Author/Inventor:** Andrew E. A.  
 **Organization:** Steel Security Advisors LLC
 
@@ -13,7 +13,7 @@
 
 ## Executive Summary
 
-The 12 DNA Code Ethical Pillars extend Ava Guardian ♱'s six-layer cryptographic defense with a mathematically rigorous ethical constraint system. Each pillar maps to specific cryptographic operations, providing verifiable ethical boundaries without compromising security guarantees.
+The 12 Omni-Code Ethical Pillars extend Ava Guardian ♱'s six-layer cryptographic defense with a mathematically rigorous ethical constraint system. Each pillar maps to specific cryptographic operations, providing verifiable ethical boundaries without compromising security guarantees.
 
 **Key Properties:**
 - **Balanced weighting:** Each pillar = 1.0, Σw = 12.0
@@ -359,7 +359,7 @@ Long-term guarantee: 50+ years post-quantum security
 ### Ethical Vector Construction
 
 ```python
-# 12 DNA Code Ethical Pillars as balanced vector
+# 12 Omni-Code Ethical Pillars as balanced vector
 ethical_vector = {
     # Triad 1: Knowledge Domain
     "omniscient": 1.0,      # Complete verification
@@ -688,7 +688,7 @@ def generate_ethical_kms(author: str) -> KeyManagementSystem:
 kms = generate_ethical_kms("Steel-SecAdv-LLC")
 
 pkg = create_crypto_package(
-    MASTER_DNA_CODES,
+    MASTER_OMNI_CODES,
     MASTER_HELIX_PARAMS,
     kms,
     author="Steel-SecAdv-LLC"
@@ -702,10 +702,10 @@ pkg_dict["ethical_hash"] = hashlib.sha3_256(
 ).hexdigest()
 
 # 4. Save package with ethical context
-with open("DNA_CRYPTO_PACKAGE_ETHICAL.json", "w") as f:
+with open("OMNI_CRYPTO_PACKAGE_ETHICAL.json", "w") as f:
     json.dump(pkg_dict, f, indent=2)
 
-print("✓ Package created with 12 DNA Code Ethical Pillars")
+print("✓ Package created with 12 Omni-Code Ethical Pillars")
 print(f"✓ Ethical hash: {pkg_dict['ethical_hash'][:16]}...")
 ```
 
@@ -778,7 +778,7 @@ print(f"✓ Ethical hash: {pkg_dict['ethical_hash'][:16]}...")
 
 ## Conclusion
 
-The 12 DNA Code Ethical Pillars provide a mathematically rigorous framework for integrating ethical constraints into the Ava Guardian ♱ cryptographic system without compromising security guarantees.
+The 12 Omni-Code Ethical Pillars provide a mathematically rigorous framework for integrating ethical constraints into the Ava Guardian ♱ cryptographic system without compromising security guarantees.
 
 **Key Achievements:**
 - **Zero security trade-off:** All pillars maintain or enhance cryptographic properties
@@ -796,4 +796,4 @@ This framework demonstrates that ethical constraints and cryptographic strength 
 
 **Built with brutal honesty. Grounded in mathematical proof. Enhanced with ethical certainty.**
 
-**Ava Guardian ♱ (AG♱) - Protecting DNA Code with cryptographic and ethical integrity.**
+**Ava Guardian ♱ (AG♱) - Protecting Omni-Code with cryptographic and ethical integrity.**

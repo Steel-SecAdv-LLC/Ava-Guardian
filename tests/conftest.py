@@ -279,13 +279,13 @@ def guardian_monitor_disabled():
 
 
 @pytest.fixture
-def sample_dna_code() -> dict:
-    """Provide a sample DNA code structure for package tests."""
+def sample_omni_code() -> dict:
+    """Provide a sample Omni-Code structure for package tests."""
     return {
         "sequence_id": "test-sequence-001",
         "data": {
             "type": "test",
-            "content": "Sample DNA code for testing",
+            "content": "Sample Omni-Code for testing",
             "metadata": {
                 "created_by": "test_suite",
                 "version": "1.0.0",

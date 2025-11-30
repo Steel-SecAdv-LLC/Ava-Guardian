@@ -110,8 +110,8 @@ class TestLengthPrefixedEncoding:
         assert expected_len == 100000
 
 
-class TestCanonicalHashDNA:
-    """Penetration tests for DNA hashing."""
+class TestCanonicalHashCode:
+    """Penetration tests for Code hashing."""
 
     def test_hash_deterministic(self):
         """Same Omni-Codes produce same hash."""

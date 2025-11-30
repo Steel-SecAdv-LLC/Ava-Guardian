@@ -224,21 +224,21 @@ class BenchmarkSuite:
         return results
 
     def benchmark_dna_operations(self) -> Dict:
-        """Benchmark DNA-specific operations."""
-        print("🧬 Benchmarking DNA Operations...")
+        """Benchmark Code-specific operations."""
+        print("🧬 Benchmarking Code Operations...")
 
         results = {}
 
         # Canonical encoding
         results["canonical_encoding"] = self.benchmark_operation(
             "Canonical Encoding",
-            lambda: length_prefixed_encode("DNA", MASTER_CODES, "HELIX", "test"),
+            lambda: length_prefixed_encode("Code", MASTER_CODES, "HELIX", "test"),
             iterations=10000,
         )
 
-        # DNA hash computation
-        results["dna_hash"] = self.benchmark_operation(
-            "DNA Hash Computation",
+        # Omni-Code hash computation
+        results["code_hash"] = self.benchmark_operation(
+            "Omni-Code Hash Computation",
             lambda: canonical_hash_code(MASTER_CODES, MASTER_HELIX_PARAMS),
             iterations=10000,
         )
@@ -327,14 +327,14 @@ class BenchmarkSuite:
         results = {}
         kms = generate_key_management_system("benchmark")
 
-        # Test different DNA code lengths
+        # Test different Omni-Code lengths
         dna_sizes = [1, 10, 100, 1000]
         for size in dna_sizes:
             codes = MASTER_CODES * size
             helix_params = MASTER_HELIX_PARAMS * size
 
             results[f"dna_size_{size}"] = self.benchmark_operation(
-                f"DNA Processing (size={size})",
+                f"Code Processing (size={size})",
                 lambda: create_crypto_package(codes, helix_params, kms, "benchmark"),
                 iterations=50,
             )

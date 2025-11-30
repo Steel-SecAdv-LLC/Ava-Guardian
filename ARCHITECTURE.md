@@ -243,7 +243,7 @@ The system enforces the following constraints on ethical pillars:
 
 ### Core Components
 
-#### DNAGuardianSecure
+#### OmniGuardianSecure
 
 The primary cryptographic engine implementing the complete security framework.
 
@@ -307,7 +307,7 @@ class CryptoPackage:
 ```
 +-------------------+     +-------------------+     +-------------------+
 |                   |     |                   |     |                   |
-|  Application      |---->|  DNAGuardianSecure|---->|  CryptoPackage    |
+|  Application      |---->|  OmniGuardianSecure|---->|  CryptoPackage    |
 |  Interface        |     |                   |     |  (Output)         |
 |                   |     +--------+----------+     |                   |
 +-------------------+              |                +-------------------+
