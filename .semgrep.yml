@@ -1,0 +1,154 @@
+# Semgrep Configuration for Ava Guardian
+# Custom cryptographic security rules
+# Version: 1.2.0
+# Last Updated: 2025-12-04
+
+rules:
+  # Cryptographic Security Rules
+  - id: insecure-random-usage
+    patterns:
+      - pattern-either:
+          - pattern: random.random()
+          - pattern: random.randint(...)
+          - pattern: random.choice(...)
+          - pattern: random.randrange(...)
+    message: "Use secrets module for cryptographic randomness instead of random module"
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      subcategory: cryptography
+      cwe: "CWE-330: Use of Insufficiently Random Values"
+
+  - id: hardcoded-secret-key
+    patterns:
+      - pattern-either:
+          - pattern: $KEY = "..."
+          - pattern: $SECRET = "..."
+          - pattern: $PASSWORD = "..."
+    message: "Potential hardcoded secret detected. Use environment variables or secure key management."
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: secrets
+
+  - id: weak-hash-algorithm
+    patterns:
+      - pattern-either:
+          - pattern: hashlib.md5(...)
+          - pattern: hashlib.sha1(...)
+    message: "Weak hash algorithm detected. Use SHA-256 or SHA3-256 for cryptographic purposes."
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      subcategory: cryptography
+      cwe: "CWE-328: Reversible One-Way Hash"
+
+  - id: non-constant-time-comparison
+    patterns:
+      - pattern-either:
+          - pattern: $A == $B
+          - pattern: $A != $B
+    paths:
+      include:
+        - "**/crypto*.py"
+        - "**/secure*.py"
+        - "**/key*.py"
+    message: "Use hmac.compare_digest() for constant-time comparison of secrets"
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: timing-attack
+      cwe: "CWE-208: Observable Timing Discrepancy"
+
+  - id: deprecated-cryptography-api
+    patterns:
+      - pattern-either:
+          - pattern: from Crypto.Cipher import DES
+          - pattern: from Crypto.Cipher import DES3
+          - pattern: from Crypto.Cipher import Blowfish
+          - pattern: from Crypto.Cipher import ARC4
+    message: "Deprecated cryptographic algorithm. Use AES-256-GCM or ChaCha20-Poly1305."
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      subcategory: cryptography
+
+  - id: insecure-key-derivation
+    patterns:
+      - pattern-either:
+          - pattern: hashlib.pbkdf2_hmac(..., iterations=$ITER, ...)
+    metavariable-comparison:
+      metavariable: $ITER
+      comparison: $ITER < 100000
+    message: "PBKDF2 iterations too low. Use at least 600,000 iterations (OWASP 2024 recommendation)."
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: key-derivation
+
+  - id: private-key-logging
+    patterns:
+      - pattern-either:
+          - pattern: print(..., $KEY, ...)
+          - pattern: logging.info(..., $KEY, ...)
+          - pattern: logging.debug(..., $KEY, ...)
+          - pattern: logger.info(..., $KEY, ...)
+          - pattern: logger.debug(..., $KEY, ...)
+    metavariable-pattern:
+      metavariable: $KEY
+      patterns:
+        - pattern-either:
+            - pattern: private_key
+            - pattern: secret_key
+            - pattern: master_secret
+    message: "Potential logging of private key material. Never log secrets."
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      subcategory: secrets
+      cwe: "CWE-532: Insertion of Sensitive Information into Log File"
+
+  - id: unsafe-pickle-usage
+    patterns:
+      - pattern-either:
+          - pattern: pickle.load(...)
+          - pattern: pickle.loads(...)
+    message: "Unsafe pickle deserialization. Use JSON or other safe serialization formats for untrusted data."
+    languages: [python]
+    severity: ERROR
+    metadata:
+      category: security
+      subcategory: deserialization
+      cwe: "CWE-502: Deserialization of Untrusted Data"
+
+  - id: assert-used-for-security
+    pattern: assert ...
+    paths:
+      include:
+        - "**/crypto*.py"
+        - "**/secure*.py"
+        - "**/verify*.py"
+    message: "Assert statements are removed in optimized mode. Use explicit checks for security validation."
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: validation
+
+  - id: timing-vulnerable-string-compare
+    pattern: |
+      if $SECRET == $INPUT:
+          ...
+    message: "String comparison may be vulnerable to timing attacks. Use hmac.compare_digest() for secrets."
+    languages: [python]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: timing-attack
