@@ -13,7 +13,7 @@ Tests covering the code quality improvements made to ensure:
 
 Organization: Steel Security Advisors LLC
 Date: 2025-11-29
-Version: 1.1.0
+Version: 1.2.0
 """
 
 import logging

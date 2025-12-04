@@ -47,7 +47,7 @@ FROM ubuntu:22.04
 
 LABEL maintainer="Steel Security Advisors LLC <steel.sa.llc@gmail.com>"
 LABEL description="Ava Guardian ♱ - Quantum-Resistant Cryptographic Protection System"
-LABEL version="1.1.0"
+LABEL version="1.2.0"
 
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \

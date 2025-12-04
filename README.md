@@ -31,7 +31,7 @@
 **Author/Inventor:** Andrew E. A.  
 **Contact:** steel.sa.llc@gmail.com  
 **License:** Apache License 2.0  
-**Version:** 1.1.0
+**Version:** 1.2.0
 
 **AI Co-Architects:** Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
@@ -216,7 +216,7 @@ Future-proof cryptography:
 - **Partial (NTT)**: Core polynomial operations (NTT, inverse NTT, compression) implemented; full KEM requires liboqs.
 - **Stub (liboqs)**: Returns `AVA_ERROR_NOT_IMPLEMENTED` without liboqs. Enable with `-DAVA_USE_LIBOQS=ON`.
 
-**C Library Implementations (v1.1.0):**
+**C Library Implementations (v1.2.0):**
 - `ava_sha3.c`: SHA3-256, SHAKE128, SHAKE256 (Keccak-f[1600] sponge construction)
 - `ava_hkdf.c`: HKDF-SHA3-256 with HMAC-SHA3-256 (RFC 5869 compliant)
 - `ava_ed25519.c`: Ed25519 keygen/sign/verify (SHA-512, field arithmetic for GF(2^255-19))
