@@ -15,8 +15,8 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "Ava Guardian ♱"
 copyright = "2025, Steel Security Advisors LLC"
 author = "Andrew E. A."
-version = "1.1.0"
-release = "1.1.0"
+version = "1.2.0"
+release = "1.2.0"
 
 # General configuration
 extensions = [

@@ -121,7 +121,7 @@ class HealthResponse(BaseModel):
 app = FastAPI(
     title="Ava Guardian ♱ API",
     description="Quantum-resistant cryptographic protection API",
-    version="1.1.0",
+    version="1.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )

@@ -4,7 +4,7 @@
 
 | Property | Value |
 |----------|-------|
-| Document Version | 1.1.0 |
+| Document Version | 1.2.0 |
 | Test Date | 2025-11-29 |
 | Classification | Public |
 | Maintainer | Steel Security Advisors LLC |
@@ -13,7 +13,7 @@
 
 ## Executive Summary
 
-Complete performance benchmarks for Ava Guardian ♱ v1.1.0, including **comparative analysis against OpenSSL and liboqs** implementations.
+Complete performance benchmarks for Ava Guardian ♱ v1.2.0, including **comparative analysis against OpenSSL and liboqs** implementations.
 
 **Test Environment:**
 - OS: Linux 4.4.0 x86_64
