@@ -12,7 +12,7 @@
 #   make install    - Install library system-wide
 #   make docker     - Build Docker image
 
-.PHONY: all c python test clean install docker help
+.PHONY: all c python test clean install docker help c-api constant-time-check security-scan
 
 # Default target
 all: c python
@@ -110,12 +110,67 @@ dist: clean
 	@python3 setup.py sdist bdist_wheel
 	@echo "✓ Distribution packages created in dist/"
 
-# Security audit
+# Security audit (basic)
 security-audit:
 	@echo "Running security audit..."
 	@pip-audit
 	@bandit -r ava_guardian/ -ll
 	@echo "✓ Security audit complete"
+
+# Comprehensive security scan (bandit + semgrep + dependency scanning)
+security-scan:
+	@echo "Running comprehensive security scan..."
+	@echo "[1/3] Running bandit for Python security issues..."
+	@bandit -r ava_guardian/ code_guardian_secure.py -ll -f json -o bandit-report.json || true
+	@bandit -r ava_guardian/ code_guardian_secure.py -ll
+	@echo "[2/3] Running semgrep for cryptographic rules..."
+	@semgrep --config .semgrep.yml ava_guardian/ code_guardian_secure.py --json -o semgrep-report.json 2>/dev/null || echo "  (semgrep not installed or no rules matched)"
+	@echo "[3/3] Running pip-audit for dependency vulnerabilities..."
+	@pip-audit --format json -o pip-audit-report.json 2>/dev/null || pip-audit || echo "  (pip-audit completed)"
+	@echo "✓ Comprehensive security scan complete"
+	@echo "  Reports: bandit-report.json, semgrep-report.json, pip-audit-report.json"
+
+# Constant-time verification (dudect-style timing analysis)
+constant-time-check:
+	@echo "Running constant-time verification..."
+	@echo "Building dudect harness..."
+	@cd tools/constant_time && $(MAKE) clean && $(MAKE)
+	@echo "Running timing analysis (100K iterations)..."
+	@cd tools/constant_time && $(MAKE) test
+	@echo "✓ Constant-time verification complete"
+
+# Full constant-time verification (1M iterations, recommended for production)
+constant-time-check-full:
+	@echo "Running full constant-time verification (1M iterations)..."
+	@echo "This may take 5-10 minutes..."
+	@cd tools/constant_time && $(MAKE) clean && $(MAKE)
+	@cd tools/constant_time && $(MAKE) test-full
+	@echo "✓ Full constant-time verification complete"
+
+# Simplified C API build (handles liboqs detection automatically)
+c-api:
+	@echo "Building C API library..."
+	@mkdir -p build
+	@cd build && cmake .. -DAVA_BUILD_SHARED=ON -DAVA_BUILD_STATIC=ON \
+		$$(pkg-config --exists liboqs 2>/dev/null && echo "-DAVA_USE_LIBOQS=ON" || echo "") \
+		&& $(MAKE)
+	@echo "✓ C API built successfully"
+	@echo "  Shared library: build/lib/libava_guardian.so"
+	@echo "  Static library: build/lib/libava_guardian.a"
+	@echo "  Headers: include/ava_guardian.h"
+	@if pkg-config --exists liboqs 2>/dev/null; then \
+		echo "  liboqs: ENABLED (PQC operations available)"; \
+	else \
+		echo "  liboqs: NOT FOUND (PQC operations will return AVA_ERROR_NOT_IMPLEMENTED)"; \
+		echo "  To enable PQC: Install liboqs and rebuild"; \
+	fi
+
+# Build C API Docker image for reproducible builds
+docker-c-api:
+	@echo "Building C API Docker image..."
+	@docker build -t ava-guardian-c-api:latest -f docker/Dockerfile.c-api .
+	@echo "✓ C API Docker image built"
+	@echo "  Usage: docker run -v \$$(pwd)/output:/output ava-guardian-c-api:latest"
 
 # Performance profiling
 profile: python
@@ -131,6 +186,7 @@ help:
 	@echo "Main targets:"
 	@echo "  make all            - Build C library and Python extensions"
 	@echo "  make c              - Build C library only"
+	@echo "  make c-api          - Build C API (auto-detects liboqs)"
 	@echo "  make python         - Build Python package"
 	@echo "  make test           - Run all tests"
 	@echo "  make benchmark      - Run performance benchmarks"
@@ -138,14 +194,20 @@ help:
 	@echo "  make install        - Install system-wide"
 	@echo "  make dev-install    - Install development environment"
 	@echo ""
+	@echo "Security targets:"
+	@echo "  make security-audit       - Run basic security checks (bandit + pip-audit)"
+	@echo "  make security-scan        - Run comprehensive security scan (bandit + semgrep + pip-audit)"
+	@echo "  make constant-time-check  - Run constant-time verification (100K iterations)"
+	@echo "  make constant-time-check-full - Run full constant-time verification (1M iterations)"
+	@echo ""
 	@echo "Development targets:"
 	@echo "  make format         - Format code with black/isort"
 	@echo "  make lint           - Lint code with flake8/mypy"
 	@echo "  make docs           - Generate API documentation"
-	@echo "  make security-audit - Run security checks"
 	@echo "  make profile        - Profile performance"
 	@echo ""
 	@echo "Deployment targets:"
 	@echo "  make docker         - Build Docker image"
+	@echo "  make docker-c-api   - Build C API Docker image"
 	@echo "  make dist           - Create release distributions"
 	@echo ""

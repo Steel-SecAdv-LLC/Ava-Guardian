@@ -9,7 +9,7 @@
 Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 **Version:** 1.2.0  
-**Date:** 2025-11-29
+**Date:** 2025-12-04
 
 ---
 
@@ -1328,5 +1328,5 @@ Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 ---
 
 **Document Version:** 1.2.0  
-**Last Updated:** 2025-11-29  
+**Last Updated:** 2025-12-04  
 **Copyright (C) 2025 Steel Security Advisors LLC**

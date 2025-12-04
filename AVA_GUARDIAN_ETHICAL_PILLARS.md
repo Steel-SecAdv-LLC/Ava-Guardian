@@ -7,7 +7,7 @@
 **Organization:** Steel Security Advisors LLC
 
 **Version:** 1.2.0  
-**Date:** 2025-11-29
+**Date:** 2025-12-04
 
 ---
 
