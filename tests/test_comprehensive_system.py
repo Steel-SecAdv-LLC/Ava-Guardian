@@ -40,6 +40,7 @@ AI Co-Architects:
 """
 
 import json
+import os
 import secrets
 import subprocess
 import sys
@@ -563,6 +564,7 @@ class TestMainFunction:
     def test_main_creates_output_files(self):
         """Test that main function creates expected output files."""
         script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
+        repo_root = Path(__file__).parent.parent
         # Run from temp directory to avoid polluting repo
         with tempfile.TemporaryDirectory() as tmpdir:
             # Copy script to temp dir
@@ -571,12 +573,17 @@ class TestMainFunction:
             temp_script = Path(tmpdir) / "code_guardian_secure.py"
             shutil.copy(script_path, temp_script)
 
+            # Set PYTHONPATH to include repo root so ava_guardian can be imported
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(repo_root) + os.pathsep + env.get("PYTHONPATH", "")
+
             result = subprocess.run(
                 [sys.executable, str(temp_script)],
                 capture_output=True,
                 text=True,
                 timeout=120,
                 cwd=tmpdir,
+                env=env,
             )
             assert result.returncode == 0
 
@@ -588,17 +595,23 @@ class TestMainFunction:
     def test_main_output_package_is_valid_json(self):
         """Test that output package is valid JSON."""
         script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
+        repo_root = Path(__file__).parent.parent
         with tempfile.TemporaryDirectory() as tmpdir:
             import shutil
 
             temp_script = Path(tmpdir) / "code_guardian_secure.py"
             shutil.copy(script_path, temp_script)
 
+            # Set PYTHONPATH to include repo root so ava_guardian can be imported
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(repo_root) + os.pathsep + env.get("PYTHONPATH", "")
+
             subprocess.run(
                 [sys.executable, str(temp_script)],
                 capture_output=True,
                 timeout=120,
                 cwd=tmpdir,
+                env=env,
             )
 
             package_path = Path(tmpdir) / "CRYPTO_PACKAGE.json"

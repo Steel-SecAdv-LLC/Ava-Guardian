@@ -148,7 +148,14 @@ class KeyPair:
     metadata: Dict[str, Any]
 
     def __del__(self):
-        """Secure cleanup of secret key"""
+        """
+        Best-effort cleanup marker for secret key.
+
+        Note: Python bytes are immutable and cannot be securely zeroed.
+        This is a marker for where cleanup would occur with mutable types.
+        For production systems requiring strong memory protection, store
+        secrets in bytearray and use secure_memzero() before deletion.
+        """
         if hasattr(self, "secret_key") and self.secret_key:
             from ava_guardian.secure_memory import secure_cleanup_bytes
 
@@ -191,7 +198,14 @@ class EncapsulatedSecret:
     metadata: Dict[str, Any]
 
     def __del__(self):
-        """Secure cleanup of shared secret"""
+        """
+        Best-effort cleanup marker for shared secret.
+
+        Note: Python bytes are immutable and cannot be securely zeroed.
+        This is a marker for where cleanup would occur with mutable types.
+        For production systems requiring strong memory protection, store
+        secrets in bytearray and use secure_memzero() before deletion.
+        """
         if hasattr(self, "shared_secret") and self.shared_secret:
             from ava_guardian.secure_memory import secure_cleanup_bytes
 

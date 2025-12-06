@@ -484,36 +484,33 @@ _SODIUM_INITIALIZED = _init_libsodium()
 
 def secure_cleanup_bytes(data: bytes) -> None:
     """
-    Attempt to securely cleanup immutable bytes objects.
+    Placeholder for secure cleanup of bytes objects.
 
-    Uses ctypes to overwrite the bytes object's internal buffer with zeros.
-    This is a best-effort operation for immutable bytes objects.
+    WARNING: This function does NOT actually zero the original bytes object.
+    Python bytes objects are immutable, and there is no reliable way to
+    overwrite their memory contents. This function exists only as a marker
+    for where secure cleanup SHOULD occur if the data were stored in a
+    mutable type like bytearray.
 
-    Note: Python bytes objects are immutable, so this uses low-level ctypes
-    to attempt overwriting the memory. This may not work in all Python
-    implementations or under all circumstances.
+    For truly secure secret handling, use:
+    - bytearray instead of bytes for secret keys
+    - SecureBuffer context manager for temporary sensitive data
+    - secure_memzero() on mutable buffers
 
     Args:
-        data: The bytes object to cleanup
+        data: The bytes object (cleanup is a no-op for immutable bytes)
 
-    Usage:
-        secret_key = b"sensitive_data"
-        # ... use secret_key ...
-        secure_cleanup_bytes(secret_key)
-
-    FIXME: This is used by KeyPair and EncapsulatedSecret __del__ methods.
-    Consider using bytearray for secret keys to enable proper secure wiping.
+    Note:
+        This is called from KeyPair.__del__ and EncapsulatedSecret.__del__
+        as a best-effort marker. The actual security benefit is minimal
+        because Python bytes are immutable. For production systems requiring
+        strong memory protection, store secrets in bytearray and use
+        secure_memzero() before deletion.
     """
-    if not data:
-        return
-
-    try:
-        import ctypes
-
-        buffer = (ctypes.c_char * len(data)).from_buffer_copy(data)
-        ctypes.memset(ctypes.addressof(buffer), 0, len(data))
-    except Exception:  # nosec B110 - best-effort cleanup, failure is acceptable
-        pass
+    # No-op: Python bytes are immutable and cannot be securely zeroed.
+    # This function exists as documentation and a marker for where
+    # secure cleanup would occur with mutable types.
+    pass
 
 
 def get_status() -> dict:

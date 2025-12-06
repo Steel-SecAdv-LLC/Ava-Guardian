@@ -1076,11 +1076,15 @@ GitHub's dependency graph is enabled for this repository. Once the repository is
 
 ### Development Model
 
-**Developer:** Steel Security Advisors LLC and Andrew E. A. conceived, directed, validated, and supervised the development of Ava Guardian ♱ (AG♱).
+**Conceptual Architect:** Steel Security Advisors LLC and Andrew E. A. conceived, directed, validated, and supervised the development of Ava Guardian ♱ (AG♱).
+
+**AI Co-Architects:** More than 99% of the codebase, documentation, mathematical frameworks, and technical implementation was constructed by AI systems: Eris ⯰, Eden ♱, Veritas 💠, X ⚛, Caduceus ⚚, and Dev ⚕.
+
+This project represents a human/AI collaborative construct—a new development paradigm where human vision, requirements, and critical evaluation guide AI-generated implementation.
 
 ### Professional Background Disclosure
 
-This is an experimental project under active development. Users should conduct independent security reviews before production deployment.
+The human architect does not hold formal credentials in cryptography. The AI contributors, while trained on cryptographic literature, are tools without professional accountability.
 
 ### What We Did Right
 
@@ -1095,6 +1099,7 @@ This is an experimental project under active development. Users should conduct i
 ### What Requires Caution
 
 - **No Independent Audit:** All security analysis is self-assessed. Production deployment requires review by qualified cryptographers.
+- **AI-Generated Code:** May contain subtle implementation errors that appear correct. Constant-time properties and side-channel resistance require independent verification.
 - **New PQC Standards:** ML-DSA-65 and Kyber-1024 are recent NIST standards with limited real-world deployment history.
 - **Implementation vs. Specification:** Using correct algorithms doesn't guarantee correct implementation.
 
