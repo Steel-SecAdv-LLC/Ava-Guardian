@@ -27,11 +27,12 @@
               +==============================================================================+
 ```
 
-**Copyright 2025 Steel Security Advisors LLC**  
-**Author/Inventor:** Andrew E. A.  
-**Contact:** steel.sa.llc@gmail.com  
-**License:** Apache License 2.0  
+**Copyright 2025 Steel Security Advisors LLC**
+**Author/Inventor:** Andrew E. A.
+**Contact:** steel.sa.llc@gmail.com
+**License:** Apache License 2.0
 **Version:** 1.3
+**AI Co-Architects:** Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 ---
 
@@ -1061,6 +1062,8 @@ GitHub's dependency graph is enabled for this repository. Once the repository is
 ## Acknowledgments
 
 **Author/Inventor**: Andrew E. A.
+
+**AI Co-Architects:** Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 **Special Thanks**:
 - NIST Post-Quantum Cryptography Standardization Project
