@@ -173,7 +173,7 @@ static inline int consttime_lt_u32(uint32_t a, uint32_t b) {
  * Constant-time equality check for size_t values
  *
  * Returns 1 if a == b, 0 otherwise, in constant time.
- * Uses XOR and arithmetic to avoid branches.
+ * Uses the standard BoringSSL/libsodium pattern for branchless equality.
  *
  * @param a First value
  * @param b Second value
@@ -181,12 +181,11 @@ static inline int consttime_lt_u32(uint32_t a, uint32_t b) {
  */
 static inline int consttime_eq_size(size_t a, size_t b) {
     size_t diff = a ^ b;
-    /* If diff == 0, then (diff - 1) overflows to all 1s, and the high bit is 1.
-     * If diff != 0, then (diff - 1) does not overflow, and we OR with diff
-     * to ensure the high bit reflects non-equality. */
-    size_t result = (diff - 1) & ~diff;
-    /* Extract the high bit: 1 if equal, 0 if not */
-    return (int)(result >> (sizeof(size_t) * 8 - 1));
+    /* diff == 0  -> (diff | -diff) == 0, high bit 0, eq = 1
+     * diff != 0  -> high bit of (diff | -diff) is 1, eq = 0 */
+    diff |= (size_t)0 - diff;
+    diff >>= (sizeof(size_t) * 8 - 1);
+    return (int)(diff ^ 1);
 }
 
 /**
@@ -197,7 +196,8 @@ static inline int consttime_eq_size(size_t a, size_t b) {
  *
  * SECURITY NOTE: This function uses constant-time comparison to avoid
  * timing side-channels. The equality check uses arithmetic operations
- * that do not branch on the secret index value.
+ * that do not branch on the secret index value. Volatile pointers prevent
+ * compiler optimizations that could introduce timing variations.
  *
  * @param table Array to search
  * @param table_len Number of elements
@@ -212,24 +212,26 @@ void ava_consttime_lookup(
     size_t index,
     void* output
 ) {
-    const uint8_t* tbl = (const uint8_t*)table;
-    uint8_t* out = (uint8_t*)output;
+    const volatile uint8_t* tbl = (const volatile uint8_t*)table;
+    volatile uint8_t* out = (volatile uint8_t*)output;
     size_t i, j;
-    int match;
-    uint8_t mask;
 
-    /* Initialize output to zero */
-    ava_secure_memzero(output, elem_size);
+    /* Initialize output to zero using volatile pointer */
+    for (j = 0; j < elem_size; j++) {
+        out[j] = 0;
+    }
 
     /* Scan entire table using constant-time comparison */
     for (i = 0; i < table_len; i++) {
-        /* Use constant-time equality check instead of direct comparison */
-        match = consttime_eq_size(i, index);
-        mask = (uint8_t)(-(int8_t)match);
+        /* Use constant-time equality check */
+        int match = consttime_eq_size(i, index);
+        /* Convert match (0 or 1) to full mask (0x00 or 0xFF) without casts */
+        size_t full_mask = (size_t)0 - (size_t)match;
 
         /* Conditionally OR in this element */
         for (j = 0; j < elem_size; j++) {
-            out[j] |= mask & tbl[i * elem_size + j];
+            size_t v = tbl[i * elem_size + j];
+            out[j] |= (uint8_t)(full_mask & v);
         }
     }
 }
