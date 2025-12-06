@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(AvaGuardian
-    VERSION 1.2.0
+    VERSION 1.3
     DESCRIPTION "Quantum-Resistant Cryptographic Protection System"
     LANGUAGES C CXX
 )

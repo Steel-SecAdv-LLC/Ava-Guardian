@@ -695,7 +695,7 @@ class TestKMSGenerationEdgeCases:
     def test_kms_version_is_set(self):
         """Test that KMS version is set."""
         kms = generate_key_management_system("test")
-        assert kms.version == "1.2.0"
+        assert kms.version == "1.3"
 
 
 class TestCryptoPackageFields:
@@ -747,7 +747,7 @@ class TestCryptoPackageFields:
     def test_package_version_is_set(self, kms):
         """Test that package version is set."""
         pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
-        assert pkg.version == "1.2.0"
+        assert pkg.version == "1.3"
 
     def test_package_author_is_set(self, kms):
         """Test that package author is set correctly."""
