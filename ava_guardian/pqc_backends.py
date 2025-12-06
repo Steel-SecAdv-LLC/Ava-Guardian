@@ -216,9 +216,7 @@ _DILITHIUM_UNAVAILABLE_MSG = (
     f"PQC_UNAVAILABLE: Dilithium backend not available. "
     f"Install liboqs-python (recommended) or pqcrypto: {_INSTALL_LIBOQS}"
 )
-_KYBER_UNAVAILABLE_MSG = (
-    f"KYBER_UNAVAILABLE: Kyber-1024 backend not available. {_INSTALL_LIBOQS}"
-)
+_KYBER_UNAVAILABLE_MSG = f"KYBER_UNAVAILABLE: Kyber-1024 backend not available. {_INSTALL_LIBOQS}"
 _SPHINCS_UNAVAILABLE_MSG = (
     f"SPHINCS_UNAVAILABLE: SPHINCS+-256f backend not available. {_INSTALL_LIBOQS}"
 )
