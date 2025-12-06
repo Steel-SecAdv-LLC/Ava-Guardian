@@ -18,7 +18,7 @@
  * @file ava_core.c
  * @brief Core Ava Guardian ♱ context and lifecycle management
  * @author Andrew E. A., Steel Security Advisors LLC
- * @date 2025-11-29
+ * @date 2025-12-06
  *
  * LIBOQS INTEGRATION
  * ==================

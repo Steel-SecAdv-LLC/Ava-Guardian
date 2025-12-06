@@ -6,8 +6,8 @@
 **Author/Inventor:** Andrew E. A.  
 **Organization:** Steel Security Advisors LLC
 
-**Version:** 1.2.0  
-**Date:** 2025-12-04
+**Version:** 1.3  
+**Date:** 2025-12-06
 
 ---
 
@@ -265,7 +265,7 @@ Coverage:
 
 ---
 
-### Triad 4: Benevolence Domain (Ethical Constraints)
+### Triad 4: Omnibenevolence Domain (Ethical Constraints)
 
 #### 10. Omnibenevolent (Ethical Foundation)
 **Definition:** Cryptographic operations serve protective, non-malicious purposes.
@@ -277,7 +277,7 @@ Coverage:
 
 **Ethical Proof:**
 ```
-Benevolence constraint B enforces:
+Omnibenevolence constraint B enforces:
 ∀ operation o: purpose(o) ∈ {protect, verify, authenticate}
                purpose(o) ∉ {attack, deceive, harm}
 
@@ -376,7 +376,7 @@ ethical_vector = {
     "omnitemporal": 1.0,    # Temporal integrity
     "omnidirectional": 1.0, # Attack surface coverage
     
-    # Triad 4: Benevolence Domain
+    # Triad 4: Omnibenevolence Domain
     "omnibenevolent": 1.0,  # Ethical foundation
     "omniperfect": 1.0,     # Mathematical correctness
     "omnivalent": 1.0,      # Hybrid security

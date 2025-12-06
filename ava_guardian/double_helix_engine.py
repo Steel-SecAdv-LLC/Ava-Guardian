@@ -44,8 +44,8 @@ Where:
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-12-04
-Version: 1.2.0
+Date: 2025-12-06
+Version: 1.3
 
 AI Co-Architects:
     Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
@@ -72,7 +72,7 @@ from ava_guardian.equations import (
 # Configure module logger
 logger = logging.getLogger(__name__)
 
-__version__ = "1.2.0"
+__version__ = "1.3"
 __author__ = "Andrew E. A., Steel Security Advisors LLC"
 
 

@@ -148,16 +148,18 @@ class KeyPair:
     metadata: Dict[str, Any]
 
     def __del__(self):
-        """Secure cleanup of secret key"""
-        if hasattr(self, "secret_key") and self.secret_key:
-            # Overwrite secret key memory
-            try:
-                import ctypes
+        """
+        Best-effort cleanup marker for secret key.
 
-                buffer = (ctypes.c_char * len(self.secret_key)).from_buffer_copy(self.secret_key)
-                ctypes.memset(ctypes.addressof(buffer), 0, len(self.secret_key))
-            except Exception:  # nosec B110
-                pass
+        Note: Python bytes are immutable and cannot be securely zeroed.
+        This is a marker for where cleanup would occur with mutable types.
+        For production systems requiring strong memory protection, store
+        secrets in bytearray and use secure_memzero() before deletion.
+        """
+        if hasattr(self, "secret_key") and self.secret_key:
+            from ava_guardian.secure_memory import secure_cleanup_bytes
+
+            secure_cleanup_bytes(self.secret_key)
 
 
 @dataclass
@@ -196,17 +198,18 @@ class EncapsulatedSecret:
     metadata: Dict[str, Any]
 
     def __del__(self):
-        """Secure cleanup of shared secret"""
-        if hasattr(self, "shared_secret") and self.shared_secret:
-            try:
-                import ctypes
+        """
+        Best-effort cleanup marker for shared secret.
 
-                buffer = (ctypes.c_char * len(self.shared_secret)).from_buffer_copy(
-                    self.shared_secret
-                )
-                ctypes.memset(ctypes.addressof(buffer), 0, len(self.shared_secret))
-            except Exception:  # nosec B110
-                pass
+        Note: Python bytes are immutable and cannot be securely zeroed.
+        This is a marker for where cleanup would occur with mutable types.
+        For production systems requiring strong memory protection, store
+        secrets in bytearray and use secure_memzero() before deletion.
+        """
+        if hasattr(self, "shared_secret") and self.shared_secret:
+            from ava_guardian.secure_memory import secure_cleanup_bytes
+
+            secure_cleanup_bytes(self.shared_secret)
 
 
 class CryptoProvider(ABC):

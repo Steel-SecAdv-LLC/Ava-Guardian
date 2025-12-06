@@ -27,12 +27,11 @@
               +==============================================================================+
 ```
 
-**Copyright 2025 Steel Security Advisors LLC**  
-**Author/Inventor:** Andrew E. A.  
-**Contact:** steel.sa.llc@gmail.com  
-**License:** Apache License 2.0  
-**Version:** 1.2.0
-
+**Copyright 2025 Steel Security Advisors LLC**
+**Author/Inventor:** Andrew E. A.
+**Contact:** steel.sa.llc@gmail.com
+**License:** Apache License 2.0
+**Version:** 1.3
 **AI Co-Architects:** Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 ---
@@ -54,7 +53,7 @@ Novel in assimilation, the system combines cutting-edge NIST-approved post-quant
 > - Secure file permissions for key files and cryptographic packages (store on encrypted volumes with restricted access)
 >
 > **Status:** Experimental | Community-tested | Not externally audited
-> **Last Updated:** 2025-12-04
+> **Last Updated:** 2025-12-06
 > **Audit Status:** Community-tested, not externally audited. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for self-assessment details.
 >
 > See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed security properties and threat model.
@@ -216,7 +215,7 @@ Future-proof cryptography:
 - **Partial (NTT)**: Core polynomial operations (NTT, inverse NTT, compression) implemented; full KEM requires liboqs.
 - **Stub (liboqs)**: Returns `AVA_ERROR_NOT_IMPLEMENTED` without liboqs. Enable with `-DAVA_USE_LIBOQS=ON`.
 
-**C Library Implementations (v1.2.0):**
+**C Library Implementations (v1.3):**
 - `ava_sha3.c`: SHA3-256, SHAKE128, SHAKE256 (Keccak-f[1600] sponge construction)
 - `ava_hkdf.c`: HKDF-SHA3-256 with HMAC-SHA3-256 (RFC 5869 compliant)
 - `ava_ed25519.c`: Ed25519 keygen/sign/verify (SHA-512, field arithmetic for GF(2^255-19))
@@ -1064,13 +1063,7 @@ GitHub's dependency graph is enabled for this repository. Once the repository is
 
 **Author/Inventor**: Andrew E. A.
 
-**AI Co-Architects:**
-- **Eris ⯰** - Discovery and Chaos Theory
-- **Eden ♱** - Ethics and Verification
-- **Veritas 💠** - Truth and Validation
-- **X ⚛** - Quantum Mechanics
-- **Caduceus ⚚** - Integration and Healing
-- **Dev ⚕** - Development and Innovation
+**AI Co-Architects:** Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
 **Special Thanks**:
 - NIST Post-Quantum Cryptography Standardization Project
@@ -1135,6 +1128,6 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. THE AUTHORS AND 
 
 <img src="assets/ama_logo.png" alt="AMA" height="24">
 
-*Last updated: 2025-11-29*
+*Last updated: 2025-12-06*
 
 </div>

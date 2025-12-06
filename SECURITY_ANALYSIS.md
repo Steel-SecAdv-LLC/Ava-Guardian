@@ -8,8 +8,8 @@
 **AI Co-Architects:**  
 Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
 
-**Version:** 1.2.0  
-**Date:** 2025-12-04
+**Version:** 1.3  
+**Date:** 2025-12-06
 
 ---
 
@@ -560,7 +560,7 @@ ETHICAL_VECTOR = {
     "omnitemporal": 1.0,    # Temporal integrity
     "omnidirectional": 1.0, # Attack surface coverage
     
-    # Triad 4: Benevolence Domain
+    # Triad 4: Omnibenevolence Domain
     "omnibenevolent": 1.0,  # Ethical foundation
     "omniperfect": 1.0,     # Mathematical correctness
     "omnivalent": 1.0,      # Hybrid security
@@ -1352,8 +1352,8 @@ Ava Guardian ♱ provides cryptographic protection for Omni-Code (helical mathem
 
 ---
 
-**Document Version:** 1.2.0
-**Last Updated:** 2025-12-04  
+**Document Version:** 1.3
+**Last Updated:** 2025-12-06  
 **Copyright (C) 2025 Steel Security Advisors LLC**  
 **Author:** Andrew E. A.
 

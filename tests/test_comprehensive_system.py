@@ -32,14 +32,15 @@ This test suite complements test_crypto_core_penetration.py by covering:
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-12-04
-Version: 1.0.0
+Date: 2025-12-06
+Version: 1.3
 
 AI Co-Architects:
     Eris | Eden | Veritas | X | Caduceus | Dev
 """
 
 import json
+import os
 import secrets
 import subprocess
 import sys
@@ -563,6 +564,7 @@ class TestMainFunction:
     def test_main_creates_output_files(self):
         """Test that main function creates expected output files."""
         script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
+        repo_root = Path(__file__).parent.parent
         # Run from temp directory to avoid polluting repo
         with tempfile.TemporaryDirectory() as tmpdir:
             # Copy script to temp dir
@@ -571,12 +573,17 @@ class TestMainFunction:
             temp_script = Path(tmpdir) / "code_guardian_secure.py"
             shutil.copy(script_path, temp_script)
 
+            # Set PYTHONPATH to include repo root so ava_guardian can be imported
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(repo_root) + os.pathsep + env.get("PYTHONPATH", "")
+
             result = subprocess.run(
                 [sys.executable, str(temp_script)],
                 capture_output=True,
                 text=True,
                 timeout=120,
                 cwd=tmpdir,
+                env=env,
             )
             assert result.returncode == 0
 
@@ -588,17 +595,23 @@ class TestMainFunction:
     def test_main_output_package_is_valid_json(self):
         """Test that output package is valid JSON."""
         script_path = Path(__file__).parent.parent / "code_guardian_secure.py"
+        repo_root = Path(__file__).parent.parent
         with tempfile.TemporaryDirectory() as tmpdir:
             import shutil
 
             temp_script = Path(tmpdir) / "code_guardian_secure.py"
             shutil.copy(script_path, temp_script)
 
+            # Set PYTHONPATH to include repo root so ava_guardian can be imported
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(repo_root) + os.pathsep + env.get("PYTHONPATH", "")
+
             subprocess.run(
                 [sys.executable, str(temp_script)],
                 capture_output=True,
                 timeout=120,
                 cwd=tmpdir,
+                env=env,
             )
 
             package_path = Path(tmpdir) / "CRYPTO_PACKAGE.json"
@@ -695,7 +708,7 @@ class TestKMSGenerationEdgeCases:
     def test_kms_version_is_set(self):
         """Test that KMS version is set."""
         kms = generate_key_management_system("test")
-        assert kms.version == "1.2.0"
+        assert kms.version == "1.3"
 
 
 class TestCryptoPackageFields:
@@ -747,7 +760,7 @@ class TestCryptoPackageFields:
     def test_package_version_is_set(self, kms):
         """Test that package version is set."""
         pkg = create_crypto_package(MASTER_CODES, MASTER_HELIX_PARAMS, kms, "test")
-        assert pkg.version == "1.2.0"
+        assert pkg.version == "1.3"
 
     def test_package_author_is_set(self, kms):
         """Test that package author is set correctly."""
