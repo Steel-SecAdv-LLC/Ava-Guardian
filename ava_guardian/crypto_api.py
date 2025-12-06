@@ -150,14 +150,9 @@ class KeyPair:
     def __del__(self):
         """Secure cleanup of secret key"""
         if hasattr(self, "secret_key") and self.secret_key:
-            # Overwrite secret key memory
-            try:
-                import ctypes
+            from ava_guardian.secure_memory import secure_cleanup_bytes
 
-                buffer = (ctypes.c_char * len(self.secret_key)).from_buffer_copy(self.secret_key)
-                ctypes.memset(ctypes.addressof(buffer), 0, len(self.secret_key))
-            except Exception:  # nosec B110
-                pass
+            secure_cleanup_bytes(self.secret_key)
 
 
 @dataclass
@@ -198,15 +193,9 @@ class EncapsulatedSecret:
     def __del__(self):
         """Secure cleanup of shared secret"""
         if hasattr(self, "shared_secret") and self.shared_secret:
-            try:
-                import ctypes
+            from ava_guardian.secure_memory import secure_cleanup_bytes
 
-                buffer = (ctypes.c_char * len(self.shared_secret)).from_buffer_copy(
-                    self.shared_secret
-                )
-                ctypes.memset(ctypes.addressof(buffer), 0, len(self.shared_secret))
-            except Exception:  # nosec B110
-                pass
+            secure_cleanup_bytes(self.shared_secret)
 
 
 class CryptoProvider(ABC):

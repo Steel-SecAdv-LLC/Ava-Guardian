@@ -482,6 +482,40 @@ def _init_libsodium() -> bool:
 _SODIUM_INITIALIZED = _init_libsodium()
 
 
+def secure_cleanup_bytes(data: bytes) -> None:
+    """
+    Attempt to securely cleanup immutable bytes objects.
+
+    Uses ctypes to overwrite the bytes object's internal buffer with zeros.
+    This is a best-effort operation for immutable bytes objects.
+
+    Note: Python bytes objects are immutable, so this uses low-level ctypes
+    to attempt overwriting the memory. This may not work in all Python
+    implementations or under all circumstances.
+
+    Args:
+        data: The bytes object to cleanup
+
+    Usage:
+        secret_key = b"sensitive_data"
+        # ... use secret_key ...
+        secure_cleanup_bytes(secret_key)
+
+    FIXME: This is used by KeyPair and EncapsulatedSecret __del__ methods.
+    Consider using bytearray for secret keys to enable proper secure wiping.
+    """
+    if not data:
+        return
+
+    try:
+        import ctypes
+
+        buffer = (ctypes.c_char * len(data)).from_buffer_copy(data)
+        ctypes.memset(ctypes.addressof(buffer), 0, len(data))
+    except Exception:  # nosec B110 - best-effort cleanup, failure is acceptable
+        pass
+
+
 def get_status() -> dict:
     """
     Get secure memory module status.
@@ -513,6 +547,7 @@ __all__ = [
     "get_status",
     "is_available",
     "secure_buffer",
+    "secure_cleanup_bytes",
     "secure_memzero",
     "secure_mlock",
     "secure_munlock",

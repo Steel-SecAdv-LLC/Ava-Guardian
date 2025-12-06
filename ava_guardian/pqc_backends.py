@@ -196,6 +196,33 @@ SPHINCS_PUBLIC_KEY_BYTES = 64
 SPHINCS_SECRET_KEY_BYTES = 128
 SPHINCS_SIGNATURE_BYTES = 49856
 
+# ============================================================================
+# ERROR MESSAGE CONSTANTS (v1.3 Refactoring)
+# ============================================================================
+# FIXME: Consider extracting backend availability checking into a decorator
+# pattern to reduce code duplication across generate_*/sign/verify functions.
+# See: https://github.com/Steel-SecAdv-LLC/Ava-Guardian/issues (create issue)
+
+# Installation instruction (centralized for consistency)
+_INSTALL_LIBOQS = "Install liboqs-python: pip install liboqs-python"
+
+# Unknown backend state error messages (should never occur in normal operation)
+_DILITHIUM_UNKNOWN_STATE = "PQC_UNAVAILABLE: Unknown backend state"
+_KYBER_UNKNOWN_STATE = "KYBER_UNAVAILABLE: Unknown backend state"
+_SPHINCS_UNKNOWN_STATE = "SPHINCS_UNAVAILABLE: Unknown backend state"
+
+# Backend unavailable error messages
+_DILITHIUM_UNAVAILABLE_MSG = (
+    f"PQC_UNAVAILABLE: Dilithium backend not available. "
+    f"Install liboqs-python (recommended) or pqcrypto: {_INSTALL_LIBOQS}"
+)
+_KYBER_UNAVAILABLE_MSG = (
+    f"KYBER_UNAVAILABLE: Kyber-1024 backend not available. {_INSTALL_LIBOQS}"
+)
+_SPHINCS_UNAVAILABLE_MSG = (
+    f"SPHINCS_UNAVAILABLE: SPHINCS+-256f backend not available. {_INSTALL_LIBOQS}"
+)
+
 
 def get_pqc_status() -> PQCStatus:
     """
@@ -358,11 +385,7 @@ def generate_dilithium_keypair() -> DilithiumKeyPair:
         QuantumSignatureUnavailableError: If no Dilithium backend is available
     """
     if not DILITHIUM_AVAILABLE:
-        raise QuantumSignatureUnavailableError(
-            "PQC_UNAVAILABLE: Dilithium backend not available. "
-            "Install liboqs-python (recommended) or pqcrypto: "
-            "pip install liboqs-python"
-        )
+        raise QuantumSignatureUnavailableError(_DILITHIUM_UNAVAILABLE_MSG)
 
     if DILITHIUM_BACKEND == "liboqs" and _oqs_module is not None:
         sig = _oqs_module.Signature("ML-DSA-65")
@@ -375,7 +398,7 @@ def generate_dilithium_keypair() -> DilithiumKeyPair:
         return DilithiumKeyPair(private_key=private_key, public_key=public_key)
 
     # Should not reach here if DILITHIUM_AVAILABLE is True
-    raise QuantumSignatureUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
+    raise QuantumSignatureUnavailableError(_DILITHIUM_UNKNOWN_STATE)
 
 
 def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
@@ -393,10 +416,7 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
         QuantumSignatureUnavailableError: If no Dilithium backend is available
     """
     if not DILITHIUM_AVAILABLE:
-        raise QuantumSignatureUnavailableError(
-            "PQC_UNAVAILABLE: Dilithium backend not available. "
-            "Install liboqs-python (recommended) or pqcrypto."
-        )
+        raise QuantumSignatureUnavailableError(_DILITHIUM_UNAVAILABLE_MSG)
 
     if DILITHIUM_BACKEND == "liboqs" and _oqs_module is not None:
         sig = _oqs_module.Signature("ML-DSA-65")
@@ -406,7 +426,7 @@ def dilithium_sign(message: bytes, private_key: bytes) -> bytes:
     elif DILITHIUM_BACKEND == "pqcrypto" and _dilithium3_module is not None:
         return cast(bytes, _dilithium3_module.sign(message, private_key))
 
-    raise QuantumSignatureUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
+    raise QuantumSignatureUnavailableError(_DILITHIUM_UNKNOWN_STATE)
 
 
 def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
@@ -425,26 +445,23 @@ def dilithium_verify(message: bytes, signature: bytes, public_key: bytes) -> boo
         QuantumSignatureUnavailableError: If no Dilithium backend is available
     """
     if not DILITHIUM_AVAILABLE:
-        raise QuantumSignatureUnavailableError(
-            "PQC_UNAVAILABLE: Dilithium backend not available. "
-            "Install liboqs-python (recommended) or pqcrypto."
-        )
+        raise QuantumSignatureUnavailableError(_DILITHIUM_UNAVAILABLE_MSG)
 
     if DILITHIUM_BACKEND == "liboqs" and _oqs_module is not None:
         try:
             sig = _oqs_module.Signature("ML-DSA-65")
             return cast(bool, sig.verify(message, signature, public_key))
-        except Exception:
+        except Exception:  # nosec B110 - intentional broad catch for signature verification
             return False
 
     elif DILITHIUM_BACKEND == "pqcrypto" and _dilithium3_module is not None:
         try:
             _dilithium3_module.verify(message, signature, public_key)
             return True
-        except Exception:
+        except Exception:  # nosec B110 - intentional broad catch for signature verification
             return False
 
-    raise QuantumSignatureUnavailableError("PQC_UNAVAILABLE: Unknown backend state")
+    raise QuantumSignatureUnavailableError(_DILITHIUM_UNKNOWN_STATE)
 
 
 # ============================================================================
@@ -473,10 +490,7 @@ def generate_kyber_keypair() -> KyberKeyPair:
         3168
     """
     if not KYBER_AVAILABLE:
-        raise KyberUnavailableError(
-            "KYBER_UNAVAILABLE: Kyber-1024 backend not available. "
-            "Install liboqs-python: pip install liboqs-python"
-        )
+        raise KyberUnavailableError(_KYBER_UNAVAILABLE_MSG)
 
     if KYBER_BACKEND == "liboqs" and _oqs_module is not None:
         kem = _oqs_module.KeyEncapsulation("Kyber1024")
@@ -484,7 +498,7 @@ def generate_kyber_keypair() -> KyberKeyPair:
         secret_key = kem.export_secret_key()
         return KyberKeyPair(secret_key=secret_key, public_key=public_key)
 
-    raise KyberUnavailableError("KYBER_UNAVAILABLE: Unknown backend state")
+    raise KyberUnavailableError(_KYBER_UNKNOWN_STATE)
 
 
 def kyber_encapsulate(public_key: bytes) -> KyberEncapsulation:
@@ -514,10 +528,7 @@ def kyber_encapsulate(public_key: bytes) -> KyberEncapsulation:
         32
     """
     if not KYBER_AVAILABLE:
-        raise KyberUnavailableError(
-            "KYBER_UNAVAILABLE: Kyber-1024 backend not available. "
-            "Install liboqs-python: pip install liboqs-python"
-        )
+        raise KyberUnavailableError(_KYBER_UNAVAILABLE_MSG)
 
     if len(public_key) != KYBER_PUBLIC_KEY_BYTES:
         raise ValueError(
@@ -530,7 +541,7 @@ def kyber_encapsulate(public_key: bytes) -> KyberEncapsulation:
         ciphertext, shared_secret = kem.encap_secret(public_key)
         return KyberEncapsulation(ciphertext=ciphertext, shared_secret=shared_secret)
 
-    raise KyberUnavailableError("KYBER_UNAVAILABLE: Unknown backend state")
+    raise KyberUnavailableError(_KYBER_UNKNOWN_STATE)
 
 
 def kyber_decapsulate(ciphertext: bytes, secret_key: bytes) -> bytes:
@@ -559,10 +570,7 @@ def kyber_decapsulate(ciphertext: bytes, secret_key: bytes) -> bytes:
         True
     """
     if not KYBER_AVAILABLE:
-        raise KyberUnavailableError(
-            "KYBER_UNAVAILABLE: Kyber-1024 backend not available. "
-            "Install liboqs-python: pip install liboqs-python"
-        )
+        raise KyberUnavailableError(_KYBER_UNAVAILABLE_MSG)
 
     if len(ciphertext) != KYBER_CIPHERTEXT_BYTES:
         raise ValueError(
@@ -582,7 +590,7 @@ def kyber_decapsulate(ciphertext: bytes, secret_key: bytes) -> bytes:
         shared_secret = kem.decap_secret(ciphertext)
         return cast(bytes, shared_secret)
 
-    raise KyberUnavailableError("KYBER_UNAVAILABLE: Unknown backend state")
+    raise KyberUnavailableError(_KYBER_UNKNOWN_STATE)
 
 
 # ============================================================================
@@ -612,10 +620,7 @@ def generate_sphincs_keypair() -> SphincsKeyPair:
         128
     """
     if not SPHINCS_AVAILABLE:
-        raise SphincsUnavailableError(
-            "SPHINCS_UNAVAILABLE: SPHINCS+-256f backend not available. "
-            "Install liboqs-python: pip install liboqs-python"
-        )
+        raise SphincsUnavailableError(_SPHINCS_UNAVAILABLE_MSG)
 
     if SPHINCS_BACKEND == "liboqs" and _oqs_module is not None:
         sig = _oqs_module.Signature("SPHINCS+-SHA2-256f-simple")
@@ -623,7 +628,7 @@ def generate_sphincs_keypair() -> SphincsKeyPair:
         secret_key = sig.export_secret_key()
         return SphincsKeyPair(secret_key=secret_key, public_key=public_key)
 
-    raise SphincsUnavailableError("SPHINCS_UNAVAILABLE: Unknown backend state")
+    raise SphincsUnavailableError(_SPHINCS_UNKNOWN_STATE)
 
 
 def sphincs_sign(message: bytes, secret_key: bytes) -> bytes:
@@ -651,10 +656,7 @@ def sphincs_sign(message: bytes, secret_key: bytes) -> bytes:
         49856
     """
     if not SPHINCS_AVAILABLE:
-        raise SphincsUnavailableError(
-            "SPHINCS_UNAVAILABLE: SPHINCS+-256f backend not available. "
-            "Install liboqs-python: pip install liboqs-python"
-        )
+        raise SphincsUnavailableError(_SPHINCS_UNAVAILABLE_MSG)
 
     if len(secret_key) != SPHINCS_SECRET_KEY_BYTES:
         raise ValueError(
@@ -667,7 +669,7 @@ def sphincs_sign(message: bytes, secret_key: bytes) -> bytes:
         sig.secret_key = secret_key
         return cast(bytes, sig.sign(message))
 
-    raise SphincsUnavailableError("SPHINCS_UNAVAILABLE: Unknown backend state")
+    raise SphincsUnavailableError(_SPHINCS_UNKNOWN_STATE)
 
 
 def sphincs_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
@@ -695,10 +697,7 @@ def sphincs_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
         False
     """
     if not SPHINCS_AVAILABLE:
-        raise SphincsUnavailableError(
-            "SPHINCS_UNAVAILABLE: SPHINCS+-256f backend not available. "
-            "Install liboqs-python: pip install liboqs-python"
-        )
+        raise SphincsUnavailableError(_SPHINCS_UNAVAILABLE_MSG)
 
     if len(public_key) != SPHINCS_PUBLIC_KEY_BYTES:
         raise ValueError(
@@ -710,10 +709,10 @@ def sphincs_verify(message: bytes, signature: bytes, public_key: bytes) -> bool:
         try:
             sig = _oqs_module.Signature("SPHINCS+-SHA2-256f-simple")
             return cast(bool, sig.verify(message, signature, public_key))
-        except Exception:
+        except Exception:  # nosec B110 - intentional broad catch for signature verification
             return False
 
-    raise SphincsUnavailableError("SPHINCS_UNAVAILABLE: Unknown backend state")
+    raise SphincsUnavailableError(_SPHINCS_UNKNOWN_STATE)
 
 
 # ============================================================================
