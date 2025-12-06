@@ -840,7 +840,7 @@ def create_ethical_binding_flow():
             ],
         ),
         (
-            "Triad 4: Benevolence",
+            "Triad 4: Omnibenevolence",
             "#8B5CF6",
             "Ethical Constraints",
             [

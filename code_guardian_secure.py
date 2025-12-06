@@ -22,7 +22,7 @@ Complete cryptographic protection system for helical mathematical Omni-Codes.
 Organization: Steel Security Advisors LLC
 Author/Inventor: Andrew E. A.
 Contact: steel.sa.llc@gmail.com
-Date: 2025-12-04
+Date: 2025-12-06
 Version: 1.3
 Project: Post-quantum cryptographic security system
 
@@ -1085,7 +1085,7 @@ ETHICAL_VECTOR = {
     "omnipresent": 1.0,  # Multi-layer defense
     "omnitemporal": 1.0,  # Temporal integrity
     "omnidirectional": 1.0,  # Attack surface coverage
-    # Triad 4: Benevolence Domain (Ethical Constraints)
+    # Triad 4: Omnibenevolence Domain (Ethical Constraints)
     "omnibenevolent": 1.0,  # Ethical foundation
     "omniperfect": 1.0,  # Mathematical correctness
     "omnivalent": 1.0,  # Hybrid security

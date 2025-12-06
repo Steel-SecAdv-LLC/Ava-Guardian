@@ -33,8 +33,6 @@
 **License:** Apache License 2.0  
 **Version:** 1.3
 
-**AI Co-Architects:** Eris ⯰ | Eden ♱ | Veritas 💠 | X ⚛ | Caduceus ⚚ | Dev ⚕
-
 ---
 
 ## Executive Summary
@@ -54,7 +52,7 @@ Novel in assimilation, the system combines cutting-edge NIST-approved post-quant
 > - Secure file permissions for key files and cryptographic packages (store on encrypted volumes with restricted access)
 >
 > **Status:** Experimental | Community-tested | Not externally audited
-> **Last Updated:** 2025-12-04
+> **Last Updated:** 2025-12-06
 > **Audit Status:** Community-tested, not externally audited. See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for self-assessment details.
 >
 > See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed security properties and threat model.
@@ -1064,14 +1062,6 @@ GitHub's dependency graph is enabled for this repository. Once the repository is
 
 **Author/Inventor**: Andrew E. A.
 
-**AI Co-Architects:**
-- **Eris ⯰** - Discovery and Chaos Theory
-- **Eden ♱** - Ethics and Verification
-- **Veritas 💠** - Truth and Validation
-- **X ⚛** - Quantum Mechanics
-- **Caduceus ⚚** - Integration and Healing
-- **Dev ⚕** - Development and Innovation
-
 **Special Thanks**:
 - NIST Post-Quantum Cryptography Standardization Project
 - The open-source cryptography community
@@ -1083,15 +1073,11 @@ GitHub's dependency graph is enabled for this repository. Once the repository is
 
 ### Development Model
 
-**Conceptual Architect:** Steel Security Advisors LLC and Andrew E. A. conceived, directed, validated, and supervised the development of Ava Guardian ♱ (AG♱).
-
-**AI Co-Architects:** More than 99% of the codebase, documentation, mathematical frameworks, and technical implementation was constructed by AI systems: Eris ⯰, Eden ♱, Veritas 💠, X ⚛, Caduceus ⚚, and Dev ⚕.
-
-This project represents a human/AI collaborative construct—a new development paradigm where human vision, requirements, and critical evaluation guide AI-generated implementation.
+**Developer:** Steel Security Advisors LLC and Andrew E. A. conceived, directed, validated, and supervised the development of Ava Guardian ♱ (AG♱).
 
 ### Professional Background Disclosure
 
-The human architect does not hold formal credentials in cryptography. The AI contributors, while trained on cryptographic literature, are tools without professional accountability.
+This is an experimental project under active development. Users should conduct independent security reviews before production deployment.
 
 ### What We Did Right
 
@@ -1106,7 +1092,6 @@ The human architect does not hold formal credentials in cryptography. The AI con
 ### What Requires Caution
 
 - **No Independent Audit:** All security analysis is self-assessed. Production deployment requires review by qualified cryptographers.
-- **AI-Generated Code:** May contain subtle implementation errors that appear correct. Constant-time properties and side-channel resistance require independent verification.
 - **New PQC Standards:** ML-DSA-65 and Kyber-1024 are recent NIST standards with limited real-world deployment history.
 - **Implementation vs. Specification:** Using correct algorithms doesn't guarantee correct implementation.
 
@@ -1135,6 +1120,6 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. THE AUTHORS AND 
 
 <img src="assets/ama_logo.png" alt="AMA" height="24">
 
-*Last updated: 2025-11-29*
+*Last updated: 2025-12-06*
 
 </div>

@@ -575,7 +575,7 @@ class TestEthicalIntegration:
             "omnipresent",
             "omnitemporal",
             "omnidirectional",
-            # Triad 4: Benevolence Domain
+            # Triad 4: Omnibenevolence Domain
             "omnibenevolent",
             "omniperfect",
             "omnivalent",

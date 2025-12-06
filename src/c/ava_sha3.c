@@ -18,7 +18,7 @@
  * @file ava_sha3.c
  * @brief SHA3-256 and SHAKE implementations using Keccak-f[1600]
  * @author Andrew E. A., Steel Security Advisors LLC
- * @date 2025-11-29
+ * @date 2025-12-06
  *
  * This implements SHA3-256 (FIPS 202) using the Keccak sponge construction.
  * The implementation is based on the reference specification and optimized
