@@ -151,92 +151,74 @@ add_ama_test(test_ed25519 test_ed25519.c)
 # "exactly 32 / 64 readable bytes" — and nothing about alignment, so an
 # unaligned caller buffer is a legal call.  Until this test, every test in the
 # tree handed the library a `uint8_t[32]` local or static, which every compiler
-# in use aligns to at least 8, so donna's `*(uint64_t *)(in + 0)` in
-# curve25519_expand was never given an address that could expose it.  This one
-# walks 16 offsets and asserts both verdicts at each.  See
-# tests/c/test_ed25519_unaligned_input.c.
+# in use aligns to at least 8, so a decoder that loaded the key with an aligned
+# 64-bit load (the since-removed vendored backend did) was never given an
+# address that could expose it.  This one walks 16 offsets and asserts both
+# verdicts at each.  See tests/c/test_ed25519_unaligned_input.c.
 add_ama_test(test_ed25519_unaligned_input test_ed25519_unaligned_input.c)
 
-# RFC 8032 5.1.7 canonical-S enforcement (INVARIANT-26).  Built
-# UNCONDITIONALLY, unlike test_ed25519_verify_equiv below: the fix
-# lands at three sites — ama_ed25519_verify in each backend plus the
-# donna batch wrapper, which calls its own ed25519_sign_open — so the
-# test has to run against whichever backend CMake selected, and it
-# drives the batch API as well as the single-verify path.
+# RFC 8032 5.1.7 canonical-S enforcement (INVARIANT-26), on the single-verify
+# path and on the batch API (a per-entry loop over the same function).
 add_ama_test(test_ed25519_canonical_s test_ed25519_canonical_s.c)
-# The backend selector is PRIVATE on the library target, so mirror it: this
-# test drives the donna-only AMA_TESTING_MODE allocation-failure hook (the
-# only path on which the fail-closed pre-zeroing of `results` is observable),
-# and the in-tree backend, which allocates nothing, does not define it.
-if(AMA_ED25519_ASSEMBLY)
-    target_compile_definitions(test_ed25519_canonical_s PRIVATE AMA_ED25519_ASSEMBLY)
-endif()
 
 # INVARIANT-38 applied to the signature's R half (RFC 8032 §5.1.7 step 1 ->
 # §5.1.3).  Separate from test_ed25519_canonical_s because it was written for
-# a different site: donna's old batch routine decoded R instead of
-# re-encoding it, so at count >= 4 (its multi-scalar boundary) nothing
-# enforced the R rule there.  B1 (commit 0cd6bb3) deleted that path: both
-# backends' batch verify is now an unconditional per-entry loop over
-# ama_ed25519_verify, whose re-encode comparison rejects a non-canonical R
-# with or without the predicate.  Post-B1 the batch assertions are
-# behavioral SMOKEs on every backend (measured: neutering the predicate on
-# the donna-assembly build fails only the four RANGE unit tests of the
-# predicate itself), and the RANGE block is the predicate's pin — see
-# R_RULE_LABEL in the TU.  An earlier revision of this comment described the
-# pre-B1 aggregate path and claimed the PINs discriminate on donna; that
-# stopped being true when the path was removed.
+# a different site: the since-removed vendored backend's old batch routine
+# decoded R instead of re-encoding it, so at count >= 4 (its multi-scalar
+# boundary) nothing enforced the R rule there.  B1 (commit 0cd6bb3) deleted
+# that path; batch verify is an unconditional per-entry loop over
+# ama_ed25519_verify.  The batch assertions are behavioral SMOKEs and the
+# RANGE block is the predicate's pin — see R_RULE_LABEL in the TU.
 add_ama_test(test_ed25519_canonical_r test_ed25519_canonical_r.c)
-# The backend selector is PRIVATE on the library target (see
-# ama_apply_donna_settings in the top-level CMakeLists.txt), so a test TU
-# cannot see it.  This test names the backend it exercised in its banner, and
-# a banner that says fe51 over a donna build is exactly the kind of claim
-# this file exists to stop, so mirror the selection onto the test.
-if(AMA_ED25519_ASSEMBLY)
-    target_compile_definitions(test_ed25519_canonical_r PRIVATE AMA_ED25519_ASSEMBLY)
-endif()
 
 # Public scalar-multiplication contract for ama_ed25519_scalarmult_public and
-# ama_ed25519_double_scalarmult_public.  Built UNCONDITIONALLY: the two
-# defects it pins are one per backend (donna's stale extended-t on the joint
-# routine, fe51's dropped wNAF carry out of bit 255), and the only in-tree
-# byte-identity test that could have caught either — test_ed25519_verify_equiv
-# — is built solely under `if(NOT AMA_ED25519_ASSEMBLY)` and reduces every
-# scalar before comparing.  Uses the public API only, so it discriminates
-# whichever backend CMake selected.
+# ama_ed25519_double_scalarmult_public: the two defects it pins (a stale
+# extended-t on the joint routine of the since-removed vendored backend, the
+# dropped wNAF carry out of bit 255 in the in-tree recoding) were invisible to
+# test_ed25519_verify_equiv, which reduces every scalar before comparing.  Uses
+# the public API only.
 add_ama_test(test_ed25519_scalarmult_contract test_ed25519_scalarmult_contract.c)
-# Same reason as test_ed25519_canonical_r above: the selector is PRIVATE on
-# the library target, and a banner naming the wrong backend is exactly the
-# kind of claim this file exists to stop.
-if(AMA_ED25519_ASSEMBLY)
-    target_compile_definitions(test_ed25519_scalarmult_contract PRIVATE AMA_ED25519_ASSEMBLY)
-endif()
 
 # test_ed25519_comb_equiv validates the constant-time fixed-base comb against
 # the variable-base wNAF ladder through the public API: for any 32-byte scalar,
 # point_from_scalar(s) == scalarmult_public(s, B).  Two independent group
 # arithmetic paths over the same static table header.
-if(NOT AMA_ED25519_ASSEMBLY)
-    add_ama_test(test_ed25519_comb_equiv test_ed25519_comb_equiv.c)
-    # Verify-path equivalence: behavioral accept/reject parity and
-    # byte-identity of the Shamir/Straus joint scalar mult against the split
-    # composition scalarmult_public + point_add.
-    add_ama_test(test_ed25519_verify_equiv test_ed25519_verify_equiv.c)
+add_ama_test(test_ed25519_comb_equiv test_ed25519_comb_equiv.c)
+# Verify-path equivalence: behavioral accept/reject parity and
+# byte-identity of the Shamir/Straus joint scalar mult against the split
+# composition scalarmult_public + point_add.
+add_ama_test(test_ed25519_verify_equiv test_ed25519_verify_equiv.c)
 
-    # The static base-point tables (src/c/internal/ama_ed25519_tables.h): every
-    # entry, recovered from its Niels form through the testing-mode export, is
-    # compared against [k]B computed by the wNAF ladder from the RFC 8032
-    # compressed base point.  Checks both radices when the build carries both.
-    add_ama_test(test_ed25519_static_tables test_ed25519_static_tables.c)
+# The static base-point tables (src/c/internal/ama_ed25519_tables.h): every
+# entry, recovered from its Niels form through the testing-mode export, is
+# compared against [k]B computed by the wNAF ladder from the RFC 8032
+# compressed base point.  Checks both radices when the build carries both.
+add_ama_test(test_ed25519_static_tables test_ed25519_static_tables.c)
 
-    # The frozen ed25519-donna oracle (tests/oracle/ed25519_frozen_oracle.txt):
-    # 2,022 recorded inputs and answers replayed against the linked backend.
-    # Reads the fixture from the source tree, like test_kat and test_lms.
-    add_executable(test_ed25519_frozen_oracle test_ed25519_frozen_oracle.c)
-    target_link_libraries(test_ed25519_frozen_oracle ama_cryptography_test)
-    add_test(NAME test_ed25519_frozen_oracle COMMAND test_ed25519_frozen_oracle
-             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endif()
+# Bernstein-Yang constant-time inversion (src/c/internal/
+# ama_fe25519_safegcd.h), the route ge_xyz_tobytes takes on toolchains
+# with a 128-bit integer type: compared with an independent
+# square-and-multiply z^(p-2) over a structured-plus-random corpus, the
+# product with the input checked to be 1, and the batch in which g first
+# reaches zero recorded through the AMA_S62_TRACE hook.  Skips (77) where
+# the header compiles to nothing (no __int128).
+add_ama_test(test_ed25519_safegcd test_ed25519_safegcd.c)
+set_tests_properties(test_ed25519_safegcd PROPERTIES SKIP_RETURN_CODE 77)
+
+# The half-size scalar decomposition of verify (src/c/internal/
+# ama_ed25519_halfsize.h): v1 ≡ v0 h (mod 8l) with v0 odd, checked by
+# independent multiprecision long division, plus the wNAF recoding of the
+# short scalars and the average size of the pair.
+add_ama_test(test_ed25519_half_reduce test_ed25519_half_reduce.c)
+
+# The frozen oracle (tests/oracle/ed25519_frozen_oracle.txt): 2,022 inputs
+# and the answers the since-removed vendored backend gave for them,
+# replayed against the linked backend.
+# Reads the fixture from the source tree, like test_kat and test_lms.
+add_executable(test_ed25519_frozen_oracle test_ed25519_frozen_oracle.c)
+target_link_libraries(test_ed25519_frozen_oracle ama_cryptography_test)
+add_test(NAME test_ed25519_frozen_oracle COMMAND test_ed25519_frozen_oracle
+         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # X25519 lives under AMA_USE_NATIVE_PQC (see top-level CMakeLists.txt),
 # so its test is only built when that option is enabled — otherwise the
@@ -310,7 +292,7 @@ if(AMA_USE_NATIVE_PQC)
     # ama_ed25519_set_mulx_override(); skips (77) where the host lacks
     # BMI2+ADX or the unit is not compiled, and refuses to compare an
     # instantiation with itself.  This is the differential that replaced the
-    # donna-versus-fe51 CI job.
+    # CI job comparing the two former backends.
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64" AND NOT MSVC)
         add_executable(test_ed25519_fe51_mulx_equiv test_ed25519_fe51_mulx_equiv.c)
         target_link_libraries(test_ed25519_fe51_mulx_equiv ama_cryptography_test)

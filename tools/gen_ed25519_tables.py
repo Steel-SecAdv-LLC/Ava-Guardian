@@ -64,7 +64,7 @@ L = 2**252 + 27742317777372353535851937790883648493
 #: Signed window width of the fixed-base comb.  Digits are in
 #: ``[-2^(W-1), 2^(W-1) - 1]`` after carry recoding, so a table row holds the
 #: multiples ``1 .. 2^(W-1)`` (the top digit can reach ``2^(W-1)`` exactly).
-COMB_WINDOW = 4
+COMB_WINDOW = 5
 COMB_STRIDE_BITS = 2 * COMB_WINDOW
 COMB_ENTRIES = 1 << (COMB_WINDOW - 1)
 #: Digits of a 256-bit scalar at width W, and the tables that pair them up.
@@ -76,6 +76,10 @@ COMB_TABLES = -(-COMB_DIGITS // 2)
 #: ``|digit| / 2 < 2^(w-2)`` is ever looked up.
 ODD_WINDOW = 7
 ODD_COUNT = 1 << (ODD_WINDOW - 2)
+#: The verify path splits its base-point scalar in two halves of this many
+#: bits and walks the second half over the odd multiples of ``2^SHIFT · B``,
+#: so both halves share the doublings of one half-length ladder.
+ODD_SHIFT = 128
 
 MASK51 = (1 << 51) - 1
 MASK64 = (1 << 64) - 1
@@ -161,9 +165,9 @@ def comb_points() -> list[list[Point]]:
     return rows
 
 
-def odd_points() -> list[Point]:
-    """odd[i] = (2i + 1) · B."""
-    b = base_point()
+def odd_points(shift: int = 0) -> list[Point]:
+    """odd[i] = (2i + 1) · 2^shift · B."""
+    b = point_mul(1 << shift, base_point())
     return [point_mul(2 * i + 1, b) for i in range(ODD_COUNT)]
 
 
@@ -225,13 +229,15 @@ def _emit_comb(radix: str, limbs_of: Limbs, rows: list[list[Point]]) -> str:
     return "\n".join(out)
 
 
-def _emit_odd(radix: str, limbs_of: Limbs, pts: list[Point]) -> str:
+def _emit_odd(radix: str, limbs_of: Limbs, pts: list[Point], shift: int = 0) -> str:
+    name = "odd" if shift == 0 else f"odd{shift}"
+    base = "B" if shift == 0 else f"2^{shift} * B"
     out = [
         f"static const ama_ed25519_niels_{radix} "
-        f"ama_ed25519_base_odd_{radix}[AMA_ED25519_BASE_ODD_COUNT] = {{"
+        f"ama_ed25519_base_{name}_{radix}[AMA_ED25519_BASE_ODD_COUNT] = {{"
     ]
     for i, p in enumerate(pts):
-        out.append(f"  /* {2 * i + 1} * B */")
+        out.append(f"  /* {2 * i + 1} * {base} */")
         out.append(_fmt_niels(p, limbs_of) + ",")
     out.append("};")
     return "\n".join(out)
@@ -242,13 +248,15 @@ def render() -> str:
     b = base_point()
     comb = comb_points()
     odd = odd_points()
+    odd_shifted = odd_points(ODD_SHIFT)
     for row in comb:
         for p in row:
             _require(on_curve(p), "a comb entry is not on the curve")
-    for p in odd:
+    for p in odd + odd_shifted:
         _require(on_curve(p), "an odd multiple is not on the curve")
     # The first comb entry and the first odd multiple are both B itself.
     _require(comb[0][0] == b and odd[0] == b, "table entry 0 is not B")
+    _require(odd_shifted[0] == point_mul(1 << ODD_SHIFT, b), "shifted table entry 0")
     # [L]B is the identity; the tables must be built from a point of order L.
     _require(point_mul(L, b) == (0, 1), "B does not have order L")
 
@@ -277,7 +285,9 @@ def render() -> str:
  *
  * Comb: signed {COMB_WINDOW}-bit window, {COMB_TABLES} tables of {COMB_ENTRIES} entries;
  * table k holds (j + 1) * 2^({COMB_STRIDE_BITS} k) * B for j in [0, {COMB_ENTRIES}).
- * Odd multiples: (2i + 1) * B for i in [0, {ODD_COUNT}), width-{ODD_WINDOW} wNAF.
+ * Odd multiples: (2i + 1) * B and (2i + 1) * 2^{ODD_SHIFT} * B for i in [0, {ODD_COUNT}),
+ * width-{ODD_WINDOW} wNAF; the second table lets the verify path walk both
+ * halves of a base-point scalar in one half-length ladder.
  */
 #ifndef AMA_ED25519_TABLES_H
 #define AMA_ED25519_TABLES_H
@@ -291,9 +301,14 @@ def render() -> str:
 #define AMA_ED25519_COMB_TABLES      {COMB_TABLES}
 #define AMA_ED25519_BASE_ODD_WINDOW  {ODD_WINDOW}
 #define AMA_ED25519_BASE_ODD_COUNT   {ODD_COUNT}
+#define AMA_ED25519_BASE_ODD_SHIFT   {ODD_SHIFT}
 
-#if defined(AMA_ED25519_TABLES_FE51) == defined(AMA_ED25519_TABLES_FE64)
-#error "define exactly one of AMA_ED25519_TABLES_FE51 / AMA_ED25519_TABLES_FE64"
+/* Instantiated by defining exactly one of AMA_ED25519_TABLES_FE51 /
+ * AMA_ED25519_TABLES_FE64 before inclusion.  Defining both is a real
+ * misuse and is rejected; defining neither (a standalone analysis pass)
+ * leaves this header as constants only, a clean no-op. */
+#if defined(AMA_ED25519_TABLES_FE51) && defined(AMA_ED25519_TABLES_FE64)
+#error "define at most one of AMA_ED25519_TABLES_FE51 / AMA_ED25519_TABLES_FE64"
 #endif
 """
     fe51 = "\n".join(
@@ -312,6 +327,8 @@ def render() -> str:
             _emit_comb("fe51", fe51_limbs, comb),
             "",
             _emit_odd("fe51", fe51_limbs, odd),
+            "",
+            _emit_odd("fe51", fe51_limbs, odd_shifted, ODD_SHIFT),
             "",
             "#endif /* AMA_ED25519_TABLES_FE51 */",
         ]
@@ -332,6 +349,8 @@ def render() -> str:
             _emit_comb("fe64", fe64_limbs, comb),
             "",
             _emit_odd("fe64", fe64_limbs, odd),
+            "",
+            _emit_odd("fe64", fe64_limbs, odd_shifted, ODD_SHIFT),
             "",
             "#endif /* AMA_ED25519_TABLES_FE64 */",
         ]

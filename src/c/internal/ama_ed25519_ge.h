@@ -23,7 +23,8 @@
  * byte for byte (tests/c/test_ed25519_fe51_mulx_equiv.c), so the field
  * kernels are checked against each other under identical group-level code,
  * and the group-level code is checked against RFC 8032 and the frozen
- * ed25519-donna oracle (tests/kat/ed25519_frozen_oracle.json) once per field.
+ * oracle (tests/oracle/ed25519_frozen_oracle.txt, recorded from the removed
+ * vendored backend) once per field.
  *
  * MACRO CONTRACT — the includer defines, before including this file:
  *
@@ -54,8 +55,13 @@
  *                      bound holds.
  *   GE_NIELS           the precomputed-point struct for this radix, as
  *                      emitted by tools/gen_ed25519_tables.py.
- *   GE_TABLE_COMB / GE_TABLE_ODD / GE_CONST_D / GE_CONST_D2 / GE_CONST_SQRTM1
- *                      the generated tables and constants for this radix.
+ *   GE_TABLE_COMB / GE_TABLE_ODD / GE_TABLE_ODD128 / GE_CONST_D / GE_CONST_D2
+ *   / GE_CONST_SQRTM1  the generated tables and constants for this radix.
+ *   GE_NIELS_FOLD_AVX2 / GE_HAVE_AVX2()   (optional, together)
+ *                      the 256-bit row fold for this radix's entry width
+ *                      (src/c/avx2/ama_ed25519_select_avx2.c) and the
+ *                      run-time CPU predicate that permits calling it.  Left
+ *                      undefined, the comb uses the SSE2 / scalar fold.
  *
  * REPRESENTATIONS
  *
@@ -82,14 +88,18 @@
  * PUBLIC scalars only; their doc comments say so at each entry point.
  */
 
-#ifndef GE_SUFFIX
-#error "ama_ed25519_ge.h is a template: define GE_SUFFIX and the GE_* field macros first"
-#endif
+/* Template header.  A translation unit instantiates it by defining GE_SUFFIX
+ * and the GE_* field macros, then #including it.  When GE_SUFFIX is absent
+ * (a standalone static-analysis pass over this header, for instance) the body
+ * below is skipped and the header is a clean no-op; a real inclusion that
+ * forgets the macros fails at the first GE_SYM() use rather than here. */
+#ifdef GE_SUFFIX
 
 #include <stdint.h>
 #include <string.h>
 
 #include "ama_ed25519_canonical.h"
+#include "ama_fe25519_safegcd.h"
 
 #define GE_CAT2(a, b) a##_##b
 #define GE_CAT(a, b) GE_CAT2(a, b)
@@ -210,6 +220,45 @@ static void GE_SYM(fe_invert)(GE_FE out, const GE_FE z) {
     GE_FE_MUL(out, t1, t0);
 }
 
+/* Constant-time inversion for the compression path.
+ *
+ * With a 128-bit integer type this is Bernstein-Yang safegcd on the
+ * canonical encoding (ama_fe25519_safegcd.h: 590 branch-free divsteps, about
+ * half the latency of the Fermat chain, the same cost for every input),
+ * followed by a constant-time check that the product with z encodes 1.  The
+ * check fails for no input under the proven divstep bound, so the Fermat
+ * fallback below is a public, never-taken branch: it turns a hypothetical
+ * bound violation into a slower inversion rather than a wrong encoding.
+ * z = 0 inverts to 0 on both routes.  Without a 128-bit type (MSVC) the
+ * Fermat chain is the only route. */
+static void GE_SYM(fe_invert_ct)(GE_FE out, const GE_FE z) {
+#if defined(AMA_FE25519_SAFEGCD_AVAILABLE)
+    uint8_t zb[32], ib[32], pb[32];
+    GE_FE inv, prod;
+    uint32_t not_one, not_zero;
+    int i;
+
+    GE_FE_TOBYTES(zb, z);
+    ama_fe25519_invert_safegcd(ib, zb);
+    GE_FE_FROMBYTES(inv, ib);
+    GE_FE_MUL(prod, inv, z);
+    GE_FE_TOBYTES(pb, prod);
+    not_one = (uint32_t)(pb[0] ^ 1u);
+    not_zero = zb[0];
+    for (i = 1; i < 32; i++) {
+        not_one |= pb[i];
+        not_zero |= zb[i];
+    }
+    if ((not_one != 0) & (not_zero != 0)) {
+        GE_SYM(fe_invert)(out, z);
+        return;
+    }
+    GE_FE_COPY(out, inv);
+#else
+    GE_SYM(fe_invert)(out, z);
+#endif
+}
+
 /* z^((p-5)/8) = z^(2^252 - 3), the exponent point decompression needs. */
 static void GE_SYM(fe_pow22523)(GE_FE out, const GE_FE z) {
     GE_FE t0, t1, t2, t3;
@@ -246,6 +295,61 @@ static void GE_SYM(fe_pow22523)(GE_FE out, const GE_FE z) {
     GE_FE_SQ(t1, t1);
     GE_FE_SQ(t1, t1);
     GE_FE_MUL(out, t1, z);
+}
+
+/* The same chain on two independent inputs at once.  Each squaring of one
+ * chain is independent of the other's, so the two interleave in the
+ * pipeline and cost little more than one: measured, two decodes through
+ * this take about 1.1x the time of one (the single chain is latency-bound).
+ * Generated from fe_pow22523's body by tools-free macro substitution below —
+ * the two functions are the same source text line for line. */
+static void GE_SYM(fe_pow22523_x2)(GE_FE out1, const GE_FE z1, GE_FE out2, const GE_FE z2) {
+#define za z1
+#define zb z2
+#define outa out1
+#define outb out2
+#define X2_SQ(t, s) do { GE_FE_SQ(t##a, s##a); GE_FE_SQ(t##b, s##b); } while (0)
+#define X2_MUL(t, s, u) do { GE_FE_MUL(t##a, s##a, u##a); GE_FE_MUL(t##b, s##b, u##b); } while (0)
+    GE_FE t0a, t1a, t2a, t3a, t0b, t1b, t2b, t3b;
+    int i;
+
+    X2_SQ(t0, z);
+    X2_SQ(t1, t0);
+    X2_SQ(t1, t1);
+    X2_MUL(t1, z, t1);
+    X2_MUL(t0, t0, t1);
+    X2_SQ(t2, t0);
+    X2_MUL(t1, t1, t2);
+    X2_SQ(t2, t1);
+    for (i = 0; i < 4; i++) X2_SQ(t2, t2);
+    X2_MUL(t1, t2, t1);
+    X2_SQ(t2, t1);
+    for (i = 0; i < 9; i++) X2_SQ(t2, t2);
+    X2_MUL(t2, t2, t1);
+    X2_SQ(t3, t2);
+    for (i = 0; i < 19; i++) X2_SQ(t3, t3);
+    X2_MUL(t2, t3, t2);
+    X2_SQ(t2, t2);
+    for (i = 0; i < 9; i++) X2_SQ(t2, t2);
+    X2_MUL(t1, t2, t1);
+    X2_SQ(t2, t1);
+    for (i = 0; i < 49; i++) X2_SQ(t2, t2);
+    X2_MUL(t2, t2, t1);
+    X2_SQ(t3, t2);
+    for (i = 0; i < 99; i++) X2_SQ(t3, t3);
+    X2_MUL(t2, t3, t2);
+    X2_SQ(t2, t2);
+    for (i = 0; i < 49; i++) X2_SQ(t2, t2);
+    X2_MUL(t1, t2, t1);
+    X2_SQ(t1, t1);
+    X2_SQ(t1, t1);
+    X2_MUL(out, t1, z);
+#undef X2_MUL
+#undef X2_SQ
+#undef outb
+#undef outa
+#undef zb
+#undef za
 }
 
 /* ------------------------------------------------------------------------
@@ -399,7 +503,7 @@ GE_OP_INLINE void GE_SYM(ge_pnielssub)(ge_p1p1 *r, const ge_p3 *p, const ge_pnie
  * 255.  T is never read, so a p3 whose T is stale is a valid input. */
 static void GE_SYM(ge_xyz_tobytes)(uint8_t *s, const GE_FE X, const GE_FE Y, const GE_FE Z) {
     GE_FE recip, x, y;
-    GE_SYM(fe_invert)(recip, Z);
+    GE_SYM(fe_invert_ct)(recip, Z);
     GE_FE_MUL(x, X, recip);
     GE_FE_MUL(y, Y, recip);
     GE_FE_TOBYTES(s, y);
@@ -412,15 +516,18 @@ GE_INLINE void GE_SYM(ge_p3_tobytes)(uint8_t *s, const ge_p3 *h) {
 
 /* Decode a compressed point (RFC 8032 §5.1.3), rejecting the encodings the
  * canonical-form rules refuse: y >= p (INVARIANT-38) and x = 0 with the sign
- * bit set.  Every decode in the library funnels through here.  Returns 0 on
- * success, -1 when the encoding is not a point or is non-canonical.
+ * bit set.  Every decode in the library funnels through ge_decode_prepare /
+ * ge_decode_finish: ge_frombytes for one point, ge_frombytes_x2 for the two
+ * points of a verification with their exponentiations interleaved.
+ * Returns 0 on success, -1 when the encoding is not a point or is
+ * non-canonical.
  *
  * Variable-time: the encoding is public in every caller (a verification
  * key, a signature's R, a FROST commitment). */
-static int GE_SYM(ge_frombytes)(ge_p3 *h, const uint8_t *s) {
-    GE_FE u, v, v3, vxx, check;
-    int x_sign = s[31] >> 7;
 
+/* First half: checks, y, Z, and h->X = u v^7 — the base of the
+ * exponentiation — with u, v, v^3 saved for the second half. */
+static int GE_SYM(ge_decode_prepare)(ge_p3 *h, const uint8_t *s, GE_FE u, GE_FE v, GE_FE v3) {
     if (!ama_ed25519_point_y_is_canonical(s) ||
         !ama_ed25519_point_x_sign_is_admissible(s)) {
         return -1;
@@ -435,13 +542,22 @@ static int GE_SYM(ge_frombytes)(ge_p3 *h, const uint8_t *s) {
     GE_FE_SUB(u, u, h->Z);
     GE_FE_ADD(v, v, h->Z);
 
-    /* x = u v^3 (u v^7)^((p-5)/8) */
+    /* x = u v^3 (u v^7)^((p-5)/8): the parenthesised base first. */
     GE_FE_SQ(v3, v);
     GE_FE_MUL(v3, v3, v);
     GE_FE_SQ(h->X, v3);
     GE_FE_MUL(h->X, h->X, v);
     GE_FE_MUL(h->X, h->X, u);
-    GE_SYM(fe_pow22523)(h->X, h->X);
+    return 0;
+}
+
+/* Second half, with h->X = (u v^7)^((p-5)/8): the root, its check, the
+ * sign, and T. */
+static int GE_SYM(ge_decode_finish)(ge_p3 *h, const uint8_t *s, const GE_FE u, const GE_FE v,
+                                    const GE_FE v3) {
+    GE_FE vxx, check;
+    int x_sign = s[31] >> 7;
+
     GE_FE_MUL(h->X, h->X, v3);
     GE_FE_MUL(h->X, h->X, u);
 
@@ -470,6 +586,30 @@ static int GE_SYM(ge_frombytes)(ge_p3 *h, const uint8_t *s) {
     return 0;
 }
 
+static int GE_SYM(ge_frombytes)(ge_p3 *h, const uint8_t *s) {
+    GE_FE u, v, v3;
+    if (GE_SYM(ge_decode_prepare)(h, s, u, v, v3) != 0) {
+        return -1;
+    }
+    GE_SYM(fe_pow22523)(h->X, h->X);
+    return GE_SYM(ge_decode_finish)(h, s, u, v, v3);
+}
+
+/* Two points, one pass through the exponentiation.  -1 if either encoding
+ * is refused (both are checked before any exponentiation is spent). */
+static int GE_SYM(ge_frombytes_x2)(ge_p3 *h1, const uint8_t *s1, ge_p3 *h2, const uint8_t *s2) {
+    GE_FE u1, v1, w1, u2, v2, w2;
+    if (GE_SYM(ge_decode_prepare)(h1, s1, u1, v1, w1) != 0 ||
+        GE_SYM(ge_decode_prepare)(h2, s2, u2, v2, w2) != 0) {
+        return -1;
+    }
+    GE_SYM(fe_pow22523_x2)(h1->X, h1->X, h2->X, h2->X);
+    if (GE_SYM(ge_decode_finish)(h1, s1, u1, v1, w1) != 0) {
+        return -1;
+    }
+    return GE_SYM(ge_decode_finish)(h2, s2, u2, v2, w2);
+}
+
 /* ------------------------------------------------------------------------
  * Constant-time fixed-base scalar multiplication
  * ---------------------------------------------------------------------- */
@@ -487,11 +627,18 @@ static int GE_SYM(ge_frombytes)(ge_p3 *h, const uint8_t *s) {
  * and requires them identical.
  *
  * On x86-64 the fold runs on 128-bit SSE2 registers — baseline for the
- * architecture, on MSVC as on GCC, so no dispatch is involved.  The
- * masked merge `(acc & ~m) | (entry & m)` is the vector form of the scalar
- * cmov below and is constant-time for the same reason: it is arithmetic on a
- * mask, with no data-dependent control flow.  The scalar form is the
- * portable fallback and is what AArch64 compiles. */
+ * architecture, on MSVC as on GCC — or, when the includer supplies
+ * GE_NIELS_FOLD_AVX2 and the CPU has AVX2 with the OS AVX state enabled, on
+ * 256-bit registers in src/c/avx2/ama_ed25519_select_avx2.c; that choice is
+ * a public CPU property, made once per scalar multiplication.  Either way
+ * every entry is masked (`entry & m`) and OR-ed into the result, two
+ * operations per lane instead of the andnot/and/or triple of a running
+ * cmov; the masks come from one packed compare per pair of entries; the
+ * result is built directly in the output and the identity for digit 0 is
+ * two OR-ed limbs afterwards.  The mask arithmetic is the vector form of
+ * the scalar cmov below and is constant-time for the same reason:
+ * arithmetic on a mask, with no data-dependent control flow.  The scalar
+ * form is the portable fallback and is what AArch64 compiles. */
 
 /* The entry is three field elements with no padding: 15 words (fe51) or 12
  * (fe64), which the vector path walks as pairs plus an odd tail word. */
@@ -503,64 +650,86 @@ typedef char GE_SYM(ge_niels_layout_check)[(sizeof(ge_niels) == 8u * GE_NIELS_WO
 #define GE_SELECT_SSE2 1
 #endif
 
-static void GE_SYM(ge_niels_select)(ge_niels *r, const ge_niels *row, int8_t digit) {
+#if !defined(GE_HAVE_AVX2)
+#define GE_HAVE_AVX2() 0
+#endif
+
+static void GE_SYM(ge_niels_select)(ge_niels *r, const ge_niels *row, int8_t digit, int avx2) {
     const uint32_t sign = (uint32_t)((uint8_t)digit >> 7);              /* 1 iff digit < 0 */
     const uint32_t mag = (uint32_t)(((int32_t)digit ^ -(int32_t)sign) + (int32_t)sign); /* |digit| */
-    uint64_t acc[GE_NIELS_WORDS];
+    const uint64_t is_zero = (uint64_t)((mag - 1u) >> 31);              /* 1 iff mag == 0 */
     GE_FE neg_t2d;
     uint64_t mask;
     int k;
 
-    /* Identity in Niels form: y+x = 1, y-x = 1, 2dxy = 0. */
-    memset(acc, 0, sizeof acc);
-    acc[0] = 1;
-    acc[GE_FE_LIMBS] = 1;
-
+#if defined(GE_NIELS_FOLD_AVX2)
+    if (avx2) {
+        GE_NIELS_FOLD_AVX2(&r->ypx[0], (const uint64_t *)row, mag,
+                           AMA_ED25519_COMB_ENTRIES);
+    } else
+#else
+    (void)avx2;
+#endif
 #if defined(GE_SELECT_SSE2)
     {
         enum { PAIRS = GE_NIELS_WORDS / 2, TAIL = GE_NIELS_WORDS & 1 };
+        uint64_t *out = &r->ypx[0];        /* the struct is 3 contiguous elements */
+        const __m128i vmag = _mm_set1_epi32((int)mag);
+        const __m128i two = _mm_set1_epi32(2);
+        __m128i idx = _mm_set_epi32(2, 2, 1, 1);   /* lanes: entry k+1 | entry k+2 */
         __m128i v[PAIRS];
         uint64_t tail = 0;
         int j;
         for (j = 0; j < PAIRS; j++) {
-            v[j] = _mm_loadu_si128((const __m128i *)(const void *)&acc[2 * j]);
+            v[j] = _mm_setzero_si128();
         }
-        for (k = 1; k <= AMA_ED25519_COMB_ENTRIES; k++) {
-            const uint8_t *entry = (const uint8_t *)(const void *)&row[k - 1];
-            uint32_t diff = mag ^ (uint32_t)k;
-            uint32_t eq = 1u ^ ((diff | (0u - diff)) >> 31);
-            __m128i m;
-            mask = 0 - (uint64_t)eq;
-            m = _mm_set1_epi64x((long long)mask);
+        /* Two entries per compare: the 32-bit lanes of idx hold the 1-based
+         * index of entry k+1 (low pair) and k+2 (high pair), so one PCMPEQD
+         * yields both masks and a shuffle broadcasts each to its full width. */
+        for (k = 0; k < AMA_ED25519_COMB_ENTRIES; k += 2) {
+            const __m128i eq = _mm_cmpeq_epi32(vmag, idx);
+            const __m128i m0 = _mm_shuffle_epi32(eq, 0x44);
+            const __m128i m1 = _mm_shuffle_epi32(eq, 0xEE);
+            const uint8_t *e0 = (const uint8_t *)&row[k];
+            const uint8_t *e1 = (const uint8_t *)&row[k + 1];
+            idx = _mm_add_epi32(idx, two);
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC unroll 8
+#endif
             for (j = 0; j < PAIRS; j++) {
-                __m128i e = _mm_loadu_si128((const __m128i *)(const void *)(entry + 16 * j));
-                v[j] = _mm_or_si128(_mm_andnot_si128(m, v[j]), _mm_and_si128(m, e));
+                v[j] = _mm_or_si128(v[j], _mm_and_si128(m0, _mm_loadu_si128((const __m128i *)(e0 + 16 * j))));
+                v[j] = _mm_or_si128(v[j], _mm_and_si128(m1, _mm_loadu_si128((const __m128i *)(e1 + 16 * j))));
             }
             if (TAIL) {
-                uint64_t w;
-                memcpy(&w, entry + 8 * (GE_NIELS_WORDS - 1), 8);
-                tail ^= mask & (tail ^ w);
+                uint64_t w0, w1;
+                memcpy(&w0, e0 + 8 * (GE_NIELS_WORDS - 1), 8);
+                memcpy(&w1, e1 + 8 * (GE_NIELS_WORDS - 1), 8);
+                tail |= (w0 & (uint64_t)_mm_cvtsi128_si64(m0)) | (w1 & (uint64_t)_mm_cvtsi128_si64(m1));
             }
         }
         for (j = 0; j < PAIRS; j++) {
-            _mm_storeu_si128((__m128i *)(void *)&acc[2 * j], v[j]);
+            _mm_storeu_si128((__m128i *)&out[2 * j], v[j]);
         }
         if (TAIL) {
-            acc[GE_NIELS_WORDS - 1] = tail;
+            out[GE_NIELS_WORDS - 1] = tail;
         }
     }
 #else
+    memset(r, 0, sizeof *r);
     for (k = 1; k <= AMA_ED25519_COMB_ENTRIES; k++) {
         uint32_t diff = mag ^ (uint32_t)k;
         uint32_t eq = 1u ^ ((diff | (0u - diff)) >> 31);
         mask = 0 - (uint64_t)eq;
-        GE_SYM(fe_cmov)(&acc[0], row[k - 1].ypx, mask);
-        GE_SYM(fe_cmov)(&acc[GE_FE_LIMBS], row[k - 1].ymx, mask);
-        GE_SYM(fe_cmov)(&acc[2 * GE_FE_LIMBS], row[k - 1].t2d, mask);
+        GE_SYM(fe_cmov)(r->ypx, row[k - 1].ypx, mask);
+        GE_SYM(fe_cmov)(r->ymx, row[k - 1].ymx, mask);
+        GE_SYM(fe_cmov)(r->t2d, row[k - 1].t2d, mask);
     }
 #endif
 
-    memcpy(r, acc, sizeof *r);
+    /* Digit 0 selected nothing: make the result the identity in Niels form
+     * (y+x = 1, y-x = 1, 2dxy = 0) by setting the two low limbs. */
+    r->ypx[0] |= is_zero;
+    r->ymx[0] |= is_zero;
 
     mask = 0 - (uint64_t)sign;
     GE_SYM(fe_cswap)(r->ypx, r->ymx, mask);
@@ -588,12 +757,13 @@ static void GE_SYM(ge_scalarmult_base)(uint8_t out[32], const int8_t *e) {
     ge_p3 h;
     ge_p1p1 t;
     ge_niels sel;
+    const int avx2 = GE_HAVE_AVX2();   /* public: a CPU property */
     int i, k;
 
     GE_SYM(ge_p3_0)(&h);
 
     for (i = 1; i < AMA_ED25519_COMB_DIGITS; i += 2) {
-        GE_SYM(ge_niels_select)(&sel, GE_TABLE_COMB[i / 2], e[i]);
+        GE_SYM(ge_niels_select)(&sel, GE_TABLE_COMB[i / 2], e[i], avx2);
         GE_SYM(ge_nielsadd)(&t, &h, &sel);
         GE_SYM(ge_p1p1_to_p3)(&h, &t);
     }
@@ -609,7 +779,7 @@ static void GE_SYM(ge_scalarmult_base)(uint8_t out[32], const int8_t *e) {
     GE_SYM(ge_p1p1_to_p3)(&h, &t);
 
     for (i = 0; i < AMA_ED25519_COMB_DIGITS; i += 2) {
-        GE_SYM(ge_niels_select)(&sel, GE_TABLE_COMB[i / 2], e[i]);
+        GE_SYM(ge_niels_select)(&sel, GE_TABLE_COMB[i / 2], e[i], avx2);
         GE_SYM(ge_nielsadd)(&t, &h, &sel);
         if (i + 2 < AMA_ED25519_COMB_DIGITS) {
             GE_SYM(ge_p1p1_to_p3)(&h, &t);
@@ -631,13 +801,14 @@ static void GE_SYM(ge_scalarmult_base)(uint8_t out[32], const int8_t *e) {
 /* ------------------------------------------------------------------------
  * Variable-time wNAF scalar multiplication — PUBLIC scalars only
  *
- * The caller supplies each scalar as 256 signed wNAF digits (odd, or zero),
- * produced by src/c/ama_ed25519.c from the scalar reduced mod l.  Digit
- * extraction, leading-zero skipping and table indexing are all
- * scalar-dependent; these routines are for Ed25519 verify (s from the
- * signature, h from a public hash), for FROST's public binding factors and
- * for the batch path — never for a secret.  FIPS 186-5 §6.4.3 permits
- * variable-time verification for exactly this reason.
+ * The caller supplies each scalar as signed wNAF digits (odd, or zero),
+ * produced by src/c/ama_ed25519.c — 256 of them from a scalar reduced mod
+ * l for the general routines, and the four short strings of the half-size
+ * decomposition for verify.  Digit extraction, leading-zero skipping and
+ * table indexing are all scalar-dependent; these routines are for Ed25519
+ * verify (s from the signature, h from a public hash), for FROST's public
+ * binding factors and for the batch path — never for a secret.  FIPS 186-5
+ * §6.4.3 permits variable-time verification for exactly this reason.
  * ---------------------------------------------------------------------- */
 
 #define GE_WNAF_A_WINDOW 5
@@ -723,27 +894,44 @@ GE_INLINE void GE_SYM(ge_p2_identity)(ge_p2 *out) {
     GE_FE_1(out->Z);
 }
 
-/* out = [w1]P1 + [w2]B, both scalars public.  w1 is a width-5 wNAF, w2 a
- * width-AMA_ED25519_BASE_ODD_WINDOW wNAF over the static odd multiples of B.
- * This is Ed25519 verify's [s]B + [h](-A) with P1 = -A. */
+/* Verification's group check, in the half-size form of
+ * src/c/internal/ama_ed25519_halfsize.h:
+ *
+ *     Q = [v0]P0 + [v1]P1 + [k0]B + [k1](2^128 B),
+ *
+ * four public scalars of about 128 bits (wNAF digit strings, width 5 for
+ * the two variable points, width AMA_ED25519_BASE_ODD_WINDOW for the two
+ * static tables) sharing one chain of `top + 1` doublings.  Returns 1 when Q
+ * is the identity, 0 otherwise.  The identity is read off the projective
+ * result directly — X = 0 and Y = Z — so the check spends no inversion.  P0
+ * and P1 arrive with whatever signs the caller's equation needs. */
 GE_HOT
-static void GE_SYM(ge_double_scalarmult_base_vartime)(ge_p2 *out, const int8_t *w1,
-                                                      const ge_p3 *p1, const int8_t *w2) {
+static int GE_SYM(ge_half_sum_is_identity)(const ge_p3 *p0, const int8_t *w0, const ge_p3 *p1,
+                                           const int8_t *w1, const int8_t *wk0,
+                                           const int8_t *wk1, int top) {
+    ge_pniels tab0[GE_WNAF_A_COUNT];
     ge_pniels tab1[GE_WNAF_A_COUNT];
     ge_p3 q;
     ge_p1p1 t;
+    GE_FE d;
     int i;
-    const int top = GE_SYM(ge_wnaf_top)(w1, w2);
 
     if (top < 0) {
-        GE_SYM(ge_p2_identity)(out);
-        return;
+        return 1;   /* every scalar is zero: the empty sum */
     }
+    GE_SYM(ge_pniels_table)(tab0, p0);
     GE_SYM(ge_pniels_table)(tab1, p1);
-    GE_LADDER_BEGIN(q, t, top)
+    GE_SYM(ge_p3_0)(&q);
+    for (i = top; i >= 0; i--) {
+        GE_SYM(ge_dbl)(&t, q.X, q.Y, q.Z);
+        GE_SYM(ge_wnaf_add_pniels)(&t, &q, w0[i], tab0);
         GE_SYM(ge_wnaf_add_pniels)(&t, &q, w1[i], tab1);
-        GE_SYM(ge_wnaf_add_niels)(&t, &q, w2[i], GE_TABLE_ODD);
-    GE_LADDER_END(q, t, out)
+        GE_SYM(ge_wnaf_add_niels)(&t, &q, wk0[i], GE_TABLE_ODD);
+        GE_SYM(ge_wnaf_add_niels)(&t, &q, wk1[i], GE_TABLE_ODD128);
+        GE_SYM(ge_p1p1_to_xyz)(q.X, q.Y, q.Z, &t);
+    }
+    GE_FE_SUB(d, q.Y, q.Z);
+    return GE_SYM(fe_iszero)(q.X) & GE_SYM(fe_iszero)(d);
 }
 
 /* out = [w1]P1 + [w2]P2 for two arbitrary points, both scalars public.
@@ -803,19 +991,31 @@ GE_LINKAGE void GE_SYM(ama_ed25519_ge_scalarmult_base)(uint8_t out[32], const in
     GE_SYM(ge_scalarmult_base)(out, comb_digits);
 }
 
-/** Verify core: writes [w_s]B + [w_h](-A) to out.  -1 if A does not decode. */
-GE_LINKAGE int GE_SYM(ama_ed25519_ge_verify_point)(uint8_t out[32], const int8_t *wnaf_s,
-                                                    const int8_t *wnaf_h, const uint8_t A[32]) {
-    ge_p3 a;
-    ge_p2 r;
-    if (GE_SYM(ge_frombytes)(&a, A) != 0) {
+/** Ed25519 verification's group check.  Decodes R and A (refusing a
+ * non-canonical or off-curve encoding with -1) and returns 1 when
+ *
+ *     [k0]B + [k1](2^128 B) - [v0]R - [v1]A = O,
+ *
+ * 0 otherwise.  The scalars arrive as wNAF digit strings of the magnitudes
+ * (v1's sign separately), `top` being the highest non-zero position over all
+ * four; src/c/ama_ed25519.c derives them from (s, h) as described in
+ * internal/ama_ed25519_halfsize.h.  -[v0]R is [v0](-R); -[v1]A is
+ * [|v1|](-A) for v1 >= 0 and [|v1|]A for v1 < 0. */
+GE_LINKAGE int GE_SYM(ama_ed25519_ge_verify_half)(const uint8_t R[32], const uint8_t A[32],
+                                                   const int8_t *w_v0, const int8_t *w_v1,
+                                                   int v1_negative, const int8_t *w_k0,
+                                                   const int8_t *w_k1, int top) {
+    ge_p3 r, a;
+    if (GE_SYM(ge_frombytes_x2)(&r, R, &a, A) != 0) {
         return -1;
     }
-    GE_FE_NEG(a.X, a.X);
-    GE_FE_NEG(a.T, a.T);
-    GE_SYM(ge_double_scalarmult_base_vartime)(&r, wnaf_h, &a, wnaf_s);
-    GE_SYM(ge_xyz_tobytes)(out, r.X, r.Y, r.Z);
-    return 0;
+    GE_FE_NEG(r.X, r.X);
+    GE_FE_NEG(r.T, r.T);
+    if (!v1_negative) {
+        GE_FE_NEG(a.X, a.X);
+        GE_FE_NEG(a.T, a.T);
+    }
+    return GE_SYM(ge_half_sum_is_identity)(&r, w_v0, &a, w_v1, w_k0, w_k1, top);
 }
 
 /** out = P + Q. */
@@ -860,7 +1060,8 @@ GE_LINKAGE int GE_SYM(ama_ed25519_ge_double_scalarmult_vartime)(uint8_t out[32],
 /** Test-only: the compressed encoding of a static table entry, recovered
  * from its Niels form (x = (ypx - ymx)/2, y = (ypx + ymx)/2), so the
  * committed constants can be checked against the library's own variable-base
- * arithmetic.  which: 0 = comb[i][j], 1 = odd[i].  -1 on a bad index. */
+ * arithmetic.  which: 0 = comb[i][j], 1 = odd[i] = (2i+1) B,
+ * 2 = odd128[i] = (2i+1) 2^128 B.  -1 on a bad index. */
 GE_LINKAGE int GE_SYM(ama_ed25519_ge_table_entry)(int which, int i, int j, uint8_t out[32]) {
     const ge_niels *n;
     GE_FE x, y, two, half;
@@ -871,6 +1072,9 @@ GE_LINKAGE int GE_SYM(ama_ed25519_ge_table_entry)(int which, int i, int j, uint8
     } else if (which == 1) {
         if (i < 0 || i >= AMA_ED25519_BASE_ODD_COUNT || j != 0) return -1;
         n = &GE_TABLE_ODD[i];
+    } else if (which == 2) {
+        if (i < 0 || i >= AMA_ED25519_BASE_ODD_COUNT || j != 0) return -1;
+        n = &GE_TABLE_ODD128[i];
     } else {
         return -1;
     }
@@ -896,3 +1100,5 @@ GE_LINKAGE int GE_SYM(ama_ed25519_ge_table_entry)(int which, int i, int j, uint8
 #undef GE_NIELS_WORDS
 #undef GE_SELECT_SSE2
 #undef GE_WNAF_A_COUNT
+
+#endif /* GE_SUFFIX */

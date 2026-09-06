@@ -21,17 +21,18 @@
  * measured and it is false, in two places, so the labels now name their
  * backend and their site:
  *
- *   - The S = s + 2L pair is a pin on fe51 only.  Neutering
- *     ama_ed25519_signature_s_is_canonical in the donna shim fails the three
- *     S = s + L checks and leaves the two S = s + 2L checks green, because
- *     donna's legacy `RS[63] & 224` test catches bit 253.  Their labels have
- *     always said "fe51 path"; only the header's blanket sentence was wrong.
+ *   - The S = s + 2L pair is a pin on the in-tree backend only.  Neutering
+ *     ama_ed25519_signature_s_is_canonical in the since-removed vendored
+ *     backend failed the three S = s + L checks and left the two S = s + 2L
+ *     checks green, because its legacy `RS[63] & 224` test caught bit 253.
+ *     Their labels have always said "fe51 path"; only the header's blanket
+ *     sentence was wrong.
  *
  *   - The canonical-y checks on the VERIFY path were vacuous outright.
  *     Handing verify the encoding y = p together with a signature made under
  *     a different key rejects for the wrong-key reason with or without
- *     §5.1.3, so short-circuiting the y guard at ed25519_donna_shim.c:198 and
- *     :385 — and nowhere else — left this file at "All 41 checks passed" and
+ *     §5.1.3, so short-circuiting the y guard at the vendored backend's two
+ *     verify sites — and nowhere else — left this file at "All 41 checks passed" and
  *     the whole ctest suite green.  Two encodings and a forged signature fix
  *     that, below: y = p + 1 and the identity's sign-bit-set encoding both
  *     decode (once the rule is gone) to the IDENTITY, and a signature
@@ -143,10 +144,10 @@ int main(void) {
     CHECK(batch_mixed_ok(forged, sig, msg, sizeof(msg), pk),
           "PIN   S = s + L rejected in a mixed batch, honest entries accepted");
 
-    /* S = s + 2L. Also satisfies the group equation. donna's old
-     * `RS[63] & 224` test happened to catch this one (bit 253 is set),
-     * so it pins the fe51 path specifically, where there was no check
-     * of any kind. */
+    /* S = s + 2L. Also satisfies the group equation. The removed vendored
+     * backend's old `RS[63] & 224` test happened to catch this one (bit 253
+     * is set), so it pins the fe51 path specifically, where there was no
+     * check of any kind. */
     (void)add256(twoL, ED25519_L, ED25519_L);
     memcpy(forged, sig, 64);
     CHECK(add256(forged + 32, sig + 32, twoL) == 0,
@@ -235,7 +236,7 @@ int main(void) {
     /* ---------------------------------------------------------------------
      * Canonical y on a compressed point.
      *
-     * fe25519_frombytes (and donna's unpack) reduce mod p, so each of the 19
+     * Both decoders then in the tree reduced mod p, so each of the 19
      * values y in [p, 2^255) decodes to the same point as y - p and gives a
      * public key a second byte representation. That is encoding malleability
      * rather than forgery, but it breaks the assumption that a key's bytes
@@ -370,15 +371,16 @@ int main(void) {
          * between this signature and AMA_SUCCESS is the public-key rule at
          * the verify site.
          *
-         * Measured: with the y/x-sign guard short-circuited at
-         * ed25519_donna_shim.c:198 and :385, all four of these report
+         * Measured: with the y/x-sign guard short-circuited at the vendored
+         * backend's two verify sites, all four of these reported
          * single_rc = 0 and batch res = 1111.  With the guard present, all
          * four reject.  On the in-tree backend the same rule lives inside
-         * ge25519_frombytes (src/c/ama_ed25519.c:266); neutering it there
-         * makes the y = p + 1 pair accept, while the sign-bit pair still
-         * rejects because that decoder recomputes x and compares its sign —
-         * so the sign-bit pair is a pin on donna and a smoke on fe51, and is
-         * labelled for the site rather than the backend. */
+         * the decoder (ge_decode_prepare in src/c/internal/ama_ed25519_ge.h);
+         * neutering it there makes the y = p + 1 pair accept, while the
+         * sign-bit pair still rejects because that decoder recomputes x and
+         * compares its sign — so the sign-bit pair was a pin on the vendored
+         * backend and is a smoke on fe51, and is labelled for the site rather
+         * than the backend. */
         {
             uint8_t forge_s[32];
             uint8_t forge_sig[64];
@@ -433,8 +435,8 @@ int main(void) {
      * verifier's error paths must fail towards "invalid", and a caller reusing
      * one buffer across batches is the ordinary way to use this API.
      *
-     * These are SMOKE, not PIN: both backends now verify batches with the same
-     * per-entry loop over ama_ed25519_verify (B1, 5.0.0 pre-tag audit), which
+     * These are SMOKE, not PIN: batches are verified by a per-entry loop over
+     * ama_ed25519_verify (B1, 5.0.0 pre-tag audit), which
      * assigns every slot unconditionally, so the pre-zeroing is belt-and-braces
      * with no observable effect here — deleting it leaves all four checks green.
      * The one contract the pre-zeroing still owns on its own is the
@@ -475,18 +477,18 @@ int main(void) {
               "PIN   an argument rejection leaves results untouched");
     }
 
-    /* Per-entry pointer validation, and the two backends agreeing on it.
+    /* Per-entry pointer validation.
      *
      * ama_ed25519_verify rejects a NULL signature, a NULL public key, and a
      * NULL message with message_len > 0.  Both batch backends are now a loop
      * over that function (B1, 5.0.0 pre-tag audit), so both inherit the guard
      * and turn a malformed entry into results[i] = 0 plus
-     * AMA_ERROR_VERIFY_FAILED.  Historically donna's batch path handed the raw
-     * pointers to ed25519_sign_open_batch, which dereferenced all three: a
-     * 6-entry batch with one field of entry 3 nulled had fe51 return
-     * AMA_ERROR_VERIFY_FAILED (results 111011) while donna took SIGSEGV (exit
-     * 139).  This block pins that batch verify stays NULL-safe on whichever
-     * backend CMake selected. */
+     * AMA_ERROR_VERIFY_FAILED.  Historically the vendored backend's batch
+     * path handed the raw pointers to its own batch routine, which
+     * dereferenced all three: a 6-entry batch with one field of entry 3
+     * nulled had fe51 return AMA_ERROR_VERIFY_FAILED (results 111011) while
+     * that backend took SIGSEGV (exit 139).  This block pins that batch
+     * verify stays NULL-safe. */
     {
         ama_ed25519_batch_entry e[4];
         int r[4];

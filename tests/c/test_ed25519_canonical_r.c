@@ -9,9 +9,9 @@
  * set fails.  Both single-signature verifiers already rejected every such R,
  * but only as a side effect: they re-encode [S]B - [h]A and compare bytes,
  * and the encoders emit canonical encodings only, so a non-canonical R could
- * never match.  donna's BATCH routine has no such comparison — it decodes R
- * with ge25519_unpack_negative_vartime and checks the aggregate group
- * equation — so nothing rejected a non-canonical R there.
+ * never match.  The BATCH routine of the vendored backend the tree then
+ * carried had no such comparison — it decoded R and checked the aggregate
+ * group equation — so nothing rejected a non-canonical R there.
  *
  * The discriminating case is R = the identity's sign-bit-set encoding
  * (`01 00..00 | 0x80`).  unpack decodes it to the identity and drops the set
@@ -21,16 +21,15 @@
  * forgery, which is the point: the SIGNER can mint a signature that batch
  * verifiers accept and single verifiers reject.
  *
- * The count used to matter.  ed25519-donna-batchverify.h ran its
- * multi-scalar routine only `while (num > 3)` and verified per entry
- * otherwise, so counts 1..3 rejected before the fix and counts >= 4
- * accepted — which is why every batch assertion below states its count.
- * B1 (commit 0cd6bb3, 5.0.0 pre-tag audit) then removed the aggregate path
- * entirely: donna's ama_ed25519_batch_verify is now an unconditional
- * per-entry loop over ama_ed25519_verify (src/c/ed25519_donna_shim.c),
- * exactly like fe51's.  There is no count boundary left, and single
- * verify's re-encode comparison rejects a non-canonical R on both backends
- * whether or not the predicate exists.
+ * The count used to matter.  That batch routine ran its multi-scalar path
+ * only `while (num > 3)` and verified per entry otherwise, so counts 1..3
+ * rejected before the fix and counts >= 4 accepted — which is why every
+ * batch assertion below states its count.  B1 (commit 0cd6bb3, 5.0.0
+ * pre-tag audit) then removed the aggregate path entirely: batch verify is
+ * an unconditional per-entry loop over ama_ed25519_verify.  There is no
+ * count boundary left, and single verify rejects a non-canonical R whether
+ * or not the predicate exists (the vendored backend itself left the tree in
+ * the twenty-first maintenance pass).
  *
  * Each assertion is therefore marked SMOKE (behavioral: the batch path
  * rejects these signatures, on every backend, but a neutered
@@ -40,10 +39,10 @@
  * guard, which the mutation does not touch).
  *
  * Measured, post-B1, with the predicate neutered to `return 1` on the
- * donna-assembly build: 45 passed / 4 failed — the four RANGE checks
+ * then-default vendored build: 45 passed / 4 failed — the four RANGE checks
  * alone, with every batch line printing [ OK ].  That is the same result
- * the fe51 build has always given, and it is WHY the batch lines are
- * SMOKE: the file's earlier claim that they discriminate on donna at
+ * the in-tree build has always given, and it is WHY the batch lines are
+ * SMOKE: the file's earlier claim that they discriminate on that backend at
  * count >= 4 (measured pre-B1 as 30 passed / 19 failed) described the
  * aggregate path B1 deleted.  The predicate stays load-bearing at the
  * verify entry (an explicit §5.1.3 decision, cheaper and earlier than the
@@ -71,14 +70,14 @@ static int passed = 0;
 
 /* The batch R-rule assertions are SMOKE on every backend, post-B1.
  *
- * Both backends' ama_ed25519_batch_verify is now a per-entry loop over
+ * ama_ed25519_batch_verify is a per-entry loop over
  * ama_ed25519_verify, which decides by re-encoding [S]B - [h]A and comparing
  * bytes; that encoder emits only canonical encodings, so a non-canonical R
  * can never match with or without the predicate.  Measured on THIS tree with
  * ama_ed25519_signature_r_is_canonical neutered to `return 1`: the
- * donna-assembly build reports 45 passed / 4 failed, and all four failures
- * are the [1] RANGE unit tests of the predicate itself — every batch line
- * prints [ OK ].  The pre-B1 donna aggregate path, where these lines
+ * then-default vendored build reported 45 passed / 4 failed, and all four
+ * failures were the [1] RANGE unit tests of the predicate itself — every
+ * batch line prints [ OK ].  The pre-B1 aggregate path, where these lines
  * genuinely discriminated at count >= 4 (30 passed / 19 failed under the
  * same mutation), was deleted by commit 0cd6bb3; a PIN label kept from that
  * architecture would be a claim the test can no longer cash.  The count
@@ -120,18 +119,12 @@ int main(void) {
      * (Release) printf is a macro, and a preprocessor directive inside a
      * macro's arguments is undefined behaviour (clang -Wembedded-directive,
      * fatal under the frozen warning allowlist). */
-#if defined(AMA_ED25519_ASSEMBLY)
-    static const char *const backend_name = "ed25519-donna";
-#else
-    static const char *const backend_name = "fe51 (in-tree)";
-#endif
-
     printf("RFC 8032 canonical-R enforcement (INVARIANT-38 on the signature's R half)\n");
-    printf("Backend: %s\n\n", backend_name);
+    printf("Backend: %s\n\n", ama_ed25519_active_backend());
 
     /* ama_ed25519_keypair does NOT generate the seed: its contract is
-     * "caller provides the 32-byte seed in secret_key[0..31] ... We must NOT
-     * overwrite secret_key[0..31] here" (src/c/ed25519_donna_shim.c).  Passing
+     * "caller provides the 32-byte seed in secret_key[0..31]" (see
+     * ama_ed25519_keypair in src/c/ama_ed25519.c).  Passing
      * an uninitialised `sk` therefore hands it whatever is on the stack — a
      * read of uninitialised memory, and a test whose key changes run to run.
      *
@@ -140,7 +133,7 @@ int main(void) {
      * is what caught it:
      *
      *   use-of-uninitialized-value in sha512_LOAD64_BE
-     *     ed25519_extsk -> ed25519_publickey -> ama_ed25519_keypair
+     *     (the vendored backend's key expansion) -> ama_ed25519_keypair
      *     Uninitialized value was created by an allocation of 'sk' in main
      *
      * A fixed seed, matching test_ed25519_canonical_s.c, also makes the whole
@@ -298,10 +291,10 @@ int main(void) {
         CHECK(all_ok && rc == AMA_SUCCESS, label);
     }
 
-    printf("\n[6] the argument contract both backends publish\n");
+    printf("\n[6] the argument contract the header publishes\n");
     {
         /* include/ama_cryptography.h states the oversized-`count` rejection
-         * unconditionally, for both backends, and says it writes NOTHING —
+         * unconditionally and says it writes NOTHING —
          * walking results[0..count) for a count that cannot describe a real
          * array is the wild write the check exists to prevent.  fe51's batch
          * allocates nothing, which is why it had no such guard; the contract

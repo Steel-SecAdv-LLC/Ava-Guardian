@@ -50,13 +50,14 @@ static void shifted_scalar(uint8_t out[32], unsigned value, unsigned shift_bits)
 }
 
 static int check_backend(int backend, const char *name) {
-    int tables, entries, stride, odd_count;
+    int tables, entries, stride, odd_count, odd_shift;
     int i, j;
     int failures = 0;
     int compared = 0;
     uint8_t got[32], want[32], scalar[32];
 
-    if (ama_ed25519_test_table_geometry(backend, &tables, &entries, &stride, &odd_count) != 0) {
+    if (ama_ed25519_test_table_geometry(backend, &tables, &entries, &stride, &odd_count,
+                                        &odd_shift) != 0) {
         printf("  %s: not compiled into this build — skipped\n", name);
         return 0;
     }
@@ -102,20 +103,40 @@ static int check_backend(int backend, const char *name) {
             failures++;
         }
     }
+    for (i = 0; i < odd_count; i++) {
+        if (ama_ed25519_test_table_entry(backend, 2, i, 0, got) != 0) {
+            fprintf(stderr, "  FAIL %s odd128[%d]: export refused\n", name, i);
+            failures++;
+            continue;
+        }
+        shifted_scalar(scalar, (unsigned)(2 * i + 1), (unsigned)odd_shift);
+        if (ama_ed25519_scalarmult_public(want, scalar, base_compressed) != AMA_SUCCESS) {
+            fprintf(stderr, "  FAIL %s odd128[%d]: reference scalarmult refused\n", name, i);
+            failures++;
+            continue;
+        }
+        compared++;
+        if (memcmp(got, want, 32) != 0) {
+            fprintf(stderr, "  FAIL %s odd128[%d] != %d * 2^%d * B\n", name, i, 2 * i + 1,
+                    odd_shift);
+            failures++;
+        }
+    }
 
     /* Out-of-range indices must be refused, not read past the table. */
     if (ama_ed25519_test_table_entry(backend, 0, tables, 0, got) == 0 ||
         ama_ed25519_test_table_entry(backend, 0, 0, entries, got) == 0 ||
         ama_ed25519_test_table_entry(backend, 1, odd_count, 0, got) == 0 ||
-        ama_ed25519_test_table_entry(backend, 2, 0, 0, got) == 0) {
+        ama_ed25519_test_table_entry(backend, 2, odd_count, 0, got) == 0 ||
+        ama_ed25519_test_table_entry(backend, 3, 0, 0, got) == 0) {
         fprintf(stderr, "  FAIL %s: an out-of-range index was accepted\n", name);
         failures++;
     }
 
     printf("  %s: %d entries compared, %d failure(s)\n", name, compared, failures);
-    if (compared != tables * entries + odd_count) {
+    if (compared != tables * entries + 2 * odd_count) {
         fprintf(stderr, "  FAIL %s: compared %d of %d entries\n",
-                name, compared, tables * entries + odd_count);
+                name, compared, tables * entries + 2 * odd_count);
         failures++;
     }
     return failures;
@@ -124,13 +145,15 @@ static int check_backend(int backend, const char *name) {
 int main(void) {
     int failures = 0;
     int present = 0;
-    int tables, entries, stride, odd_count;
+    int tables, entries, stride, odd_count, odd_shift;
 
     printf("Ed25519 static table check (entries vs the variable-base ladder from B)\n");
     failures += check_backend(0, "fe51");
-    present += ama_ed25519_test_table_geometry(0, &tables, &entries, &stride, &odd_count) == 0;
+    present += ama_ed25519_test_table_geometry(0, &tables, &entries, &stride, &odd_count,
+                                               &odd_shift) == 0;
     failures += check_backend(1, "fe64-mulx");
-    present += ama_ed25519_test_table_geometry(1, &tables, &entries, &stride, &odd_count) == 0;
+    present += ama_ed25519_test_table_geometry(1, &tables, &entries, &stride, &odd_count,
+                                               &odd_shift) == 0;
 
     if (present == 0) {
         fprintf(stderr, "FAIL: no backend exposed its tables — nothing was checked\n");

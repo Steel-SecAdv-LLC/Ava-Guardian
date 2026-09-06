@@ -39,6 +39,9 @@ def test_header_declares_the_geometry_the_generator_used() -> None:
     assert macro("AMA_ED25519_COMB_TABLES") == gen.COMB_TABLES
     assert macro("AMA_ED25519_BASE_ODD_WINDOW") == gen.ODD_WINDOW
     assert macro("AMA_ED25519_BASE_ODD_COUNT") == 1 << (gen.ODD_WINDOW - 2)
+    assert macro("AMA_ED25519_BASE_ODD_SHIFT") == gen.ODD_SHIFT
+    # The shifted table covers the upper half of a reduced scalar.
+    assert gen.ODD_SHIFT == 128
     # The digit count covers a 256-bit scalar and the tables cover the digits.
     assert gen.COMB_DIGITS * gen.COMB_WINDOW >= 256
     assert 2 * gen.COMB_TABLES >= gen.COMB_DIGITS

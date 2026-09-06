@@ -152,9 +152,9 @@ static void *worker(void *arg) {
         /* Ed25519: there is NO lazily-built state on this path any more.  The
          * base-point tables are `static const` (src/c/internal/
          * ama_ed25519_tables.h) and neither src/c/ama_ed25519.c nor the group
-         * template writes a file-scope variable, which
-         * tests/test_ed25519_no_lazy_state.py pins at the source and object
-         * level.  What N threads entering cold can still prove here is the
+         * template writes a file-scope variable, so there is nothing to build
+         * once or to race on.  What N threads entering cold can still prove
+         * here is the
          * behavioural half of that claim: the very first call on every thread
          * returns the RFC 8032 §7.1 test-1 public key and signature, with no
          * warm-up call anywhere in the process and no ordering between

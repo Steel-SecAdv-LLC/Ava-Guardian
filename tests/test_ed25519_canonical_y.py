@@ -24,7 +24,7 @@ same call for exactly the same reason.
 This is the second time this defect class has been found in the coverage for
 this one invariant: ``tests/c/test_ed25519_canonical_s.c`` had it (``y = p``
 is not the signer's key, so verify rejects it either way) and
-``tools/check_ed25519_backend_parity.py`` had it (its corpus contained no
+the former backend-differential tool had it (its corpus contained no
 non-canonical ``y`` at all). The lesson is the same each time and it is worth
 stating plainly: **a rejection is only evidence when something that differs
 from it in exactly one respect is accepted.** A test whose expected result is
@@ -52,7 +52,8 @@ as refusals *alongside* the ``y = 0`` control that proves refusal is not the
 uniform answer.
 
 ``tests/c/test_ed25519_canonical_s.c`` isolates the predicate itself, and the
-backend-differential job proves donna and fe51 agree on every case.
+frozen oracle (``tests/test_ed25519_frozen_oracle.py``) holds the in-house
+backend to the answers the removed vendored one gave on every case.
 """
 
 from __future__ import annotations
@@ -100,8 +101,8 @@ def decode() -> dict[str, Callable[[bytes], bool]]:
 
     ``ama_ed25519_point_add`` and ``ama_ed25519_scalarmult_public`` are C-ABI
     only — ``pqc_backends`` exposes no Python wrapper — and they are the same
-    pair ``tools/check_ed25519_backend_parity.py`` uses for its decode stage,
-    for the same reason: they succeed or fail on the decode alone.
+    pair the frozen-oracle fixture uses for its decode records, for the same
+    reason: they succeed or fail on the decode alone.
     """
     if _native_lib is None:  # pragma: no cover - INVARIANT-7 makes this unreachable
         pytest.skip("native library unavailable")
@@ -235,9 +236,9 @@ class TestNullArgumentsAreRefused:
     That mattered more once this module started driving those entry points
     through ctypes: a Python ``None`` arrives as NULL and takes the interpreter
     down with it, so an unguarded parameter turns a test-suite typo into a
-    crash with no traceback. Both backends are fixed identically, which the
-    backend-differential job requires — they must agree on the verdict for
-    every input, and NULL is an input.
+    crash with no traceback. Both field instantiations are fixed identically:
+    the frozen oracle and the fe51/MULX differential require them to agree on
+    the verdict for every input, and NULL is an input.
 
     ``point_from_scalar`` needed an ABI change to be fixable at all: it
     returned ``void`` through 3.x, so an early return on NULL would have left
@@ -322,9 +323,10 @@ class TestXIsZeroWithSignBitSet:
 
     ``x = 0`` has a single square root, so the sign bit distinguishes nothing
     and the encoding carrying it is a SECOND spelling of a point whose
-    canonical encoding does not.  Neither backend implemented the rule: the
-    fe51 decoder negates conditionally and ``-0 == 0``, so the bit was silently
-    ignored; donna compares parity and skips the negate for the same reason.
+    canonical encoding does not.  Neither backend then in the tree implemented
+    the rule: the fe51 decoder negates conditionally and ``-0 == 0``, so the bit
+    was silently ignored; the vendored one compared parity and skipped the
+    negate for the same reason.
 
     ``x = 0`` exactly when ``y² = 1`` — the numerator of
     ``x² = (y²-1)/(dy²+1)`` vanishes — i.e. ``y = 1`` (the identity) or

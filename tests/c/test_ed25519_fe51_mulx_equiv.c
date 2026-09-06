@@ -5,16 +5,18 @@
  * @brief The two in-house Ed25519 instantiations are byte-identical.
  *
  * src/c/ama_ed25519.c dispatches every group operation to one of two
- * compilations of the same template: the radix-2^51 field (fe51) or the
- * radix-2^64 field on the MULX+ADX kernel (fe64-mulx), chosen by CPUID.  This
- * test forces each in turn through ama_ed25519_set_mulx_override() and
+ * compilations of the same template: the radix-2^51 field (fe51, the
+ * default) or the radix-2^64 field on the MULX+ADX kernel (fe64-mulx,
+ * selectable on hosts with BMI2 and ADX).  This test forces each in turn
+ * through ama_ed25519_set_mulx_override() and
  * compares, through the public API and byte for byte, every operation the
  * library exposes: keypair, sign, verify (accept and reject), batch verify,
  * point_from_scalar, point_add, scalarmult_public and
  * double_scalarmult_public, over a deterministic corpus that includes
  * unreduced scalars, the small-order points and the non-canonical encodings.
  *
- * This is the differential that replaced the donna-versus-fe51 CI job: the
+ * This is the differential that replaced the CI job comparing the two former
+ * backends: the
  * two field kernels are checked against each other under identical group
  * code, so a defect in either field layer shows up as a disagreement, and a
  * defect in the shared group code shows up against the frozen oracle and the

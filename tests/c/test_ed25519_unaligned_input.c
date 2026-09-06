@@ -10,18 +10,13 @@
  * and `const uint8_t *` imposes none, so `verify(sig, msg, len, packet + 3)`
  * is a legal call and must work.
  *
- * It did not.  On x86-64 the default backend is ed25519-donna
- * (`AMA_ED25519_ASSEMBLY` defaults ON there), and donna's `curve25519_expand`
- * read the public key with `*(uint64_t *)(in + 0)` — a load that requires
- * 8-byte alignment from a pointer that has none.  That is undefined behaviour
- * under C11 6.3.2.3p7, and UBSan reports it:
- *
- *   curve25519-donna-64bit.h:293:8: runtime error: load of misaligned address
- *   ... for type 'uint64_t', which requires 8 byte alignment
- *       #0 curve25519_expand
- *       #1 ge25519_unpack_negative_vartime
- *       #2 ed25519_sign_open
- *       #3 ama_ed25519_verify
+ * It did not.  The vendored backend that was then the x86-64 default (removed
+ * in the twenty-first maintenance pass) read the public key with
+ * `*(uint64_t *)(in + 0)` in its decoder — a load that requires 8-byte
+ * alignment from a pointer that has none.  That is undefined behaviour under
+ * C11 6.3.2.3p7, and UBSan reported it as a "load of misaligned address ...
+ * for type 'uint64_t', which requires 8 byte alignment" inside
+ * ama_ed25519_verify.  The in-house decoder assembles limbs byte by byte.
  *
  * The `AddressSanitizer + UBSan` job runs `halt_on_error=1`, so for a caller
  * with an unaligned buffer this was not a warning — a signature check became
@@ -65,8 +60,8 @@ int main(void) {
     printf("Ed25519 unaligned-caller-buffer test (%d offsets)\n", OFFSETS);
 
     /* ama_ed25519_keypair does NOT generate the seed: its contract is
-     * "caller provides the 32-byte seed in secret_key[0..31] ... We must NOT
-     * overwrite secret_key[0..31] here" (src/c/ed25519_donna_shim.c).  The
+     * "caller provides the 32-byte seed in secret_key[0..31]" (see
+     * ama_ed25519_keypair in src/c/ama_ed25519.c).  The
      * first revision of this file passed `sk` uninitialised and every
      * ordinary configuration passed — garbage is still a usable seed — which
      * is the exact defect test_ed25519_canonical_r.c documents MemorySanitizer

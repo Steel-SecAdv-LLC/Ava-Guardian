@@ -55,6 +55,7 @@
 #include "internal/ama_sha2.h"
 #include "internal/ama_ed25519_canonical.h"
 #include "internal/ama_ed25519_backend.h"
+#include "internal/ama_ed25519_halfsize.h"
 #include "internal/ama_testing_exports.h"
 #include <stdlib.h>
 #include <string.h>
@@ -101,29 +102,45 @@
 #define GE_NIELS ama_ed25519_niels_fe51
 #define GE_TABLE_COMB ama_ed25519_base_comb_fe51
 #define GE_TABLE_ODD ama_ed25519_base_odd_fe51
+#define GE_TABLE_ODD128 ama_ed25519_base_odd128_fe51
 #define GE_CONST_D ama_ed25519_const_d_fe51
 #define GE_CONST_D2 ama_ed25519_const_d2_fe51
 #define GE_CONST_SQRTM1 ama_ed25519_const_sqrtm1_fe51
+#if defined(AMA_HAVE_AVX2_IMPL) && (defined(__x86_64__) || defined(_M_X64))
+#define GE_NIELS_FOLD_AVX2 ama_ed25519_select15_avx2
+#define GE_HAVE_AVX2() ama_has_avx2()
+#endif
 #include "internal/ama_ed25519_ge.h"
 
 /* ============================================================================
  * BACKEND DISPATCH
  *
  * On x86-64 GCC/Clang builds the MULX+ADX instantiation is linked in and
- * chosen at run time; everywhere else the fe51 instantiation above is the
- * only one and the dispatch macro collapses to a direct call.  The override
- * mirrors ama_x25519_set_mulx_override(): a benchmark/test knob, single-
- * threaded by contract, never a production policy.
+ * selectable at run time; everywhere else the fe51 instantiation above is
+ * the only one and the dispatch macro collapses to a direct call.
+ *
+ * The default is fe51 on every host, by measurement, not by ISA: with both
+ * instantiations alternating in one process on the reference x86-64 host
+ * (so both see the same machine state), the MULX path ties fe51 on keygen
+ * and sign (ratio 1.00-1.01) and loses on verify and double-scalar-mult
+ * (1.10 and 1.13-1.15).  The fused MULX kernel does win the field-multiply
+ * microbenchmark (18.4 against 23.1 cycles per multiply in throughput), but
+ * the group formulas spend about 1.5 additions or subtractions per
+ * multiplication, and on radix 2^64 every one of those carries fully while
+ * radix 2^51 leaves them carry-free.  The MULX instantiation stays compiled,
+ * byte-identical (tests/c/test_ed25519_fe51_mulx_equiv.c) and reachable
+ * through the override, so the choice can be re-measured on any host with
+ * one call; the override mirrors ama_x25519_set_mulx_override(): a
+ * benchmark/test knob, single-threaded by contract, never a production
+ * policy.
  * ============================================================================ */
 
 #if defined(AMA_HAVE_ED25519_FE64_MULX_IMPL)
 static int ama_ed25519_mulx_override = -1;
 
 static int ed25519_use_mulx(void) {
-    int has_mulx = ama_cpuid_has_x25519_mulx();
     int mode = ama_ed25519_mulx_override;
-    int want = (mode == -1) ? has_mulx : (mode != 0);
-    return want && has_mulx;
+    return mode == 1 && ama_cpuid_has_x25519_mulx();
 }
 
 AMA_API void ama_ed25519_set_mulx_override(int mode) {
@@ -686,12 +703,11 @@ static void sc25519_to_wnaf(int8_t wnaf[256], const uint8_t scalar[32], int w) {
              | ((uint32_t)reduced[4 * i + 2] << 16)
              | ((uint32_t)reduced[4 * i + 3] << 24);
     }
-    memset(wnaf, 0, 256);
     for (pos = 0; pos < 256; pos++) {
+        int32_t digit = 0;
         if (s[0] & 1u) {
-            int32_t digit = (int32_t)(s[0] & mask);
+            digit = (int32_t)(s[0] & mask);
             if (digit >= half) digit -= full;
-            wnaf[pos] = (int8_t)digit;
             if (digit < 0) {
                 uint64_t carry = (uint64_t)(uint32_t)(-digit);
                 for (i = 0; i < 8; i++) {
@@ -710,6 +726,7 @@ static void sc25519_to_wnaf(int8_t wnaf[256], const uint8_t scalar[32], int w) {
                 }
             }
         }
+        wnaf[pos] = (int8_t)digit;
         for (i = 0; i < 7; i++) {
             s[i] = (s[i] >> 1) | (s[i + 1] << 31);
         }
@@ -876,10 +893,6 @@ ama_error_t ama_ed25519_verify(
     const uint8_t public_key[32]
 ) {
     uint8_t h[64];
-    uint8_t R_bytes[32];
-    int8_t wnaf_s[256];
-    int8_t wnaf_h[256];
-    int i;
     /* Stack buffer for messages <= ED25519_STACK_THRESHOLD (4KB). */
     uint8_t stack_buf[64 + ED25519_STACK_THRESHOLD];
     uint8_t *buf;
@@ -939,26 +952,44 @@ ama_error_t ama_ed25519_verify(
         free(buf);
     }
 
-    /* Check: [s]B - [h]A == R, computed as [s]B + [h](-A) in one joint
-     * Shamir/Straus pass — the base half over the static odd multiples of B
-     * at width AMA_ED25519_BASE_ODD_WINDOW, the key half over an 8-entry
-     * table of A built per call at width 5.  Both scalars are public (s from
-     * the signature, h from a hash of public data), so the variable-time
-     * ladder is safe; the public key is decoded and negated inside the
-     * backend, which rejects a non-canonical or off-curve A. */
-    sc25519_to_wnaf(wnaf_s, signature + 32, AMA_ED25519_BASE_ODD_WINDOW);
-    sc25519_to_wnaf(wnaf_h, h, 5);
-    if (ED_DISPATCH(ama_ed25519_ge_verify_point, R_bytes, wnaf_s, wnaf_h, public_key) != 0) {
-        return AMA_ERROR_VERIFY_FAILED;
-    }
-
-    /* Encode and compare */
+    /* Check [s]B - R - [h]A = O.  The group check runs in the half-size
+     * form of internal/ama_ed25519_halfsize.h: (v0, v1) with v1 ≡ v0 h
+     * (mod 8l) and v0 odd, v2 = v0 s mod l split into 128-bit halves k0, k1,
+     * and one ladder of about 128 doublings over
+     *
+     *     [k0]B + [k1](2^128 B) - [v0]R - [v1]A,
+     *
+     * which is v0 ([s]B - R - [h]A) exactly and vanishes iff the direct check
+     * does (the header proves it, including the small-order and mixed-order
+     * cases).  Every scalar is public (s from the signature, h from a hash
+     * of public data), so the variable-time reduction, recoding and ladder
+     * are safe; R and A are decoded inside the backend, which refuses a
+     * non-canonical or off-curve encoding.  R's canonical form was checked
+     * above, and decoding it rather than re-encoding the recomputed point is
+     * an equivalent test because canonical encodings are unique. */
     {
-        int diff = 0;
-        for (i = 0; i < 32; i++) {
-            diff |= R_bytes[i] ^ signature[i];
-        }
-        return (diff == 0) ? AMA_SUCCESS : AMA_ERROR_VERIFY_FAILED;
+        static const uint8_t zero[32] = {0};
+        uint8_t v0[32], v1[32], v2[32], k0[32], k1[32];
+        int8_t w_v0[AMA_ED25519_WNAF_SLOTS], w_v1[AMA_ED25519_WNAF_SLOTS];
+        int8_t w_k0[AMA_ED25519_WNAF_SLOTS], w_k1[AMA_ED25519_WNAF_SLOTS];
+        int v1_negative, top, t, rc;
+
+        ama_ed25519_half_reduce(v0, v1, &v1_negative, h);
+        sc25519_muladd(v2, zero, v0, signature + 32);       /* v2 = v0 s mod l */
+        memcpy(k0, v2, 16);
+        memset(k0 + 16, 0, 16);
+        memcpy(k1, v2 + 16, 16);
+        memset(k1 + 16, 0, 16);
+        top = ama_ed25519_wnaf_bytes(w_v0, AMA_ED25519_WNAF_SLOTS, v0, 5);
+        t = ama_ed25519_wnaf_bytes(w_v1, AMA_ED25519_WNAF_SLOTS, v1, 5);
+        if (t > top) top = t;
+        t = ama_ed25519_wnaf_bytes(w_k0, AMA_ED25519_WNAF_SLOTS, k0, AMA_ED25519_BASE_ODD_WINDOW);
+        if (t > top) top = t;
+        t = ama_ed25519_wnaf_bytes(w_k1, AMA_ED25519_WNAF_SLOTS, k1, AMA_ED25519_BASE_ODD_WINDOW);
+        if (t > top) top = t;
+        rc = ED_DISPATCH(ama_ed25519_ge_verify_half, signature, public_key, w_v0, w_v1,
+                         v1_negative, w_k0, w_k1, top);
+        return (rc == 1) ? AMA_SUCCESS : AMA_ERROR_VERIFY_FAILED;
     }
 }
 
@@ -1183,10 +1214,13 @@ AMA_API void ama_ed25519_sha512(const uint8_t *data, size_t len,
  * tests/c/test_ed25519_static_tables.c can walk every entry without including
  * the generated header.  -1 for a backend this build does not carry. */
 int ama_ed25519_test_table_geometry(int backend, int *tables, int *entries,
-                                    int *stride_bits, int *odd_count) {
+                                    int *stride_bits, int *odd_count, int *odd_shift) {
     if (backend != 0) {
 #if defined(AMA_HAVE_ED25519_FE64_MULX_IMPL)
-        if (backend != 1) return -1;
+        /* The MULX unit issues BMI2/ADX unconditionally; report it absent when
+         * the host cannot run it, so the test skips backend 1 instead of
+         * taking SIGILL on a BMI2-without-ADX core. */
+        if (backend != 1 || !ama_cpuid_has_x25519_mulx()) return -1;
 #else
         return -1;
 #endif
@@ -1195,6 +1229,7 @@ int ama_ed25519_test_table_geometry(int backend, int *tables, int *entries,
     *entries = AMA_ED25519_COMB_ENTRIES;
     *stride_bits = AMA_ED25519_COMB_STRIDE_BITS;
     *odd_count = AMA_ED25519_BASE_ODD_COUNT;
+    *odd_shift = AMA_ED25519_BASE_ODD_SHIFT;
     return 0;
 }
 
@@ -1207,7 +1242,7 @@ int ama_ed25519_test_table_entry(int backend, int which, int i, int j, uint8_t o
         return ama_ed25519_ge_table_entry_fe51(which, i, j, out);
     }
 #if defined(AMA_HAVE_ED25519_FE64_MULX_IMPL)
-    if (backend == 1) {
+    if (backend == 1 && ama_cpuid_has_x25519_mulx()) {
         return ama_ed25519_ge_table_entry_mulx(which, i, j, out);
     }
 #endif

@@ -5,7 +5,7 @@
  * @brief Replay tests/oracle/ed25519_frozen_oracle.txt against the linked
  *        Ed25519 backend.
  *
- * The fixture records the answers the vendored ed25519-donna backend gave, at
+ * The fixture records the answers the since-removed vendored backend gave, at
  * the last commit that carried it, for a deterministic corpus that covers
  * keygen, signing, single and batch verification (honest, malleable, boundary,
  * bit-flipped, non-canonical-R and small-order-R signatures), the two
@@ -135,7 +135,11 @@ int main(void) {
             }
         }
 #define HEX(i) (len[i] = unhex(tok[i], b[i], MAX_BYTES))
-#define NEED(cond) do { if (!(cond)) { fail(line_no, "malformed record"); continue; } } while (0)
+/* On a malformed record: report it and move to the next line.  A `continue`
+ * here would bind to the do-while(0) of the macro itself (C11 6.8.6.2), not
+ * to the fgets loop, and fall through into the per-kind body with undecoded
+ * buffers; the goto leaves the record. */
+#define NEED(cond) do { if (!(cond)) { fail(line_no, "malformed record"); goto next_record; } } while (0)
 
         if (strcmp(tok[0], "K") == 0) {
             uint8_t sk[64], pk[32], sig[64];
@@ -225,6 +229,7 @@ int main(void) {
         }
 #undef HEX
 #undef NEED
+    next_record:;
     }
     fclose(f);
 

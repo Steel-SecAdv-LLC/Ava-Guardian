@@ -11,14 +11,15 @@ library gave for them.
 
 Why it exists
 -------------
-Until 5.0.0 the tree carried two Ed25519 backends and a CI job that compared
-them on every push (``tools/check_ed25519_backend_parity.py``).  The vendored
-ed25519-donna backend has been removed; the in-house backend is the only one.
-A differential needs a second party, and the RFC 8032 §7.1 vectors alone are a
-handful of cases.  So before donna left, its answers over the whole
-differential corpus were recorded here — inputs and outputs, byte for byte —
-and every build replays the recording against the shipped backend.  The
-independent oracle survives the code it was recorded from.
+Until the twenty-first maintenance pass the tree carried two Ed25519
+backends — the in-house one and a vendored x86-64 one — and a CI job that
+compared them on every push.  The vendored backend has been removed; the
+in-house backend is the only one.  A differential needs a second party, and
+the RFC 8032 §7.1 vectors alone are a handful of cases.  So before the vendored
+backend left, its answers over the whole differential corpus were recorded
+here — inputs and outputs, byte for byte — and every build replays the
+recording against the shipped backend.  The independent oracle survives the
+code it was recorded from.
 
 The corpus is generated from fixed seeds, never from the CSPRNG, so the
 fixture can be regenerated from any library and diffed: ``--write`` against

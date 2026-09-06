@@ -4,25 +4,25 @@
  * @file test_ed25519_scalarmult_contract.c
  * @brief Public scalar-multiplication contract for both Ed25519 backends
  *
- * Two defects, one per backend, made ama_ed25519_scalarmult_public and
- * ama_ed25519_double_scalarmult_public return a mathematically wrong group
- * element with AMA_SUCCESS.  Nothing in the tree could see either one:
- * tests/c/test_ed25519_verify_equiv.c is built only under
- * `if(NOT AMA_ED25519_ASSEMBLY)`, so its byte-identity layer never ran on the
- * default x86-64 donna build, and it reduced every scalar mod l before
- * comparing, so it could not see the fe51 defect either.
- * tools/check_ed25519_backend_parity.py compared return codes, not output
- * bytes, and never drove double_scalarmult_public.
+ * Two defects, one per backend the tree then carried, made
+ * ama_ed25519_scalarmult_public and ama_ed25519_double_scalarmult_public
+ * return a mathematically wrong group element with AMA_SUCCESS.  Nothing in
+ * the tree could see either one: tests/c/test_ed25519_verify_equiv.c was
+ * built only for the in-tree backend, so its byte-identity layer never ran
+ * on the then-default x86-64 build, and it reduced every scalar mod l before
+ * comparing, so it could not see the fe51 defect either.  The backend
+ * differential compared return codes, not output bytes, and never drove
+ * double_scalarmult_public.
  *
- * donna (default on x86-64).  vendor/ed25519-donna/ed25519-donna-impl-base.h
- * ends ge25519_double_scalarmult_vartime with ge25519_p1p1_to_partial, which
- * writes x, y and z but never t.  Upstream that is fine — donna only ever
- * packs the result, and ge25519_pack reads x, y, z alone.  The shim instead
- * fed two such partial results into ge25519_add_p1p1, whose third product is
- * curve25519_mul(c, p->t, q->t); with two stale t's the sum was an arbitrary
- * point.  [7]B + [3]B returned 906ebcd3...  instead of [10]B.
+ * The vendored backend (then the x86-64 default, removed in the twenty-first
+ * maintenance pass).  Its joint scalar multiplication ended with a partial
+ * conversion that writes x, y and z but never t.  Upstream that was fine —
+ * it only ever packed the result, which reads x, y, z alone.  The shim
+ * instead fed two such partial results into the general addition, whose
+ * third product multiplies the two t's; with two stale t's the sum was an
+ * arbitrary point.  [7]B + [3]B returned 906ebcd3...  instead of [10]B.
  *
- * fe51 (every non-x86-64 target, and AMA_ED25519_ASSEMBLY=OFF).
+ * fe51 (the in-tree backend).
  * sc25519_to_wnaf emitted 256 signed digits from eight 32-bit limbs.  A
  * width-w wNAF of a 256-bit integer needs up to 257 digits, and the
  * compensation step for a negative digit ADDS to the running value, so a
@@ -31,15 +31,15 @@
  * ~17% of uniform 32-byte scalars.  [ff..ff]B returned -B.
  *
  * Both entry points are now specified to compute [s mod l]P, which is what
- * the donna backend always did (expand256_modm reduces) and what
- * ge25519_scalarmult_base_comb_signed has always done in-tree for the same
- * reason.  Every assertion below is labelled with the backend it
- * discriminates on:
+ * the vendored backend always did (its scalar expansion reduced) and what the
+ * in-tree fixed-base comb has always done for the same reason.  Every
+ * assertion below is labelled with the backend it discriminated on:
  *
- *   PIN(donna) — fails on a donna build with the extended-t restore removed.
- *   PIN(fe51)  — fails on an fe51 build with the sc25519_reduce removed from
- *                sc25519_to_wnaf.
- *   PIN(both)  — fails on either mutation.
+ *   PIN(vendored) — failed on the vendored build with the extended-t restore
+ *                   removed (that backend is gone; the label is history).
+ *   PIN(fe51)     — fails on an fe51 build with the sc25519_reduce removed
+ *                   from sc25519_to_wnaf.
+ *   PIN(both)     — fails on either mutation.
  *   SMOKE      — guards against over-rejection / regression, discriminates
  *                neither mutation.
  *
@@ -98,11 +98,7 @@ int main(void) {
      * (Release) printf is a macro, and a preprocessor directive inside a
      * macro's arguments is undefined behaviour (clang -Wembedded-directive,
      * fatal under the frozen warning allowlist). */
-#ifdef AMA_ED25519_ASSEMBLY
-    static const char *const backend_name = "donna (AMA_ED25519_ASSEMBLY=ON)";
-#else
-    static const char *const backend_name = "fe51 (in-tree)";
-#endif
+    const char *const backend_name = ama_ed25519_active_backend();
 
     printf("Ed25519 public scalar-multiplication contract\n");
     printf("  backend: %s\n", backend_name);
@@ -117,7 +113,7 @@ int main(void) {
      * ---------------------------------------------------------------- */
     printf("\n[1] Known-answer reproducers\n");
     {
-        /* [7]B + [3]B == [10]B.  The donna defect returned
+        /* [7]B + [3]B == [10]B.  The vendored backend's defect returned
          * 906ebcd365a9be786da1df783977da91a3296145c7d8432740a4c270a8fd50d6. */
         uint8_t s7[32], s3[32], s10[32], want[32], got[32];
         small_scalar(s7, 7); small_scalar(s3, 3); small_scalar(s10, 10);
@@ -126,7 +122,7 @@ int main(void) {
         CHECK(ama_ed25519_double_scalarmult_public(got, s7, B, s3, B) == AMA_SUCCESS,
               "SMOKE: double_scalarmult_public(7,B,3,B) succeeds");
         CHECK(memcmp(got, want, 32) == 0,
-              "PIN(donna): [7]B + [3]B == [10]B");
+              "PIN(vendored): [7]B + [3]B == [10]B");
     }
     {
         /* [ff..ff]B == [(2^256-1) mod l]B.  The fe51 defect returned -B,
@@ -205,9 +201,9 @@ int main(void) {
 
     /* ---------------------------------------------------------------- *
      * 4. The joint routine equals the split composition, on arbitrary   *
-     *    points and arbitrary scalars.  This is the identity the donna  *
-     *    shim's construction is supposed to implement; with a stale     *
-     *    extended-t it fails on the very first pair.                    *
+     *    points and arbitrary scalars.  This is the identity the        *
+     *    removed vendored backend's construction was supposed to        *
+     *    implement; with a stale extended-t it failed on the first pair. *
      * ---------------------------------------------------------------- */
     printf("\n[4] Joint mult vs split composition over 128 pairs\n");
     {
