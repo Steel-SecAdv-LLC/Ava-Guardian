@@ -10,10 +10,11 @@ repos:
     hooks:
       # These two hooks REWRITE the files they run on, so their scope is a
       # correctness question, not a style one.  Unscoped, `pre-commit run
-      # --all-files` on this tree modified 150 files, among them 94 binary
-      # seeds under fuzz/seed_corpus/, all 32 vendored ed25519-donna headers,
-      # 19 NIST/Ascon KAT vector files, and the FIPS 140-3 power-on self-test
-      # KAT JSON.  Nothing in CI notices: measured on the rewritten tree, the
+      # --all-files` on the tree as it stood when this scope was set modified
+      # 150 files, among them 94 binary seeds under fuzz/seed_corpus/, the
+      # vendored Ed25519 headers the tree then carried, 19 NIST/Ascon KAT
+      # vector files, and the FIPS 140-3 power-on self-test KAT JSON.  Nothing
+      # in CI noticed: measured on the rewritten tree, the
       # corpus generators' --check, check_corpus_originality.py,
       # check_vendor_isolation.py and all 135 KAT tests still passed.  Silent
       # is what makes it dangerous.
@@ -26,8 +27,6 @@ repos:
       #                        turns `PT = ` into `PT =` — the parsers here
       #                        tolerate both, but the file no longer matches
       #                        what NIST published
-      #   src/c/vendor         third-party source; INVARIANT-1 keeps it
-      #                        unmodified so it stays diffable against upstream
       #   nist_vectors,
       #   ama_cryptography/_post_kats,
       #   wycheproof_vectors/*.json   published test vectors
@@ -42,7 +41,6 @@ repos:
           (?x)^(
             fuzz/seed_corpus/.*|
             tests/kat/.*|
-            src/c/vendor/.*|
             nist_vectors/.*|
             wycheproof_vectors/.*\.json|
             ama_cryptography/_post_kats/.*|

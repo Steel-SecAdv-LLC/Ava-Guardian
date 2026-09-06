@@ -155,15 +155,10 @@ class ComparativeBenchmark:
           - the peer library (PyNaCl / cryptography) on the same
             Python surface.
 
-        The "Ed25519 Verify" row exercises the build-selected verify
-        scalar-mult path for the active backend.  For the in-tree C
-        backend (AMA_ED25519_ASSEMBLY=OFF), AMA_ED25519_VERIFY_SHAMIR
-        selects Shamir/Straus joint mult (default,
-        -DAMA_ED25519_VERIFY_SHAMIR=1) or the legacy split layout
-        (-DAMA_ED25519_VERIFY_SHAMIR=0).  When the donna shim is in use
-        (AMA_ED25519_ASSEMBLY=ON, auto-enabled on MSVC x64), those
-        CMake gates are ignored, so toggling AMA_ED25519_VERIFY_SHAMIR
-        does not change the benchmarked verify path.
+        The "Ed25519 Verify" row exercises the library's one verify path:
+        the half-size-scalar check of src/c/internal/ama_ed25519_halfsize.h
+        on the in-house backend.  There are no compile-time knobs left for
+        it; the only variable is the field instantiation, fe51 by default.
 
         Build prerequisite: the harness binary must exist.  Build with
         `cmake --build build --target benchmark_c_raw` before running, or

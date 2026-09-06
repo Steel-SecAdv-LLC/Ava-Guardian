@@ -107,16 +107,12 @@ jobs:
           # both findings disappear AND leaves the bounds check live on every
           # `char[AMA_DISPATCH_PATH_MAX]` buffer in the file — which, being a
           # file full of them, is the one place the suppression cost most.
-          #
-          # unknownMacro: a vendored donna header (mul64x64_128); -i excludes
-          # vendor files from being CHECKED but not from being #included.
           cppcheck \
             --enable=warning,performance,portability \
             --suppress=missingIncludeSystem \
             --suppress=unusedFunction \
             --suppress=shiftTooManyBitsSigned \
             --suppressions-list=.cppcheck-suppressions \
-            --suppress=unknownMacro:src/c/vendor/* \
             --error-exitcode=1 \
             --inline-suppr \
             --std=c11 \
@@ -124,7 +120,6 @@ jobs:
             -DAMA_USE_NATIVE_PQC \
             -DPATH_MAX=4096 \
             --force \
-            -i src/c/vendor/ \
             src/c/ 2>&1 | tee cppcheck-report.txt
 
       - name: Upload cppcheck report
@@ -284,8 +279,8 @@ jobs:
       # d=11 unpacker carry the same explicit casts the d=10 branch always
       # had (the FIPS 203 KATs pin the serialization bit-for-bit).
       #
-      # What legitimately remains outside src/c/vendor/ is exactly two
-      # documented language-extension classes, both required by construction:
+      # What legitimately remains is exactly two documented language-extension
+      # classes, both required by construction:
       #   fe51.h / fe64.h            "ISO C does not support '__int128'"
       #                              (-Wpedantic, gcc) — the 128-bit limbs the
       #                              field arithmetic is built on.
@@ -297,8 +292,8 @@ jobs:
       #                              depends on, and the warning measures the
       #                              concatenated literal anyway.
       # The "Enforce the frozen warning allowlist" step below fails this job
-      # if ANY other warning appears outside src/c/vendor/, so the clean
-      # state is now a gate, not a snapshot.
+      # if ANY other warning appears, so the clean state is now a gate, not a
+      # snapshot.
       #
       # TWO configurations are built, because one of them could not see an
       # entire class of diagnostic.  The original step passed no
@@ -763,8 +758,8 @@ jobs:
             -DAMA_AES_CONSTTIME=ON
 
       - name: Run clang-tidy on our C sources (fail-closed)
-        # Only run on src/c/ and include/, excluding vendored code under
-        # src/c/vendor/.  The .clang-tidy config file at repo root
+        # Only run on src/c/ and include/ (every C source is first-party;
+        # there is no vendored tree).  The .clang-tidy config file at repo root
         # drives check selection AND the WarningsAsErrors flip; CI
         # just enumerates the input files and propagates the exit
         # status.  Output is captured to an artefact regardless of
@@ -789,7 +784,6 @@ jobs:
         run: |
           set -o pipefail
           files=$(find src/c include \
-            -type d -name vendor -prune -o \
             -type f \( -name '*.c' -o -name '*.h' \) -print)
           if [ -z "$files" ]; then
             echo "ERROR: no C/H source files found — is the layout intact?"

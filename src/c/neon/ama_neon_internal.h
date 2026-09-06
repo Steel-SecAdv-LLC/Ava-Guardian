@@ -18,8 +18,8 @@
  *    produced a warning at its definition — 25 of them across the eight
  *    files here.  None was ever reported, because the strict-warnings gate
  *    runs on x86-64 only, where these translation units compile to an empty
- *    `#else` typedef.  The gate's claim ("no warnings outside src/c/vendor/
- *    beyond the two documented extension classes") was true of the one
+ *    `#else` typedef.  The gate's claim ("no warnings beyond the two
+ *    documented extension classes") was true of the one
  *    architecture it built, and the AArch64 build it never ran was carrying
  *    the exact class the gate makes fatal.
  *

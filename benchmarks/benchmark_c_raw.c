@@ -428,15 +428,12 @@ static bench_result_t bench_ed25519_sign(int iters, int warmup) {
  * stacks (TLS cert chains, Noise handshakes, MLS Welcome/Commit) see
  * per signature check.
  *
- * Backend-dependent interpretation:
- *   - In-tree C backend (AMA_ED25519_ASSEMBLY=OFF): the scalar-mult
- *     path is selected by the compile-time gates AMA_ED25519_VERIFY_SHAMIR
- *     (default 1 — Shamir/Straus joint layout) and AMA_ED25519_VERIFY_WINDOW
- *     (default 5 — wNAF window width).
- *   - Donna shim backend (AMA_ED25519_ASSEMBLY=ON, auto-enabled on MSVC
- *     x64): those gates are ignored; the shim uses its own vendored
- *     scalar-mult and wNAF width.  Toggling the gates at CMake-time has
- *     no effect on this benchmark's numbers on shim builds. */
+ * The verify path is the half-size-scalar check of
+ * src/c/internal/ama_ed25519_halfsize.h: two point decodes with the
+ * exponentiations interleaved, a Lehmer reduction of the hash scalar, and
+ * one ladder of about 128 doublings over four short scalars.  There are no
+ * compile-time knobs; the field instantiation (fe51 by default, MULX under
+ * ama_ed25519_set_mulx_override(1)) is the only variable. */
 static bench_result_t bench_ed25519_verify(int iters, int warmup) {
     uint8_t pk[32], sk[64], sig[64];
     const uint8_t msg[] = "Benchmark message for Ed25519 sign/verify test 0123456789ABCDEF";
@@ -462,19 +459,11 @@ static bench_result_t bench_ed25519_verify(int iters, int warmup) {
  *
  * Times ama_ed25519_double_scalarmult_public() without the surrounding
  * verify overhead (no SHA-512 of (R||A||M), no extra decompressions).
- * Interpretation is backend-dependent:
- *
- *   - In-tree C backend (AMA_ED25519_ASSEMBLY=OFF): measures the
- *     Shamir/Straus joint pass that the verify path uses.  This is the
- *     relevant microbenchmark for AMA_ED25519_VERIFY_WINDOW tuning —
- *     comparing results across builds with W=4/5/6 isolates the pure
- *     scalar-mult cost from the SHA-512 noise that dominates whole-
- *     verify timings on short messages.
- *   - Donna shim backend (AMA_ED25519_ASSEMBLY=ON): the public API is
- *     implemented as two separate scalar multiplications plus one
- *     point add, so this bench does NOT isolate the in-tree Shamir
- *     path, and AMA_ED25519_VERIFY_WINDOW has no effect on the
- *     measured code.
+ * Measures the general two-point Straus pass (width-5 wNAF on both
+ * points, 256 doublings) that the public double-scalar-mult entry point
+ * runs; verify itself no longer uses this routine (it runs the half-size
+ * ladder described above), so this row isolates the variable-base group
+ * arithmetic from the hashing and decoding a whole verify carries.
  *
  * Setup uses two pseudo-random valid Ed25519 points (public keys from
  * two derived keypairs) and the s/h halves of a real signature for

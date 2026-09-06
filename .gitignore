@@ -243,9 +243,6 @@ build-fuzz-ct/
 build-asan/
 build-scan/
 build-strict/
-# Ed25519 backend differential (ci.yml ed25519-backend-differential job)
-build-donna/
-build-fe51/
 build-on/
 build-dudect/
 build-warn/

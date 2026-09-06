@@ -59,11 +59,6 @@ OVERLENGTH_LITERAL = (
     "warning: string literal of length 9001 exceeds maximum length 4095 that "
     "ISO C99 compilers are required to support [-Woverlength-strings]"
 )
-VENDORED = (
-    "/home/user/AMA-Cryptography/src/c/vendor/ed25519-donna/"
-    "modm-donna-64bit.h:13:35: warning: a label can only be part of a "
-    "statement and a declaration is not a statement [-Wpedantic]"
-)
 
 
 def run_gate(*logs: Path) -> subprocess.CompletedProcess[str]:
@@ -87,8 +82,8 @@ class TestAllowlistAdmitsItsOwnClasses:
 
     @pytest.mark.parametrize(
         "line",
-        [INT128_ASCII, INT128_UTF8, OVERLENGTH_LITERAL, VENDORED],
-        ids=["int128-ascii", "int128-utf8", "overlength-literal", "vendored"],
+        [INT128_ASCII, INT128_UTF8, OVERLENGTH_LITERAL],
+        ids=["int128-ascii", "int128-utf8", "overlength-literal"],
     )
     def test_exempt_line_passes(self, tmp_path: Path, line: str) -> None:
         log = write_log(tmp_path, "build.log", line)

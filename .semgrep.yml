@@ -331,7 +331,8 @@ rules:
     # flagged; mass-flagging those names would just train the team to
     # silence the rule with a comment, which is worse than nothing.
     #
-    # Paths: any *.c / *.h under src/c/ except src/c/vendor/.  Tests
+    # Paths: any *.c / *.h under src/c/ (no source is vendored: INVARIANT-1
+    # requires that src/c/vendor not exist).  Tests
     # are intentionally NOT excluded — a test that takes a memset of
     # a secret-named buffer is exercising the same anti-pattern.
     patterns:
@@ -355,9 +356,6 @@ rules:
         - "src/c/"
         - "src/c/**/*.c"
         - "src/c/**/*.h"
-      exclude:
-        - "src/c/vendor/"
-        - "src/c/vendor/**"
     message: |
       Bare `memset(BUF, 0, LEN)` on a secret-named buffer.
       Use `ama_secure_memzero(BUF, LEN)` from src/c/ama_consttime.c —

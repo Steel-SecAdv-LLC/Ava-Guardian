@@ -418,7 +418,7 @@ class TestSuppressionHygiene:
         ``src/c/`` and ``include/`` hold no Python, and the other two entries
         name directories that do not exist, so it asserted over an empty set —
         the same vacuity the gate itself had, and it passed for years while a
-        live suppression sat in ``src/c/ed25519_donna_shim.c``.  It now drives
+        live suppression sat in the since-removed vendored backend's shim.  It now drives
         the gate's own C-tree scan, which is the thing CI runs.
         """
         repo_root = Path(__file__).resolve().parent.parent

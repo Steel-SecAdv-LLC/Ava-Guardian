@@ -49,25 +49,6 @@ option(AMA_KYBER_BUILD_DIAGNOSTICS
        "Compile the printf-heavy Kyber NTT/CPA debug roundtrip block (default OFF; test-only)"
        OFF)
 
-# Ed25519 backend default:
-#  - x86-64  → ON  (donna's hand-tuned AVX2 field arithmetic + precomputed
-#                   base-point table outruns the in-tree fe51 comb by ~1.5–2×
-#                   on x86-64, for both keygen/sign and verify)
-#  - non-x86 → OFF (donna's fast path is x86-64 assembly; on ARM and other
-#                   targets the in-tree fe51 + signed 4-bit window comb in
-#                   src/c/ama_ed25519.c is used instead, and remains fast
-#                   for fixed-base keygen/sign)
-# Opt out explicitly with -DAMA_ED25519_ASSEMBLY=OFF to force the in-tree
-# backend regardless of platform (useful for clean-room audits of the
-# ama_ed25519.c path on x86-64).
-set(_AMA_DONNA_DEFAULT OFF)
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
-    set(_AMA_DONNA_DEFAULT ON)
-endif()
-option(AMA_ED25519_ASSEMBLY
-       "Enable ed25519-donna x86-64 assembly scalar mult"
-       ${_AMA_DONNA_DEFAULT})
-
 option(AMA_ENABLE_NATIVE_ARCH "Use -march=native for host-optimized builds" OFF)
 option(AMA_ENABLE_DUDECT "Build dudect constant-time verification tests" OFF)
 option(AMA_ENABLE_NEON "Enable ARM NEON optimizations (AArch64)" ON)
@@ -90,24 +71,6 @@ endif()
 # bundle (ama_cpuid_has_avx512_keccak()) passes.  AVX2 4-way remains
 # the fallback when the bundle fails or when this flag is OFF.
 option(AMA_ENABLE_AVX512 "Enable AVX-512 SHA3 4-way kernel (x86-64 only)" OFF)
-
-# MSVC lacks __uint128_t required by fe51 field arithmetic. Auto-enable the
-# donna shim (which provides its own field ops) so Windows builds compile.
-# On MSVC ARM64, neither fe51 nor donna is available — fail at configure time.
-if(MSVC AND NOT AMA_ED25519_ASSEMBLY)
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64|x86_64|X86_64")
-        set(AMA_ED25519_ASSEMBLY ON CACHE BOOL
-            "Auto-enabled: MSVC lacks __uint128_t required by fe51" FORCE)
-        message(STATUS
-            "MSVC x64 detected: AMA_ED25519_ASSEMBLY auto-enabled (fe51 requires __uint128_t)")
-    else()
-        message(FATAL_ERROR
-            "AMA Cryptography: MSVC on ${CMAKE_SYSTEM_PROCESSOR} is not supported. "
-            "Ed25519 requires either __uint128_t (GCC/Clang) or x86-64 assembly (donna). "
-            "Neither is available on this compiler/architecture combination. "
-            "Use GCC or Clang to build on non-x64 platforms.")
-    endif()
-endif()
 
 # INVARIANT-8: Minimum compiler versions for correct constant-time code
 # generation and SIMD intrinsics.  Reference build: ubuntu:22.04 + GCC 12.
@@ -187,7 +150,7 @@ else()
     #   noexecstack  — marks the stack non-executable.  Usually the default, but
     #                  a single assembly object without .note.GNU-stack silently
     #                  makes the WHOLE image executable-stack, and this project
-    #                  links hand-written assembly (ed25519-donna).
+    #                  carries inline-assembly kernels (the MULX field code).
     #
     # Checked for support rather than assumed, so a toolchain without them still
     # configures (the checks below are cheap and run once).
@@ -432,6 +395,7 @@ if(AMA_ENABLE_SIMD AND AMA_ENABLE_AVX2)
             src/c/avx2/ama_chacha20poly1305_avx2.c
             src/c/avx2/ama_argon2_avx2.c
             src/c/avx2/ama_x25519_avx2.c
+            src/c/avx2/ama_ed25519_select_avx2.c
         )
         if(NOT MSVC)
             set_source_files_properties(${AMA_AVX2_SOURCES} PROPERTIES
@@ -447,7 +411,7 @@ if(AMA_ENABLE_SIMD AND AMA_ENABLE_AVX2)
                 PROPERTIES COMPILE_FLAGS
                 "-mavx2 -mvaes -mvpclmulqdq -maes -mpclmul")
         endif()
-        message(STATUS "SIMD: AVX2 hand-written intrinsics enabled (8 algorithms incl. VAES AES-GCM)")
+        message(STATUS "SIMD: AVX2 hand-written intrinsics enabled (9 algorithms incl. VAES AES-GCM and the Ed25519 comb select)")
         # Tell dispatch code that AVX2 implementations are linked in
         add_compile_definitions(AMA_HAVE_AVX2_IMPL)
     endif()
@@ -875,53 +839,6 @@ if(AMA_USE_NATIVE_PQC)
     message(STATUS "Native PQC enabled: ML-DSA-65, Kyber-1024, SPHINCS+-256f (zero OpenSSL dependency)")
 endif()
 
-# ed25519-donna assembly path (x86-64 only).  Auto-fallback when sanitizers
-# are active: donna's ge25519_scalarmult_base_choose_niels inline assembly
-# consumes most of the x86-64 XMM register file, and -fsanitize=address,
-# undefined instrumentation pushes clang past the register budget with
-# "inline assembly requires more registers than available".  Rather than
-# patch the vendored asm, we disable the inline-asm tier via donna's own
-# ED25519_NO_INLINE_ASM gate when sanitizers are present; the fallback C
-# path is what donna ships for exactly this situation.
-set(_AMA_SANITIZERS_ACTIVE FALSE)
-if(AMA_ENABLE_SANITIZERS)
-    set(_AMA_SANITIZERS_ACTIVE TRUE)
-endif()
-if(CMAKE_C_FLAGS MATCHES "-fsanitize=")
-    set(_AMA_SANITIZERS_ACTIVE TRUE)
-endif()
-if(AMA_ED25519_ASSEMBLY)
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
-        list(REMOVE_ITEM AMA_SOURCES src/c/ama_ed25519.c)
-        list(APPEND AMA_SOURCES src/c/ed25519_donna_shim.c)
-        # donna needs platform_rand even without native PQC
-        if(NOT AMA_USE_NATIVE_PQC)
-            list(APPEND AMA_SOURCES src/c/ama_platform_rand.c)
-        endif()
-        if(_AMA_SANITIZERS_ACTIVE)
-            message(STATUS
-                "Ed25519: donna x86-64 path active, but sanitizer flags detected "
-                "— defining ED25519_NO_INLINE_ASM to route around the choose-niels "
-                "inline asm (register pressure vs. ASan/UBSan instrumentation)")
-        else()
-            message(STATUS
-                "Ed25519: donna x86-64 assembly scalar mult (vendored, public domain)")
-        endif()
-    else()
-        # M14: an explicit -DAMA_ED25519_ASSEMBLY=ON on a non-x86-64 host used to
-        # WARN and silently fall back to fe51.  That silent downgrade is how the
-        # Ed25519 backend differential could end up comparing two fe51 builds (a
-        # library with itself) and pass vacuously.  The default on non-x86-64 is
-        # already OFF (_AMA_DONNA_DEFAULT above), so reaching this branch means ON
-        # was requested explicitly — make that a hard error, not a silent switch.
-        message(FATAL_ERROR
-            "AMA_ED25519_ASSEMBLY=ON was requested but the donna assembly scalar "
-            "multiply requires x86-64 (host is ${CMAKE_SYSTEM_PROCESSOR}). Build "
-            "with -DAMA_ED25519_ASSEMBLY=OFF for the portable fe51 backend on this "
-            "architecture.")
-    endif()
-endif()
-
 # Constant-time AES S-box (bitsliced algebraic decomposition).
 #
 # INVARIANT-20 hardening (audit Issue 5): if the operator opts out of
@@ -977,25 +894,6 @@ find_package(Threads REQUIRED)
 # downstream that passes -DOPENSSL_ROOT_DIR gets an unused-variable warning
 # from CMake, which is the honest answer.
 
-# Helper: apply ed25519-donna settings to a target
-function(ama_apply_donna_settings target)
-    if(AMA_ED25519_ASSEMBLY)
-        target_compile_definitions(${target} PRIVATE AMA_ED25519_ASSEMBLY)
-        # When sanitizers are active, route donna around its x86-64 inline
-        # assembly (register-budget conflict with -fsanitize instrumentation).
-        if(_AMA_SANITIZERS_ACTIVE)
-            target_compile_definitions(${target} PRIVATE ED25519_NO_INLINE_ASM)
-        endif()
-        # donna's shim includes vendored source via relative path;
-        # suppress warnings from vendored third-party code
-        if(NOT MSVC)
-            set_source_files_properties(src/c/ed25519_donna_shim.c PROPERTIES
-                COMPILE_FLAGS "-Wno-unused-function -Wno-missing-prototypes -Wno-strict-prototypes"
-            )
-        endif()
-    endif()
-endfunction()
-
 function(ama_apply_integrity_anchor target)
     target_compile_definitions(${target} PRIVATE
         AMA_INTEGRITY_TRUST_ANCHOR_PUBKEY_HEX="${AMA_INTEGRITY_TRUST_ANCHOR_PUBKEY_HEX}")
@@ -1027,7 +925,6 @@ if(AMA_BUILD_SHARED)
     if(AMA_KYBER_BUILD_DIAGNOSTICS)
         target_compile_definitions(ama_cryptography_shared PRIVATE AMA_KYBER_BUILD_DIAGNOSTICS)
     endif()
-    ama_apply_donna_settings(ama_cryptography_shared)
     ama_apply_integrity_anchor(ama_cryptography_shared)
 
     # Threading (INVARIANT-15): pthread_once on POSIX, InitOnceExecuteOnce on Windows
@@ -1041,20 +938,17 @@ if(AMA_BUILD_SHARED)
     # Export only the ama_* ABI from the shared library (audit B2).
     #
     # Off-Windows AMA_API expands to nothing, so the linked .so exported all of
-    # its ~246 defined symbols -- including six un-prefixed vendor names from the
-    # bundled ed25519-donna tree (ed25519_sign, ed25519_sign_open,
-    # ed25519_sign_open_batch, ed25519_publickey,
-    # curved25519_scalarmult_basepoint) and the mutable data symbol
-    # batch_point_buffer.  A process loading AMA alongside another ed25519-donna
-    # consumer could have AMA's Ed25519 silently serviced by the other copy (ELF
-    # flat-namespace interposition; a static consumer's symbols always win),
-    # bypassing the canonical-R/S/y hardening -- and once .so.5 publishes, every
-    # exported name becomes an ABI promise.  This is the release that must carry
+    # its ~246 defined symbols -- at the time including six un-prefixed names
+    # from the since-removed vendored Ed25519 tree and one mutable data symbol,
+    # any of which a process loading a second copy of that code could have
+    # interposed (ELF flat-namespace interposition; a static consumer's symbols
+    # always win), bypassing the canonical-R/S/y hardening -- and once .so.5
+    # publishes, every exported name becomes an ABI promise.  This is the release that must carry
     # the fix, since the SONAME already moves .so.4 -> .so.5.
     #
     # A version script restricts the dynamic symbol table to ama_* and localises
     # everything else; -Bsymbolic-functions binds AMA's own intra-library calls
-    # (e.g. ama_ed25519_verify -> the vendored ed25519_sign_open) internally so
+    # (an exported entry point calling an internal helper) internally so
     # they are not interposable even before a SONAME consumer relinks.  MSVC
     # controls exports through AMA_API/__declspec on the header; macOS uses a
     # two-level namespace and the exported-symbols list for parity.
@@ -1091,7 +985,6 @@ if(AMA_BUILD_STATIC)
     if(AMA_KYBER_BUILD_DIAGNOSTICS)
         target_compile_definitions(ama_cryptography_static PRIVATE AMA_KYBER_BUILD_DIAGNOSTICS)
     endif()
-    ama_apply_donna_settings(ama_cryptography_static)
     ama_apply_integrity_anchor(ama_cryptography_static)
 
     target_link_libraries(ama_cryptography_static PRIVATE Threads::Threads)
@@ -1190,7 +1083,6 @@ if(AMA_BUILD_TESTS)
     # globally with -DAMA_KYBER_BUILD_DIAGNOSTICS=ON when running a
     # tools-only build outside the CMake test target.
     target_compile_definitions(ama_cryptography_test PRIVATE AMA_KYBER_BUILD_DIAGNOSTICS)
-    ama_apply_donna_settings(ama_cryptography_test)
     ama_apply_integrity_anchor(ama_cryptography_test)
 
     target_link_libraries(ama_cryptography_test PRIVATE Threads::Threads)
@@ -1288,11 +1180,7 @@ message(STATUS "  AES consttime:  ${AMA_AES_CONSTTIME}")
 message(STATUS "  AES table-insecure opt-in: ${AMA_AES_TABLE_INSECURE}")
 message(STATUS "  Kyber diagnostics: ${AMA_KYBER_BUILD_DIAGNOSTICS} (forced ON for tests target only)")
 message(STATUS "  LTO:            ${AMA_ENABLE_LTO}")
-if(MSVC AND AMA_ED25519_ASSEMBLY)
-    message(STATUS "  Ed25519 donna:  Auto (MSVC — fe51 requires __uint128_t)")
-else()
-    message(STATUS "  Ed25519 donna:  ${AMA_ED25519_ASSEMBLY}")
-endif()
+message(STATUS "  Ed25519:        in-house (radix-2^51 default; MULX instantiation on x86-64 GCC/Clang)")
 message(STATUS "")
 message(STATUS "Post-Quantum Cryptography:")
 message(STATUS "  Native PQC:     ${AMA_USE_NATIVE_PQC}")

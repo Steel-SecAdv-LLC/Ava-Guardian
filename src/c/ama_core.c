@@ -48,10 +48,9 @@ extern ama_error_t ama_kyber_decapsulate(const uint8_t* ct, size_t ct_len,
                                           const uint8_t* sk, size_t sk_len,
                                           uint8_t* ss, size_t ss_len);
 
-/* Ed25519 — concrete backend is either the fe51 reference (default) or the
- * donna shim (AMA_ED25519_ASSEMBLY=ON); both expose the same three symbols.
- * Selected at build time via CMakeLists.txt, not at runtime — the dispatcher
- * reports `ed25519 = AMA_IMPL_GENERIC` either way. */
+/* Ed25519 — the in-house backend (src/c/ama_ed25519.c); its two field
+ * instantiations are chosen inside that unit, so the dispatcher here reports
+ * `ed25519 = AMA_IMPL_GENERIC`. */
 extern ama_error_t ama_ed25519_keypair(uint8_t public_key[32],
                                         uint8_t secret_key[64]);
 extern ama_error_t ama_ed25519_sign(uint8_t signature[64],

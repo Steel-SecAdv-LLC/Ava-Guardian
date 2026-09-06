@@ -250,7 +250,7 @@ NIST-standardized post-quantum algorithms:
 | ChaCha20-Poly1305 | Full | Full | RFC 8439; AVX2 8-way + NEON kernels |
 | Ascon-AEAD128 & Ascon-Hash256 | Full | Full | SP 800-232 |
 | Argon2id | Full | Full | RFC 9106; `out_len ≤ AMA_ARGON2ID_MAX_TAG_LEN` (1024). Legacy verify-only path (`ama_argon2id_legacy*`) for one-shot migration of hashes from AMA ≤ 2.1.5 |
-| Ed25519 | Full | Full | RFC 8032; INVARIANT-26 canonical-S enforced. Backend: vendored ed25519-donna x86-64 assembly by default (`AMA_ED25519_ASSEMBLY=ON` auto-set on x86-64 / MSVC x64); `-DAMA_ED25519_ASSEMBLY=OFF` selects the in-tree fe51 + signed-4-bit-window comb path |
+| Ed25519 | Full | Full | RFC 8032; INVARIANT-26 canonical-S enforced. One in-house backend on every platform (`src/c/ama_ed25519.c` + `src/c/internal/ama_ed25519_ge.h`): radix-2⁵¹ fe51 arithmetic, static signed-5-bit comb base-point tables, Bernstein–Yang safegcd inversion, half-size-scalar verification; x86-64 GCC/Clang builds also instantiate the same group code over the radix-2⁶⁴ MULX+ADX kernel, byte-identical and selectable via `ama_ed25519_set_mulx_override(1)` (not the default — slower at the group level) |
 | X25519 | Full | Full | RFC 7748; field arithmetic dispatched fe64 (radix-2⁶⁴ on x86-64 GCC/Clang, promoted to a MULX+ADX asm kernel when CPUID reports BMI2 ∧ ADX) → fe51 (radix-2⁵¹, non-x86-64 64-bit) → gf16 (radix-2¹⁶, 32-bit and MSVC). u-coordinates canonicalised (INVARIANT-27); low-order outputs rejected (INVARIANT-21); batch API `ama_x25519_scalarmult_batch` available; opt-in AVX2 4-way ladder |
 | NIST P-256 / P-384 / P-521 | Full | Full | FIPS 186-5 ECDSA + SP 800-56A ECDH; TLS/X.509/JOSE/COSE/WebAuthn interop. P-256 4-limb Montgomery MULX+ADCX/ADOX kernel; P-384/P-521 use the generic multi-limb CIOS path constant-folded to their limb counts. Strict minimal-DER with `r`,`s` in `[1, n-1]` unconditional; RFC 6979 `s` emitted verbatim and either representative accepted by default, low-`s` opt-in via `AMA_NISTP_ECDSA_SIGN_LOW_S` / `AMA_NISTP_ECDSA_REQUIRE_LOW_S` (INVARIANT-34); canonical field-element pubkey coordinates (INVARIANT-29). See [docs/NIST_PRIME_CURVES.md](docs/NIST_PRIME_CURVES.md) |
 | secp256k1 | Full | Full | RFC 6979 deterministic ECDSA; fixed-base comb over the compile-time generator (4-block, 16 entries) — pubkey derivation and signing scalar multiplications use the comb; caller-supplied bases keep the constant-time Montgomery ladder |
@@ -267,22 +267,21 @@ NIST-standardized post-quantum algorithms:
 
 ### C library inventory (v5.0.0)
 
-Top-level `src/c/*.c` — 29 translation units:
+Top-level `src/c/*.c` — 28 translation units:
 
-`ama_aes_bitsliced.c`, `ama_aes_gcm.c`, `ama_agent_binding.c`, `ama_argon2.c`, `ama_ascon.c`, `ama_chacha20poly1305.c`, `ama_consttime.c`, `ama_core.c`, `ama_cpuid.c`, `ama_dilithium.c`, `ama_ed25519.c`, `ama_frost.c`, `ama_hkdf.c`, `ama_hmac_sha256.c`, `ama_hmac_sha384.c`, `ama_kyber.c`, `ama_lms.c`, `ama_nistp.c`, `ama_pbkdf2.c`, `ama_platform_rand.c`, `ama_secp256k1.c`, `ama_secure_memory.c`, `ama_sha256.c`, `ama_sha256_ni.c`, `ama_sha3.c`, `ama_sha512.c`, `ama_slhdsa.c`, `ama_x25519.c`, `ed25519_donna_shim.c`.
+`ama_aes_bitsliced.c`, `ama_aes_gcm.c`, `ama_agent_binding.c`, `ama_argon2.c`, `ama_ascon.c`, `ama_chacha20poly1305.c`, `ama_consttime.c`, `ama_core.c`, `ama_cpuid.c`, `ama_dilithium.c`, `ama_ed25519.c`, `ama_frost.c`, `ama_hkdf.c`, `ama_hmac_sha256.c`, `ama_hmac_sha384.c`, `ama_kyber.c`, `ama_lms.c`, `ama_nistp.c`, `ama_pbkdf2.c`, `ama_platform_rand.c`, `ama_secp256k1.c`, `ama_secure_memory.c`, `ama_sha256.c`, `ama_sha256_ni.c`, `ama_sha3.c`, `ama_sha512.c`, `ama_slhdsa.c`, `ama_x25519.c`.
 
 Public headers under `include/` — 4: `ama_cryptography.h` (top-level API), `ama_cpuid.h`, `ama_dispatch.h`, `ama_uint128.h`.
 
 Additional C sources:
 
 - `src/c/dispatch/ama_dispatch.c` — runtime CPU-feature detection and function-pointer dispatch. On x86 the SHA-3 slot promotes to the AVX-512 kernel when `AMA_ENABLE_AVX512=ON` at build time and `ama_cpuid_has_avx512_keccak()` (AVX-512F + AVX-512VL + XCR0 5+6+7) holds at runtime; every other x86 slot ceiling is AVX2. On AArch64 the order is SVE2 → NEON → generic (for the three slots wired to SVE2; see below). Best-of-5 SHA-3 auto-tune with a 10 % revert threshold. Overrides: `AMA_DISPATCH_NO_AUTOTUNE=1`, `AMA_DISPATCH_VERBOSE=1`.
-- `src/c/x86/` (2 files) — `ama_keccak_f1600_bmi.c` (Keccak-f[1600] BMI1/BMI2 kernel where `ANDN` collapses chi's `(~b) & c`); `ama_nistp_mont_mulx.c` (P-256 4-limb MULX+ADCX/ADOX Montgomery multiply).
-- `src/c/internal/` — 1 `.c`: `ama_x25519_fe64_mulx.c` (fe64 multiply / square / reduce with `MULX` + `ADCX` + `ADOX` dual-carry chains); 8 `.h`: `ama_ct_barrier.h` (compiler barrier that keeps constant-time selects from being branch-optimized), `ama_ed25519_canonical.h`, `ama_keccak_round.h` (macro-based round header shared by scalar / BMI paths), `ama_once.h` (platform once-primitive for INVARIANT-15), `ama_sha2.h` (SHA-512 header-only), `ama_sha3_x4.h` (4-way Keccak interface), `ama_testing_exports.h` (visibility macro that exposes internals to the C test suite only), `ama_x25519_fe64_mulx.h` (the prototypes for the `.c` above).
-- `src/c/vendor/` — vendored public-domain ed25519-donna (`src/c/vendor/ed25519-donna/`).
+- `src/c/x86/` (3 files) — `ama_keccak_f1600_bmi.c` (Keccak-f[1600] BMI1/BMI2 kernel where `ANDN` collapses chi's `(~b) & c`); `ama_nistp_mont_mulx.c` (P-256 4-limb MULX+ADCX/ADOX Montgomery multiply); `ama_ed25519_fe64_mulx.c` (the radix-2^64 MULX+ADX instantiation of the Ed25519 group arithmetic, selectable through `ama_ed25519_set_mulx_override(1)`).
+- `src/c/internal/` — 1 `.c`: `ama_x25519_fe64_mulx.c` (fe64 multiply / square / reduce with `MULX` + `ADCX` + `ADOX` dual-carry chains); 15 `.h`: `ama_ct_barrier.h` (compiler barrier that keeps constant-time selects from being branch-optimized), `ama_ed25519_backend.h` (hidden prototypes of the MULX instantiation), `ama_ed25519_canonical.h`, `ama_ed25519_ge.h` (the Ed25519 group-arithmetic template both field instantiations compile), `ama_ed25519_halfsize.h` (half-size-scalar decomposition for verify), `ama_ed25519_tables.h` (generated static base-point tables), `ama_fe25519_safegcd.h` (Bernstein–Yang constant-time inversion), `ama_fe64_mulx_kernel.h` (the fused MULX/ADX multiply and square, shared by X25519 and Ed25519), `ama_keccak_round.h` (macro-based round header shared by scalar / BMI paths), `ama_once.h` (platform once-primitive for INVARIANT-15), `ama_sha2.h` (SHA-512 header-only), `ama_sha3_x4.h` (4-way Keccak interface), `ama_testing_exports.h` (visibility macro that exposes internals to the C test suite only), `ama_wide_mul.h` (64×64→128 multiply on every toolchain), `ama_x25519_fe64_mulx.h` (the prototypes for the `.c` above).
 
 ### Hand-written SIMD kernels — 26 translation units
 
-**AVX2 (`src/c/avx2/`, 9 files):** SHA3 4-way Keccak-f[1600], ML-KEM (NTT / Barrett / batch CBD2), ML-DSA (NTT q=8380417 / batch SHAKE rejection), SPHINCS+ 4-way SHA-256, AES-256-GCM pipelined AES-NI + PCLMULQDQ GHASH with H^1..H^8 power-table folding and deferred one-iteration GHASH pipeline, VAES + VPCLMULQDQ YMM AES-256-GCM (`ama_aes_gcm_vaes_avx2.c` — gated by `ama_cpuid_has_vaes_aesgcm()`), ChaCha20-Poly1305 8-way, Argon2 4-way BlaMka, X25519 4-way ladder (`ama_x25519_avx2.c` — opt-in via `AMA_DISPATCH_USE_X25519_AVX2=1`; intentionally not the default on MULX/ADX hosts, retained for CI matrix coverage and a future AVX-512-IFMA port).
+**AVX2 (`src/c/avx2/`, 10 files):** SHA3 4-way Keccak-f[1600], ML-KEM (NTT / Barrett / batch CBD2), ML-DSA (NTT q=8380417 / batch SHAKE rejection), SPHINCS+ 4-way SHA-256, AES-256-GCM pipelined AES-NI + PCLMULQDQ GHASH with H^1..H^8 power-table folding and deferred one-iteration GHASH pipeline, VAES + VPCLMULQDQ YMM AES-256-GCM (`ama_aes_gcm_vaes_avx2.c` — gated by `ama_cpuid_has_vaes_aesgcm()`), ChaCha20-Poly1305 8-way, Argon2 4-way BlaMka, X25519 4-way ladder (`ama_x25519_avx2.c` — opt-in via `AMA_DISPATCH_USE_X25519_AVX2=1`; intentionally not the default on MULX/ADX hosts, retained for CI matrix coverage and a future AVX-512-IFMA port), and the Ed25519 comb's constant-time 256-bit table fold (`ama_ed25519_select_avx2.c` — dispatched on `ama_has_avx2()`).
 
 **AVX-512 (`src/c/avx512/`, 1 file, opt-in via `-DAMA_ENABLE_AVX512=ON`):** EVEX-encoded YMM-width 4-way Keccak permutation (`ama_sha3_x4_avx512.c` — `vprolq` for the 64-bit rotate, `vpternlogq` for the theta `0x96` and chi `0xD2` collapses). No ZMM register touched. XCR0 5+6+7-gated so an EVEX YMM op cannot `#UD` on a host whose hypervisor advertises CPUID without the ZMM save area. See [docs/AVX512_KECCAK_ADR.md](docs/AVX512_KECCAK_ADR.md).
 
@@ -1003,7 +1002,7 @@ The test suite includes:
 
 ![Test Suite Coverage](assets/test_coverage.png)
 
-*5,126 test functions across 215 Python test files plus 67 C test suites (69 translation units) covering core crypto and NIST KATs (including the new AVX-512 4-way Keccak KAT, fe51-vs-fe64 X25519 byte-equivalence, MULX+ADX equivalence, VAES AES-GCM equivalence, FROST threshold signing, Ed25519 Shamir verify and base-point comb equivalence, and Dilithium / Kyber sampling-equivalence pinning), PQC backends, key management, adaptive posture, hybrid combiner, memory security, fuzz harnesses, and performance/monitoring. See [docs/METRICS_REPORT.md](docs/METRICS_REPORT.md) for the authoritative count and reproduction command (`grep -rE "^\s*def test_" tests/ --include='*.py' | wc -l`).*
+*5,107 test functions across 216 Python test files plus 72 C test suites (74 translation units) covering core crypto and NIST KATs (including the new AVX-512 4-way Keccak KAT, fe51-vs-fe64 X25519 byte-equivalence, MULX+ADX equivalence, VAES AES-GCM equivalence, FROST threshold signing, Ed25519 Shamir verify and base-point comb equivalence, and Dilithium / Kyber sampling-equivalence pinning), PQC backends, key management, adaptive posture, hybrid combiner, memory security, fuzz harnesses, and performance/monitoring. See [docs/METRICS_REPORT.md](docs/METRICS_REPORT.md) for the authoritative count and reproduction command (`grep -rE "^\s*def test_" tests/ --include='*.py' | wc -l`).*
 
 </details>
 
@@ -1328,9 +1327,6 @@ sudo cmake --install .
 - `AMA_BUILD_TESTS` - Build test suite including NIST KAT tests (default: ON)
 - `AMA_BUILD_EXAMPLES` - Build C example programs (default: ON)
 - `AMA_BUILD_FUZZ` - Build coverage-guided libFuzzer harnesses (default: OFF; 15 targets in `fuzz/`)
-- `AMA_ED25519_ASSEMBLY` - Enable ed25519-donna x86-64 assembly scalar mult (default: **ON** on x86-64 builds — donna's AVX2 field arithmetic outruns the in-tree fe51 path there; **OFF** on ARM and other non-x86 targets where donna has no assembly path. Set `-DAMA_ED25519_ASSEMBLY=OFF` to force the in-tree `src/c/ama_ed25519.c` backend on x86-64, e.g. for clean-room auditing of the signed 4-bit window comb.)
-- `AMA_ED25519_VERIFY_SHAMIR` - Use Shamir / Straus joint `[s]B + [h](-A)` in Ed25519 verify (default: ON; set OFF for legacy split scalar-mult, useful for deterministic regression comparisons)
-- `AMA_ED25519_VERIFY_WINDOW` - wNAF window width for Ed25519 verify scalar mults; integer in `[2, 6]` (default: `5`)
 - `AMA_ENABLE_SIMD` - Master toggle for all SIMD paths (default: ON)
 - `AMA_ENABLE_AVX2` - Enable AVX2 SIMD optimizations (x86-64; default: ON)
 - `AMA_ENABLE_AVX512` - Enable in-house AVX-512 4-way Keccak permutation kernel (`src/c/avx512/ama_sha3_x4_avx512.c`, EVEX YMM-width, XCR0 5+6+7-gated; x86-64 only; default: **OFF**). With this off, the AVX2 4-way Keccak path remains the SHA-3 dispatch ceiling; with it on, the dispatcher promotes the SHA-3 slot to the AVX-512 kernel when `ama_cpuid_has_avx512_keccak()` holds at runtime.
@@ -1568,7 +1564,6 @@ AMA Cryptography v5.0.0 has **zero core cryptographic dependencies** — all cry
 - **ML-KEM-1024** (Kyber): Public domain (NIST FIPS 203)
 - **SPHINCS+-SHA2-256f**: Public domain (NIST FIPS 205)
 - **Ed25519**: Public domain (ref10 implementation, RFC 8032)
-- **ed25519-donna** (optional assembly backend): Public domain (Andrew Moon) — vendored in `src/c/vendor/ed25519-donna/`, compiled in-tree, enabled via `AMA_ED25519_ASSEMBLY=ON`
 - **AES-256-GCM**: Public domain (NIST SP 800-38D)
 - **SHA3-256/SHAKE**: Public domain (NIST FIPS 202)
 
@@ -1628,7 +1623,7 @@ The human architect does not hold formal credentials in cryptography. The AI con
 
 - **Standards-based design:** Built on NIST FIPS 202/204, RFC 2104/5869/8032/3161—not custom cryptography
 - **Quantified claims:** All performance metrics are measured and reproducible (see [benchmarks/](benchmarks/))
-- **Rigorous testing:** 5,126 test functions across 215 Python files plus 67 C test suites, anchored in [docs/METRICS_REPORT.md](docs/METRICS_REPORT.md); CI includes security scanning, NIST ACVP validation (1,215/1,215 — 815 AFT + 400 SHA-3 MCT), and tiered benchmark-regression checks
+- **Rigorous testing:** 5,107 test functions across 216 Python files plus 72 C test suites, anchored in [docs/METRICS_REPORT.md](docs/METRICS_REPORT.md); CI includes security scanning, NIST ACVP validation (1,215/1,215 — 815 AFT + 400 SHA-3 MCT), and tiered benchmark-regression checks
 - **Regression detection:** Tiered benchmark tolerances calibrated for CI environments
 - **Transparent limitations:** Security analysis explicitly distinguishes self-assessed vs. audited claims
 - **Defense-in-depth:** Security bounded by weakest layer (~128-bit classical), not inflated aggregate claims

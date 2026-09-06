@@ -98,7 +98,6 @@ INTERNAL_SUPPORT: frozenset[str] = frozenset(
         "ama_secure_memory",  # zeroization / locked-memory helpers
         "ama_sha256",  # internal SHA-256 backing LMS / NIST-P / HMAC
         "ama_sha256_ni",  # SHA-NI accelerated SHA-256 backend
-        "ed25519_donna_shim",  # vendored ed25519-donna glue
     }
 )
 
@@ -107,7 +106,7 @@ def check_component_completeness() -> None:
     """Fail closed if src/c grows a TU the SBOM has not classified.
 
     Scans top-level ``src/c/*.c`` (subdirectories — dispatch/, SIMD
-    kernels, vendor/ — are implementation detail of the top-level TUs)
+    kernels, x86/ — are implementation detail of the top-level TUs)
     and requires every stem to be either a named component or an entry
     in INTERNAL_SUPPORT.  Runs in both generate and --check mode, so CI
     rejects a new primitive whose SBOM classification was forgotten —

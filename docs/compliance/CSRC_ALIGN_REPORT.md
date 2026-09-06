@@ -83,11 +83,14 @@ Source files:
 - `src/c/internal/ama_sha2.h` — Shared SHA-512/HMAC-SHA-512 (used by Ed25519 + SLH-DSA)
 - `src/c/PROVENANCE.md` — Per-primitive derivation status, known divergences, and the clean-room attestation
 
-Ed25519 (`src/c/ama_ed25519.c`) is **vendored** rather than clean-room: the
-field arithmetic and base-point tables in `src/c/vendor/ed25519-donna/`
-come from the public-domain floodyberry/ed25519-donna project with its
-LICENSE preserved verbatim. The AMA wrapper above it (API contract, FROST
-integration, expanded-key fast path) is in-house.
+Ed25519 (`src/c/ama_ed25519.c` + `src/c/internal/ama_ed25519_ge.h`) is
+**in-house**: the field arithmetic, the group arithmetic and the static
+base-point tables (generated in-tree by `tools/gen_ed25519_tables.py` into
+`src/c/internal/ama_ed25519_tables.h`) are written against RFC 8032 with no
+upstream code copied. Earlier revisions of this report described a vendored
+public-domain x86-64 backend; it was removed in the twenty-first maintenance
+pass (see CHANGELOG). The AMA wrapper above it (API contract, FROST
+integration, expanded-key fast path) is likewise in-house.
 
 ### 1.3 Test Execution Environment
 
@@ -500,7 +503,8 @@ unchanged:
 - **Source-file inventory (§1.2).** `src/c/ama_kyber.c`,
   `src/c/ama_dilithium.c`, `src/c/ama_slhdsa.c`, `src/c/internal/ama_sha2.h`,
   `src/c/PROVENANCE.md`, and `src/c/ama_ed25519.c` +
-  `src/c/vendor/ed25519-donna/` (LICENSE preserved) are all present. The
+  `src/c/internal/ama_ed25519_ge.h` (the formerly vendored x86-64 backend
+  having been removed in the twenty-first maintenance pass) are all present. The
   no-external-PQC claim still holds: no liboqs, PQClean, or pq-crystals code
   or dependency exists anywhere in the tree (the last vestigial liboqs
   packaging reference was removed in #352, 2026-06-15).

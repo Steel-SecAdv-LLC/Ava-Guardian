@@ -92,6 +92,20 @@ ALLOWED: dict[str, tuple[int, str]] = {
         "Confirmed in the disassembly: the divisor sits loop-invariant in one "
         "register across the unrolled body while the dividend increments.",
     ),
+    "ama_ed25519_verify": (
+        2,  # EXACT: gcc-13 -O3, identical on x86-64 and aarch64 shared objects (and with SVE2 kernels on)
+        "ama_ed25519.c:977 (`ama_ed25519_half_reduce(v0, v1, &v1_negative, h)` "
+        "inside ama_ed25519_verify) -> ama_ed25519_halfsize.h:291-292 "
+        "`q = (uh + A) / (vh + C)` and "
+        "`q2 = (uh + B) / (vh + D)`: the two Lehmer quotient steps of the "
+        "half-size reduction of the verification scalar, inlined into "
+        "ama_ed25519_verify.  The dividend is the top 61 bits of "
+        "h = SHA-512(R || A || M) mod l and the divisor the top bits of the "
+        "constant 8l, both public: verification takes only the public key, "
+        "the message and the signature, and no secret is in scope in this "
+        "function.  The ladder that follows is variable-time by design (wNAF "
+        "over the same public scalars).",
+    ),
     "lms_verify_parsed": (
         11,  # EXACT: gcc-13 -O3, identical on x86-64 and aarch64 shared objects
         "ama_lms.c:391. LMS/HSS verification takes only public inputs — the "

@@ -54,7 +54,8 @@ details, key sizes, and security properties; see
 report rather than relying on a number hard-coded here). See
 [`src/c/PROVENANCE.md`](src/c/PROVENANCE.md) for per-primitive derivation
 status (PQC primitives are clean-room from the FIPS text; Ed25519 is
-vendored from ed25519-donna).
+in-house — its formerly vendored x86-64 backend was removed in the
+twenty-first maintenance pass).
 
 > **Boundary Notice:** Everything above this line describes standardized
 > cryptographic primitives governed by NIST FIPS and IETF RFC

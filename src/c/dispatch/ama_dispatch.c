@@ -1455,10 +1455,8 @@ static void dispatch_init_internal(void) {
     dispatch_info.sphincs          = effective;
     dispatch_info.aes_gcm          = effective;
     /* Ed25519: no vector-wide AVX2/AVX-512 path is wired in this
-     * dispatcher. Report as GENERIC; the concrete non-vector backend
-     * (fe51 scalar, or the donna shim when AMA_ED25519_ASSEMBLY is
-     * enabled) is selected by the build configuration, not at
-     * runtime. */
+     * dispatcher. Report as GENERIC; the in-house backend chooses its
+     * field instantiation inside src/c/ama_ed25519.c, not here. */
     dispatch_info.ed25519          = AMA_IMPL_GENERIC;
     dispatch_info.chacha20poly1305 = effective;
     dispatch_info.argon2           = effective;
@@ -1716,9 +1714,9 @@ static void dispatch_init_internal(void) {
          * Rationale: on hosts where the scalar X25519 path is fe64
          * (radix-2^64, x86-64 GCC/Clang with MULX/ADX), four
          * sequential scalar ladders are *faster* than four lanes of
-         * the AVX2 donna-32bit ladder.  The 4-way kernel uses 32-bit
+         * the AVX2 32-bit-limb ladder.  The 4-way kernel uses 32-bit
          * limbs because AVX2 lacks a 64×64→128 lane-wise multiply
-         * (that arrived with AVX-512 IFMA); donna-32bit's larger
+         * (that arrived with AVX-512 IFMA); the 32-bit schedule's larger
          * cross-product count outpaces the 4× SIMD width on
          * Skylake-Cascade-class cores.  Measured locally:
          *   scalar fe64    : ~78 µs / op

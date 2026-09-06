@@ -4,14 +4,16 @@
  *
  * 5.1.7 step 1 requires the verifier to decode the signature's second half
  * as an integer S in the range 0 <= S < L, and to reject it otherwise.
- * Neither backend did, so (R, S + L) verified as well as (R, S) — signature
- * malleability: a distinct 64-byte string for one authenticated message,
- * producible without the private key. donna checked only `RS[63] & 224`
- * (rejecting S >= 2^253, while L sits just above 2^252, so the band where
- * S + L lands passed); fe51 had no check and reduces mod L internally.
+ * Neither of the two backends the tree then carried did, so (R, S + L)
+ * verified as well as (R, S) — signature malleability: a distinct 64-byte
+ * string for one authenticated message, producible without the private key.
+ * The since-removed vendored backend checked only `RS[63] & 224` (rejecting
+ * S >= 2^253, while L sits just above 2^252, so the band where S + L lands
+ * passed); the in-house backend had no check and reduces mod L internally.
  *
- * Header-only because CMakeLists.txt swaps one backend source for the
- * other: a shared .c would compile into one configuration only.
+ * Header-only (dating from when two backend sources were swapped at
+ * configure time); the predicates stay here because every decode and every
+ * verify funnels through them.
  *
  * Not constant time by requirement — S arrives in the signature and is
  * public — but written branch-free anyway.
@@ -77,10 +79,10 @@ static inline int ama_ed25519_scalar_is_canonical(const uint8_t s[32]) {
  * the opposite of the X25519 rule in RFC 7748 5, where a u in the same band
  * is reduced so two peers agree on one shared secret.  INVARIANT-27 records
  * that split and states the Ed25519 side of it explicitly; this predicate is
- * what makes the statement true of the code.  Before it, fe25519_frombytes
- * (and donna's ge25519_unpack_negative_vartime) reduced mod p, so each of the
- * 19 values in [p, 2^255) decoded to the same curve point as its reduced
- * counterpart and a public key had two accepted encodings.
+ * what makes the statement true of the code.  Before it, both decoders then
+ * in the tree reduced mod p, so each of the 19 values in [p, 2^255) decoded
+ * to the same curve point as its reduced counterpart and a public key had
+ * two accepted encodings.
  *
  * This is the same input-canonicalization class as INVARIANT-26's 0 <= S < L
  * and INVARIANT-29's ECDSA Qx/Qy in [0, p), and it is resolved the same way:
@@ -92,12 +94,12 @@ static inline int ama_ed25519_scalar_is_canonical(const uint8_t s[32]) {
  * is rejected by ama_ed25519_signature_r_is_canonical() below.  That last
  * clause used to read "a malleated R fails the re-encode comparison, so both
  * signature-malleability paths were already closed" -- true of the two
- * single-signature verifiers, and half false of the donna batch path, which
- * decodes R instead of re-encoding and so closed only the S one.  The S half
- * was already covered there by the explicit canonical-S loop in the shim's
- * post-batch override; nothing covered R.  The R predicate exists because
- * that half of the sentence did not hold everywhere it was written.  (An
- * earlier correction here said the batch path "closed neither", which
+ * single-signature verifiers, and half false of the removed vendored
+ * backend's batch path, which decoded R instead of re-encoding and so closed
+ * only the S one.  The S half was already covered there by an explicit
+ * canonical-S loop after the batch; nothing covered R.  The R predicate
+ * exists because that half of the sentence did not hold everywhere it was
+ * written.  (An earlier correction here said the batch path "closed neither", which
  * overstates in the other direction.)
  *
  * The sign bit (bit 255) is masked off first -- it carries the sign of x, not
@@ -120,10 +122,11 @@ static inline int ama_ed25519_point_y_is_canonical(const uint8_t p[32]) {
  * RFC 8032 5.1.3 step 3: "if x = 0, and x_0 = 1, decoding fails."  x = 0 has a
  * single square root, so the sign bit distinguishes nothing, and the encoding
  * with it SET is a second spelling of a point whose canonical encoding has it
- * clear.  Neither backend implemented the rule: fe25519's decoder negates
- * conditionally (and -0 == 0, so the sign bit was silently ignored), and
- * donna's ge25519_unpack_negative_vartime compares parity and skips the negate
- * for the same reason.  The identity therefore had two accepted encodings.
+ * clear.  Neither backend then in the tree implemented the rule: the
+ * in-house decoder negates conditionally (and -0 == 0, so the sign bit was
+ * silently ignored), and the vendored one compared parity and skipped the
+ * negate for the same reason.  The identity therefore had two accepted
+ * encodings.
  *
  * x = 0 exactly when y^2 = 1 — from x^2 = (y^2 - 1)/(d*y^2 + 1), the numerator
  * vanishes — i.e. y = 1 (the identity) or y = p-1 (the order-2 point).  So the
@@ -194,12 +197,11 @@ static inline int ama_ed25519_point_encoding_is_canonical(const uint8_t p[32]) {
  *
  * The single-signature verifiers satisfied this by accident rather than by
  * rule.  Both re-encode the computed [S]B - [h]A and compare bytes against
- * R, and both encoders (ge25519_pack, ge25519_p3_tobytes) emit only canonical
- * encodings, so a non-canonical R could never match and was rejected.  The
- * donna BATCH path has no such comparison: ed25519-donna-batchverify.h feeds
- * R through ge25519_unpack_negative_vartime and checks the aggregate group
- * equation, and unpack decodes `01 00..00` with bit 255 set to the identity
- * and drops the set sign bit (x = 0 has one root, so the conditional negate
+ * R, and both encoders emitted only canonical encodings, so a non-canonical
+ * R could never match and was rejected.  The removed vendored backend's BATCH
+ * path had no such comparison: it decoded R and checked the aggregate group
+ * equation, and its decoder took `01 00..00` with bit 255 set to the identity
+ * and dropped the set sign bit (x = 0 has one root, so the conditional negate
  * is a no-op).  Batch therefore reported VALID for a signature single verify
  * REJECTS -- two verifiers in one library disagreeing on one input, which is
  * the condition INVARIANT-26/38 exist to forbid.
@@ -207,11 +209,11 @@ static inline int ama_ed25519_point_encoding_is_canonical(const uint8_t p[32]) {
  * That divergence was reachable with the signer's own key and no forgery:
  * put R = the identity's sign-bit-set encoding, and S = h * a mod L makes
  * [S]B - [h]A the identity, which is what R decodes to.  Reproduced at
- * count >= 4 (donna falls back to per-entry verify while num <= 3), see
+ * count >= 4 (that path fell back to per-entry verify while num <= 3), see
  * tests/c/test_ed25519_canonical_r.c.
  *
  * Applying the rule explicitly on the single-verify path -- which the batch
- * verifier now calls per entry in BOTH backends (B1, 5.0.0 pre-tag audit) --
+ * verifier calls per entry (B1, 5.0.0 pre-tag audit) --
  * puts it on every verify path by construction: the batch path no longer has a
  * separate aggregate decode of R that could disagree with single verify.  No
  * legitimate signature is affected: R is produced by the same canonical

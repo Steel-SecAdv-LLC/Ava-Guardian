@@ -1325,9 +1325,10 @@ typedef struct {
  *                  an invalid entry (`results[i] = 0`, and the call returns
  *                  `AMA_ERROR_VERIFY_FAILED`), which is the same verdict
  *                  `ama_ed25519_verify` gives those arguments. Until this
- *                  was added the donna backend dereferenced them and took
- *                  SIGSEGV while the in-tree backend rejected cleanly, so
- *                  the same call crashed on x86-64 and returned on aarch64.
+ *                  was added the since-removed vendored backend dereferenced
+ *                  them and took SIGSEGV while the in-tree backend rejected
+ *                  cleanly, so the same call crashed on x86-64 and returned
+ *                  on aarch64.
  * @param count     Number of entries in `entries`, and the minimum number
  *                  of `int` slots in `results`.
  * @param results   Output: caller MUST supply at least `count` writable
@@ -1338,9 +1339,9 @@ typedef struct {
  *         AMA_ERROR_INVALID_PARAM if `entries` or `results` is NULL, or if
  *         `count` is large enough that `count * sizeof(void *)` would overflow.
  *
- * Batch verification is a per-entry loop over `ama_ed25519_verify`, identical
- * in both backends (the fe51 path always was; the donna path became one in
- * 5.0.0 — see B1 in the pre-tag audit, which retired donna's randomized
+ * Batch verification is a per-entry loop over `ama_ed25519_verify` (the
+ * in-tree path always was; the since-removed vendored backend became one in
+ * 5.0.0 — see B1 in the pre-tag audit, which retired its randomized
  * multi-scalar aggregate because its predicate accepted canonically encoded
  * small-order residues that single verify rejects). The batch verdict for an
  * entry is therefore exactly the single-verify verdict for the same 64 bytes:
@@ -1371,12 +1372,12 @@ AMA_API ama_error_t ama_ed25519_batch_verify(
 
 /**
  * @brief Name the Ed25519 group-arithmetic instantiation the next call runs on.
- * @return A static string: "fe64-mulx" when the radix-2^64 MULX+ADX
- *         instantiation is compiled in and selected (x86-64 GCC/Clang build,
- *         CPUID reports BMI2 and ADX, no override forcing it off), otherwise
- *         "fe51" (the portable radix-2^51 instantiation, the only one on
- *         AArch64 and MSVC).  Both are in-house; there is no third-party
- *         Ed25519 code in the library.
+ * @return A static string: "fe51" (the portable radix-2^51 instantiation,
+ *         the default on every host and the only one on AArch64 and MSVC),
+ *         or "fe64-mulx" when the radix-2^64 MULX+ADX instantiation is
+ *         compiled in (x86-64 GCC/Clang build), the host has BMI2 and ADX,
+ *         and `ama_ed25519_set_mulx_override(1)` has selected it.  Both are
+ *         in-house; there is no third-party Ed25519 code in the library.
  *
  * Build and dispatch introspection, not a cryptographic operation.  The
  * fe51-versus-MULX differential (tests/c/test_ed25519_fe51_mulx_equiv.c) uses
@@ -1386,24 +1387,27 @@ AMA_API ama_error_t ama_ed25519_batch_verify(
 AMA_API const char *ama_ed25519_active_backend(void);
 
 /**
- * @brief Benchmark/test-only override for the Ed25519 fe64 MULX+ADX runtime gate.
+ * @brief Benchmark/test-only selector for the Ed25519 fe64 MULX+ADX instantiation.
  *
  * The in-house Ed25519 backend carries two instantiations of one group
- * arithmetic: the portable radix-2^51 field (fe51) and, on x86-64 GCC/Clang
- * builds, the radix-2^64 field on the MULX+ADX kernel, selected per call when
- * `ama_cpuid_has_x25519_mulx()` reports BMI2 and ADX.  This sets a
- * process-wide override of that selection, with the same contract as
- * `ama_x25519_set_mulx_override()`: -1 = auto (default; honour CPUID),
- * 0 = force the fe51 instantiation, 1 = force the MULX instantiation (a no-op
- * unless the unit was compiled in AND the host has BMI2+ADX).
+ * arithmetic: the portable radix-2^51 field (fe51), the default everywhere,
+ * and, on x86-64 GCC/Clang builds, the radix-2^64 field on the MULX+ADX
+ * kernel.  fe51 is the default by measurement: alternating the two in one
+ * process on the reference x86-64 host, the MULX instantiation ties on
+ * keygen and sign and is 10-15% slower on verify and double-scalar-mult,
+ * because the group formulas carry every radix-2^64 addition while radix
+ * 2^51 leaves them carry-free (src/c/ama_ed25519.c, BACKEND DISPATCH).
+ * This sets a process-wide selection: -1 or 0 = fe51 (default), 1 = the
+ * MULX instantiation (a no-op unless the unit was compiled in AND
+ * `ama_cpuid_has_x25519_mulx()` reports BMI2 and ADX).
  *
  * **NOT a production policy knob.**  Both instantiations are byte-identical
- * (tests/c/test_ed25519_fe51_mulx_equiv.c); the override exists so
+ * (tests/c/test_ed25519_fe51_mulx_equiv.c); the selector exists so
  * benchmarks can measure both on one host and so the equivalence test can
- * pin the fe51 path on a host that would otherwise select MULX.  Single-
- * threaded by contract: call it during harness setup with no Ed25519 work
- * in flight on any thread.  On builds without the MULX unit it is a no-op.
- * `ama_ed25519_active_backend()` reports the selection in effect.
+ * drive both.  Single-threaded by contract: call it during harness setup
+ * with no Ed25519 work in flight on any thread.  On builds without the MULX
+ * unit it is a no-op.  `ama_ed25519_active_backend()` reports the selection
+ * in effect.
  */
 AMA_API void ama_ed25519_set_mulx_override(int mode);
 
@@ -1448,10 +1452,9 @@ AMA_API ama_error_t ama_ed25519_point_add(uint8_t result[32],
  * SCALAR RANGE: any 32-byte little-endian value in [0, 2^256) is accepted,
  * and the result depends on it only through `public_scalar mod l`, where l
  * is the Ed25519 group order.  That is the same canonicalisation
- * ama_ed25519_point_from_scalar has always applied, it is what the donna
- * backend has always done (its scalar expansion reduces), and it is now
- * enforced in the in-tree backend as well, so the two backends return
- * byte-identical results for every input.  Callers holding an unreduced
+ * ama_ed25519_point_from_scalar has always applied, and it is enforced on
+ * every entry point, so both field instantiations return byte-identical
+ * results for every input.  Callers holding an unreduced
  * scalar do not need to reduce it first; callers relying on a distinction
  * between s and s mod l (which differ on points outside the prime-order
  * subgroup) will not find one here.
@@ -1475,7 +1478,8 @@ AMA_API ama_error_t ama_ed25519_scalarmult_public(uint8_t result[32],
  * micro-benchmark target for tuning the wNAF window default.
  *
  * SCALAR RANGE: as for ama_ed25519_scalarmult_public — both scalars are
- * taken modulo l, and both backends agree byte-for-byte on every input.
+ * taken modulo l, and both field instantiations agree byte-for-byte on every
+ * input.
  */
 AMA_API ama_error_t ama_ed25519_double_scalarmult_public(
     uint8_t result[32],
@@ -2274,7 +2278,7 @@ AMA_API ama_error_t ama_x25519_keypair(
  * encodings — the values in [p, 2^255) — that are representable but not
  * canonical.  This library REDUCES such a u modulo p before the ladder, so
  * the shared secret is the one every reference implementation (ref10,
- * curve25519-donna, libsodium) computes for the reduced value: the
+ * Andrew Moon's curve25519, libsodium) computes for the reduced value: the
  * Wycheproof x25519 tc88 input `p + 3`, for instance, is treated as `3`.
  * RFC 7748 permits either reducing or consuming the value unreduced;
  * reducing is chosen deliberately, so two peers that agree on a public key
@@ -2308,7 +2312,7 @@ AMA_API ama_error_t ama_x25519_key_exchange(
  * batch wrapper never pads short calls up to four lanes.  The 4-way
  * kernel is opt-in because on hosts with the scalar fe64 (MULX/ADX)
  * field path, four sequential scalar ladders are faster than four
- * AVX2 lanes of the donna-32bit ladder; the kernel is provided for
+ * AVX2 lanes of the 32-bit-limb ladder; the kernel is provided for
  * the future AVX-512 IFMA port and for CI/test coverage of the SIMD
  * path.  Single-element batches (N == 1) bypass the 4-way kernel
  * entirely so callers do not pay the 3-lane zero-fill cost on the

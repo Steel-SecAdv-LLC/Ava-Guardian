@@ -5073,7 +5073,7 @@ def native_ed25519_batch_verify(
     Batch verify multiple Ed25519 signatures using native C backend.
 
     This is intentionally non-constant-time (vartime) because verification
-    scalars are public. This is safe and documented in the donna header.
+    scalars are public; the C backend documents the same (src/c/ama_ed25519.c).
 
     Args:
         entries: List of (message, signature, public_key) tuples.

@@ -38,10 +38,9 @@
 # So the answer to a finding is to fix the code, or to drop the category
 # from `Checks:` below with a rationale.  The one suppression this
 # codebase used to carry — three clang-analyzer uninitialised-read checks
-# in `src/c/ed25519_donna_shim.c::ama_ed25519_point_from_scalar`, on
-# donna's macro-driven initialisation — was resolved the first way:
-# zero-initialising the two locals at declaration removes the analyzer's
-# premise, and clang-tidy 18 reports the file clean without it.
+# in the shim of the since-removed vendored Ed25519 backend — was resolved
+# the first way (zero-initialising the two locals at declaration), and the
+# shim itself is gone with the backend.
 
 Checks: >
   -*,
@@ -107,19 +106,18 @@ Checks: >
 #     no-op refactor (e.g., a project-side `safe_getenv` wrapper)
 #     that adds zero safety.
 #
-#   clang-analyzer-core.UndefinedBinaryOperatorResult — fires once,
-#     from `src/c/ed25519_donna_shim.c::ama_ed25519_point_from_scalar`
-#     calling into `src/c/vendor/ed25519-donna/curve25519-donna-64bit.h:85`.
-#     The interprocedural pass loses track of the vendor donna macro
-#     that initialises the field-element argument and flags the read
-#     as "garbage".  The kernel is KAT-verified and vendor code gets
-#     no project-side modifications.  Dropping ONLY this one check
-#     keeps the rest of `clang-analyzer-*` (the security-bearing
-#     family) enforced.  (No NOLINT survives at the call site:
-#     inline suppressions under src/c/ are forbidden and enforced by
-#     tools/check_suppression_hygiene.py — see the header of this
-#     file; an earlier revision of this note claimed one was
-#     "preserved", contradicting that policy.)
+#   clang-analyzer-core.UndefinedBinaryOperatorResult — the interprocedural
+#     analyzer reports "garbage value" on the Montgomery-reduce reads from
+#     caller-initialised coefficient arrays in the polynomial backends
+#     (ama_dilithium.c pointwise Montgomery, ama_kyber.c basemul and
+#     ama_nistp.c limb packing): it cannot follow the array fill across the
+#     call boundary and treats the operand as uninitialised.  These are false
+#     positives on code the KAT suites exercise exhaustively; the finding was
+#     first seen from the since-removed vendored Ed25519 shim and still fires
+#     on the first-party NTT code, so the check stays dropped.  (No NOLINT
+#     exists anywhere under src/c/: inline suppressions there are forbidden
+#     and enforced by tools/check_suppression_hygiene.py — see the header of
+#     this file.)
 
 # WarningsAsErrors flips every enabled check above to an ERROR.  See
 # the header for the audit Issue 9 close-out rationale.  PRs that
@@ -129,10 +127,9 @@ Checks: >
 WarningsAsErrors: '*'
 
 # Header filter:
-#   We only check our own headers (src/c/, include/).  Vendored sources
-#   under src/c/vendor/ and third-party headers under /usr/include are
-#   excluded — clang-tidy would otherwise drown the output in third-
-#   party-noise.
+#   We only check our own headers (src/c/, include/); system headers
+#   under /usr/include are excluded — clang-tidy would otherwise drown
+#   the output in third-party noise.
 #
 #   POSITIVE alternation over the real header directories, in POSIX ERE.
 #   The previous spelling excluded vendor/ with a lookahead —

@@ -114,14 +114,25 @@ with no gate looks like.
 
 ### INVARIANT-1 Addendum — Vendoring Policy
 
-Vendoring public-domain source into `src/c/vendor/` and compiling it as part
-of AMA's own build system is permitted. Vendored source is included in-tree
-and compiled from source as part of AMA's build system; its original license
-(documented per component) is unaffected by vendoring. Vendored source
-**must not** be linked as a pre-built binary.
+No cryptographic source is vendored. Every primitive the library ships is
+written in this repository, and `src/c/vendor/` **must not exist**:
+`tools/check_vendor_isolation.py` fails the build if the directory reappears
+or if any file under `src/c/` includes a forbidden vendor header, in a fallback
+arm or anywhere else, and `tests/test_vendor_isolation_gate.py` pins both
+directions.
 
-See the **Vendored Dependencies** appendix at the end of this document for
-the current inventory.
+This addendum used to permit vendoring public-domain source into
+`src/c/vendor/`, compiled from source and never linked pre-built, and one
+component lived under it: a public-domain x86-64 Ed25519 implementation
+selected by a CMake option on x86-64 and MSVC builds. The twenty-first
+maintenance pass replaced it with the in-house Ed25519 backend
+(`src/c/ama_ed25519.c`, `src/c/internal/ama_ed25519_ge.h`), which is measured
+faster than it was on every row, and removed the option, the shim, the
+differential CI job and the tree itself. The only third-party code left in
+the repository is the dudect timing harness under `tests/c/dudect/`, which is
+test tooling, not a cryptographic primitive, and is outside `src/c/`. The
+**Vendored Dependencies** appendix at the end of this document records the
+history.
 
 ## INVARIANT-2 — Fail-Closed CI
 
@@ -677,15 +688,16 @@ that reported on them, but it only ever collected
 `ama_cryptography/**/*.py`, `tests/**/*.py` and `tools/**/*.py`, so no path
 under `src/c/` or `include/` could reach that branch — dead code for all four
 entries, two of which (`ama_cryptography/_primitive`, `ama_cryptography/backend`)
-name directories that do not exist. Meanwhile a live suppression sat in
-`src/c/ed25519_donna_shim.c`: a next-line marker silencing three
-clang-analyzer uninitialised-read checks on donna's macro-driven
-initialisation, while the gate printed "all suppressions are properly justified"
-and exited 0. It is gone — not moved or re-justified, but removed by making the
-analyzer's premise false, zero-initialising the two locals at declaration, after
-which clang-tidy 18 reports the file clean. The tree now carries **zero**
-suppressions under either root, and the gate is the thing that keeps it that
-way.
+name directories that do not exist. Meanwhile a live suppression sat in the
+shim of the since-removed vendored Ed25519 backend: a next-line marker
+silencing three clang-analyzer uninitialised-read checks on that backend's
+macro-driven initialisation, while the gate printed "all suppressions are
+properly justified" and exited 0. It went — not moved or re-justified, but
+removed by making the analyzer's premise false, zero-initialising the two
+locals at declaration, after which clang-tidy 18 reported the file clean (and
+the file itself has since left the tree with the backend). The tree now
+carries **zero** suppressions under either root, and the gate is the thing
+that keeps it that way.
 
 Widening it also required the scanner to become precise about what a
 suppression *is*. It had been collecting the line numbers carrying a comment
@@ -983,36 +995,29 @@ not as recoverable telemetry loss.
 
 ## Vendored Dependencies
 
-### ed25519-donna
+**None.** `src/c/vendor/` does not exist and the vendor-isolation gate fails
+the build if it reappears (INVARIANT-1 Addendum — Vendoring Policy).
 
-- **Source:** https://github.com/floodyberry/ed25519-donna
-- **License:** Public domain (Andrew Moon)
-- **Location:** `src/c/vendor/ed25519-donna/`
-- **CMake flag:** `AMA_ED25519_ASSEMBLY` (default **ON** on x86-64 and
-  MSVC x64; default **OFF** on ARM and other non-x86 targets, where donna
-  has no assembly path. Opt out of donna on x86-64 with
-  `-DAMA_ED25519_ASSEMBLY=OFF`, which forces the in-tree fe51 + signed
-  4-bit window comb backend in `src/c/ama_ed25519.c` — useful for
-  clean-room auditing of the AMA-authored Ed25519 path.)
-- **Purpose:** Optimized x86-64 Ed25519 scalar multiplication with inline
-  assembly for constant-time Niels basepoint table selection. Provides ~3x
-  keygen/sign speedup and ~2.5x verify speedup over AMA's fe51 C
-  implementation on x86-64. The in-tree backend also uses a signed 4-bit
-  window comb (BDLSY 2012) that closes most of that gap on platforms where
-  donna is not available.
-- **INVARIANT-1 compliance:** The vendored source is public domain, compiled
-  from source as part of AMA's build system, and never linked as a pre-built
-  binary. It satisfies INVARIANT-1 under the vendoring policy: vendored
-  public-domain source is included in-tree and compiled as part of AMA's
-  build system; its original public-domain license is unaffected by
-  vendoring.
-- **MSVC ARM64 limitation:** The donna backend provides x86-64 assembly
-  only. The fe51 backend requires `__uint128_t`, which MSVC does not provide
-  on any architecture. Therefore MSVC on ARM64 (Windows on ARM) has no
-  working Ed25519 path. `CMakeLists.txt` emits `FATAL_ERROR` at configure
-  time for this combination. To build on ARM64 Windows, use GCC or Clang
-  (e.g., via MSYS2 or clang-cl) which provide `__uint128_t` and enable the
-  fe51 backend.
+### History: the removed x86-64 Ed25519 backend
+
+Until the twenty-first maintenance pass the tree vendored a public-domain
+x86-64 Ed25519 implementation (Andrew Moon's), compiled from source through a
+project shim and selected by a CMake option that defaulted on for x86-64 and
+was auto-enabled on MSVC x64, because the in-tree radix-2^51 arithmetic
+needed a 128-bit integer type MSVC does not have. It was the faster path on
+x86-64 at the time.
+
+It is gone. The in-house backend now carries static precomputed base-point
+tables (`tools/gen_ed25519_tables.py`), a signed 5-bit comb with constant-time
+masked selection, Bernstein–Yang constant-time inversion, and half-size-scalar
+verification, and measures faster than the removed backend on every Ed25519
+row of the benchmark on the reference x86-64 host (keygen 0.85x, sign 0.87x,
+verify 0.74x, double-scalar-mult 0.67x of its time). MSVC builds the same
+arithmetic through `_umul128` / `__shiftright128` (x64) and `__umulh` (ARM64),
+so Windows on ARM, which had no Ed25519 path at all, now has the same one as
+every other platform. The removed backend's answers over a 2,022-record corpus
+are frozen in `tests/oracle/ed25519_frozen_oracle.txt` and replayed on every
+build, so the code that replaced it is still held to the answers it gave.
 
 ---
 
@@ -1184,7 +1189,7 @@ Neither backend enforced it, and Wycheproof `eddsa_verify_schema_v1` found it:
 `tc63` (*checking malleability*) and `tc85` (*Signature with S just above the
 bound*) both verified as **valid**.
 
-* The vendored **ed25519-donna** path (x86-64 default) tested only
+* The vendored x86-64 path the tree then carried (since removed) tested only
   `RS[63] & 224`, rejecting `S >= 2^253`. `L` is just above `2^252`, so the
   band `L <= S < 2^253` passed — exactly where `S + L` lands.
 * The portable **fe51** path (`ama_ed25519.c`) performed no range check, and
@@ -1198,13 +1203,12 @@ caches, replay windows, content addressing, transaction ids) can be shown two
 "different" signatures for one authenticated message.
 
 **Enforcement.** `src/c/internal/ama_ed25519_canonical.h` provides the range
-check as a `static inline`, included by **both** backends. It is header-only
-because CMakeLists.txt swaps one backend source for the other, so a shared `.c`
-would compile into only one configuration and the check could regress silently
-in the other. Applied at three sites: `ama_ed25519_verify` in each backend, and
-the donna batch wrapper — donna's batch routine calls its own
-`ed25519_sign_open` rather than `ama_ed25519_verify`, so without the third site
-batch verification would accept what single verification rejects.
+check as a `static inline`. It was made header-only when CMakeLists.txt still
+swapped one backend source for the other, so that a shared `.c` could not
+compile into only one configuration; with one backend left it is applied at
+`ama_ed25519_verify`, which batch verification calls per entry, so the two
+cannot disagree. (The removed vendored backend's batch routine called its own
+verifier, which is why a third site once existed.)
 
 **Not claimed as constant time.** `S` arrives in the signature and is public, so
 a data-dependent branch here leaks nothing secret. The check is written
@@ -1248,8 +1252,8 @@ RFC 7748 does not *require* the reduction and Wycheproof scores the case
 is decided in favour of reducing because the failure mode is silent and
 undiagnosable: two peers that agree on a public key derive different shared
 secrets, and the handshake simply fails. Every reference implementation
-(ref10, curve25519-donna, libsodium) normalizes and therefore agrees with the
-reduced interpretation.
+(ref10, Andrew Moon's curve25519, libsodium) normalizes and therefore agrees
+with the reduced interpretation.
 
 **Enforcement.** `x25519_canonicalize_u()` in `src/c/ama_x25519.c` masks bit
 255 and performs one conditional subtraction of `p` — one suffices, because
@@ -2133,13 +2137,13 @@ public-key encoding malleability.
 `src/c/internal/ama_ed25519_canonical.h` masks bit 255 and compares the 32-byte
 little-endian value against `p` using the same branch-free comparator as the
 `S < L` check (`ama_ed25519_lt_32`, factored out so the scalar and
-field-element predicates cannot drift apart). Both backends enforce it: the
-in-tree fe51 path inside `ge25519_frombytes()` in `src/c/ama_ed25519.c`, which
-every decode in that file funnels through, and the donna path at each call site
-in `src/c/ed25519_donna_shim.c` — verify plus the four point helpers — because
-`ge25519_unpack_negative_vartime()` belongs to the vendored tree and stays
-byte-for-byte unmodified. Both therefore accept exactly the same set of
-encodings, which the Ed25519 backend-differential job depends on.
+field-element predicates cannot drift apart). It is enforced inside the
+decoder every point in the in-house backend funnels through
+(`ge_decode_prepare` in `src/c/internal/ama_ed25519_ge.h`), so both field
+instantiations accept exactly the same set of encodings — which the fe51/MULX
+differential and the frozen oracle both depend on. (The removed vendored
+backend applied the same predicate at each of its call sites, because its
+decoder stayed byte-for-byte unmodified.)
 
 **Not a constant-time requirement.** The `y` coordinate arrives in a public
 key and is public. The comparison is branch-free regardless.
@@ -2152,7 +2156,9 @@ directions, and integration assertions through single and batch verify.
 binding — the whole `[p, p+18]` band rejected, canonical keys accepted, and the
 sign bit shown not to affect the verdict — mirroring
 `tests/test_secp256k1_ecdsa_noncanonical_pubkey.py` for INVARIANT-29. The
-backend-differential job proves the two backends agree on every case.
+frozen oracle (`tests/oracle/ed25519_frozen_oracle.txt`) replays the removed
+backend's verdicts on every case, and the fe51/MULX differential pins the two
+field instantiations against each other.
 
 ---
 

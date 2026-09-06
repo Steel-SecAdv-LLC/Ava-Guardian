@@ -31,7 +31,7 @@ and continuously enforced in
 | ML-KEM-1024 (FIPS 203) | `ama_kyber.c` | Written from FIPS 203 spec | None (no upstream code copied) | N/A (clean-room) | 25/25 KeyGen, 25/25 EncapDecap |
 | ML-DSA-65 (FIPS 204) | `ama_dilithium.c` | Written from FIPS 204 spec | None (no upstream code copied) | N/A (clean-room) | 25/25 KeyGen, 15/15 SigVer (TG3) |
 | SLH-DSA-SHA2-256f (FIPS 205) | `ama_slhdsa.c` | Written from FIPS 205 spec | None (no upstream code copied) | N/A (clean-room) | 14/14 SigVer (TG5) |
-| Ed25519 | `ama_ed25519.c` + `vendor/ed25519-donna/` | Vendored | [floodyberry/ed25519-donna](https://github.com/floodyberry/ed25519-donna) | Public domain (see `vendor/ed25519-donna/LICENSE`) | Sign/verify round-trip |
+| Ed25519 | `ama_ed25519.c` + `internal/ama_ed25519_ge.h` | In-house (written from RFC 8032; tables generated in-tree) | Group law, comb, verify: none. Constant-time inversion (`internal/ama_fe25519_safegcd.h`) follows libsecp256k1's safegcd `modinv64` reference (MIT; attributed in NOTICE) | Adapted (safegcd), else in-house | Sign/verify round-trip + frozen-oracle replay (2,022 records) |
 | SHA3-256 / SHA3-512 / SHAKE | `ama_sha3.c` | Written from FIPS 202 spec | None | N/A (clean-room) | 554 AFT + 400 MCT (151/86/174/143 AFT + 100 MCT per algo) |
 | SHA-256 | `ama_sha256.c` | Written from FIPS 180-4 spec | None | N/A (clean-room) | FIPS 180-4 §B.1 refs |
 | HMAC-SHA-256 | `ama_hmac_sha256.c` | Written from RFC 2104 + FIPS 198-1 | None | N/A (clean-room) | 150/150 AFT |
@@ -186,32 +186,51 @@ at the hash layer (the SHA-2 core is straight-line).
 
 ---
 
-## Ed25519 — `ama_ed25519.c` + `vendor/ed25519-donna/`
+## Ed25519 — `ama_ed25519.c` + `internal/ama_ed25519_ge.h`
 
-**Provenance:** Mixed. The default x86-64 build uses the vendored
-[floodyberry/ed25519-donna](https://github.com/floodyberry/ed25519-donna)
-public-domain assembly backend (enabled by `AMA_ED25519_ASSEMBLY=ON`,
-which is the CMake default on x86-64 / MSVC x64); the vendored copy
-lives under `src/c/vendor/ed25519-donna/` with the upstream `LICENSE`
-preserved verbatim. When the donna backend is not selected (the default
-on ARM / other non-x86 targets, or on any platform with
-`-DAMA_ED25519_ASSEMBLY=OFF`), the in-tree path in `src/c/ama_ed25519.c`
-is used instead. It consists of:
+**Provenance:** In-house, on every platform. Until the twenty-first
+maintenance pass the default x86-64 build used a vendored public-domain
+assembly backend selected by a CMake option; that backend, its shim and
+the option were removed (see CHANGELOG), and exactly one Ed25519
+implementation remains: `src/c/ama_ed25519.c` (the RFC 8032 protocol,
+scalar arithmetic mod l, digit recoding and the public API) plus the
+group-arithmetic template `src/c/internal/ama_ed25519_ge.h`, instantiated
+twice from the same source text — over radix 2^51 (fe51, the default
+everywhere) and, on x86-64 GCC/Clang builds, over radix 2^64 on the
+MULX+ADX kernel (`src/c/x86/ama_ed25519_fe64_mulx.c`), byte-identical
+(`tests/c/test_ed25519_fe51_mulx_equiv.c`) and selectable through
+`ama_ed25519_set_mulx_override(1)` but not the default because it
+measured slower at the group level. It consists of:
 - Radix 2^51 field arithmetic (`fe51.h`) — written from the
   [Ed25519 paper](https://ed25519.cr.yp.to/ed25519-20110926.pdf) and
-  the ref10 SUPERCOP reference, in-tree.
-- Fixed-base scalar multiplication via a **signed 4-bit window comb**
-  (Bernstein–Duif–Lange–Schwabe–Yang 2012, §4) — 32 subtables × 8
-  Edwards-extended points precomputed at first use from the RFC 8032
-  base point, using the same in-tree group arithmetic as sign/verify.
-  Constant-time (INVARIANT-12): digit extraction is branchless; table
-  select is a linear cmov over all 8 entries; sign negation is a
-  branchless cmov on the coordinate negations. No external data — the
-  table is derived from ed_B by in-tree math, making every byte
-  auditable. See `ge25519_scalarmult_base_comb_signed` in
-  `ama_ed25519.c`.
-- Variable-base scalar multiplication via width-4 wNAF (vartime, used
-  only for verification where the scalar is public).
+  the ref10 SUPERCOP reference, in-tree. MSVC builds it through a
+  128-bit accumulator on `_umul128` / `__shiftright128` (x64) or
+  `__umulh` (ARM64), so Windows needs no other backend.
+- Fixed-base scalar multiplication via a **signed 5-bit window comb**
+  over static precomputed tables — 26 tables × 16 affine Niels entries,
+  derived from the RFC 8032 base point by `tools/gen_ed25519_tables.py`
+  and emitted into `src/c/internal/ama_ed25519_tables.h` in both radices
+  (nothing transcribed from another implementation;
+  `tests/test_ed25519_static_tables.py` checks the file against the
+  generator and `tests/c/test_ed25519_static_tables.c` checks every entry
+  against the library's own variable-base arithmetic). Constant-time
+  (INVARIANT-12): fixed digit count; table selection reads every entry
+  of the row and combines with masks (a 128-bit SSE2 fold in the
+  template, or the 256-bit AVX2 fold in
+  `src/c/avx2/ama_ed25519_select_avx2.c` dispatched on CPUID); the digit
+  sign is applied by masked swap and masked negate. No lazy
+  initialisation and no atomics anywhere on the path.
+- Constant-time field inversion by Bernstein–Yang safegcd divsteps
+  (`src/c/internal/ama_fe25519_safegcd.h`).  The algorithm is
+  Bernstein–Yang (paper cited in the file); the concrete batched 62-bit
+  divstep implementation follows libsecp256k1's `modinv64` reference and its
+  published write-up (Pieter Wuille et al., MIT), attributed in NOTICE.  It is
+  the one adapted component in this backend; everything else here is written
+  from the specifications above.
+- Verification by half-size scalar decomposition (Antipa et al.,
+  `src/c/internal/ama_ed25519_halfsize.h`) over precomputed odd
+  multiples of B and of 2^128 B, with a projective identity test —
+  vartime, used only where every scalar is public.
 
 The AMA-level wrapper (`ama_ed25519.c`) adds:
 - API surface matching AMA's `ama_ed25519_sign` / `_verify` contract.
@@ -231,13 +250,18 @@ non-clamped all-0xFF, non-clamped top-byte 0xFE).  The last two
 provably exceed the group order l and exercise the internal
 `sc25519_reduce` path specifically.
 
-**Vendored-code patches** (applied in-tree on top of upstream
-floodyberry/ed25519-donna; searchable by grepping `AMA-PATCH:`):
-
-| File | Change | Reason |
-|------|--------|--------|
-| `vendor/ed25519-donna/curve25519-donna-{64bit,32bit,sse2}.h` | `curve25519_expand` reads its input with `memcpy` instead of `*(uint64_t *)(in + n)` / `*(uint32_t *)(in + n)` | `in` is caller memory: `ama_ed25519_verify`'s `public_key`, or a `pk[i]` / `RS[i]` entry on the batch path.  `include/ama_cryptography.h` requires of it only "exactly 32 readable bytes" and states no alignment requirement, and `const uint8_t *` imposes none, so an unaligned buffer is a legal call — on which the cast performed a misaligned load, undefined behaviour under C11 6.3.2.3p7.  UBSan reports it (`load of misaligned address ... requires 8 byte alignment`) through `ama_ed25519_verify -> ed25519_sign_open -> ge25519_unpack_negative_vartime -> curve25519_expand`, and the `AddressSanitizer + UBSan` job runs `halt_on_error=1`, so for such a caller a signature check became an abort.  It went unseen because every test in the tree passed a `uint8_t[32]` local or static, which every compiler in use aligns to at least 8; `tests/c/test_ed25519_unaligned_input.c` now walks 16 offsets.  Costs nothing: the linked `libama_cryptography.so` is **byte-identical** before and after the change under the release build (control: an edit at the same site that does change behaviour moves the digest).  donna's own byte-wise `else` branch is untouched. |
-| `vendor/ed25519-donna/ed25519-hash.h` | `ed25519_hash_update` early-return when `inlen == 0` | Upstream unconditionally calls `memcpy(dst, in, want)` even when `want` can be zero.  Passing a NULL `in` with `inlen == 0` is strict-C UB ("null pointer passed as argument 2, which is declared to never be null") and is flagged by UBSan; AMA's API permits `ama_ed25519_sign(..., NULL, 0, ...)` for empty-message signing (RFC 8032 Test Vector 1).  The early-return is a pure no-op for all real behaviour but satisfies the non-null-attribute contract. |
+**Formerly vendored code.** Earlier revisions of this section carried a
+table of `AMA-PATCH:` fixes applied on top of the vendored x86-64 backend
+(an unaligned-load fix in its point decoding and a zero-length `memcpy`
+guard in its hash update). That backend was removed in the twenty-first
+maintenance pass (see CHANGELOG), so no patched third-party source remains
+in the tree. The regression test the first fix introduced,
+`tests/c/test_ed25519_unaligned_input.c`, stays in the suite and runs
+against the in-house implementation, and the removed backend's recorded
+behaviour is pinned by `tests/oracle/ed25519_frozen_oracle.txt` (2,022
+records taken at commit `e848740`, replayed by
+`tests/c/test_ed25519_frozen_oracle.c` and
+`tests/test_ed25519_frozen_oracle.py`).
 
 No AES-NI-like hardware instructions exist for Ed25519; all speedups
 are algorithmic (precomputed tables, Karatsuba / fe51 field layout,

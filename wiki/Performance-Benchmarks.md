@@ -202,10 +202,10 @@ the kernel does **not** light up automatically.  Set
 
 Why opt-in: on x86-64 hosts where the scalar X25519 path is fe64 +
 MULX/ADX (Broadwell+ Intel, Zen+ AMD), four sequential scalar
-ladders are *faster* than four lanes of the AVX2 donna-32bit
+ladders are *faster* than four lanes of the AVX2 radix-2^25.5 10-limb
 ladder.  The kernel uses 32-bit limbs because AVX2 lacks a
 64×64→128 lane-wise multiply (that arrived with AVX-512 IFMA's
-`VPMADD52LUQ` / `VPMADD52HUQ`); donna-32bit's larger
+`VPMADD52LUQ` / `VPMADD52HUQ`); the 10-limb layout's larger
 cross-product schedule outpaces the 4× SIMD width on
 Skylake-class cores.  See the CHANGELOG `[3.0.0]` Performance
 entry for the per-op measurement and the full retention rationale
@@ -234,7 +234,7 @@ runtime so an operator can pin to scalar without rebuilding.
 | Ed25519 sign | Base-point comb table (radix-2^51 fe51 field arithmetic) | Default ON for x86-64 GCC/Clang (`fe51.h`) | Sign ~5× faster vs the previous scalar path on this host class | `src/c/ama_ed25519.c` (PR #261) |
 | Ed25519 verify | Width-5 wNAF + Shamir's trick (double-scalar-mult variable-time on public-only inputs) | Default ON for x86-64 GCC/Clang | Verify ~2× faster on this host class | `src/c/ama_ed25519.c` (PR #265) |
 | X25519 scalar-mult | fe64 schoolbook + MULX/ADCX/ADOX in-house inline assembly (4-limb radix-2^64 with dual-carry-chain interleave) | Build: per-file `-mbmi2 -madx`. Runtime: `ama_cpuid_has_x25519_mulx()` (BMI2 + ADX). Pure-C `fe64.h` is the fallback | ~21% over pure-C fe64 on the local sandbox; literature 1.8-2.2× on uncontended Skylake+ / Zen+ | `src/c/internal/ama_x25519_fe64_mulx.c`, `tests/c/test_x25519_fe64_mulx_equiv.c` |
-| X25519 batch-4 | AVX2 4-way Montgomery ladder (donna-32bit field, OPT-IN) | Runtime: only when `AMA_DISPATCH_USE_X25519_AVX2=1` (default OFF — scalar fe64 is faster on MULX/ADX hosts) | Off by design on MULX/ADX hosts; reserved for fe51/gf16 fallback hosts and the future AVX-512 IFMA port | `src/c/avx2/ama_x25519_avx2.c`, `tests/test_x25519_dispatch_policy.py` |
+| X25519 batch-4 | AVX2 4-way Montgomery ladder (radix-2^25.5 10-limb field, OPT-IN) | Runtime: only when `AMA_DISPATCH_USE_X25519_AVX2=1` (default OFF — scalar fe64 is faster on MULX/ADX hosts) | Off by design on MULX/ADX hosts; reserved for fe51/gf16 fallback hosts and the future AVX-512 IFMA port | `src/c/avx2/ama_x25519_avx2.c`, `tests/test_x25519_dispatch_policy.py` |
 | ML-DSA-65 / ML-KEM-1024 sampling | 4-way SHAKE128 / SHAKE256 across 4 SIMD lanes; CBD2 noise sampling AVX2-vectorised | Runtime: `ama_cpuid_has_avx2()` | Throughput-bound by the SHAKE rounds; sign / encaps ~3× faster than the scalar reference on this host | `src/c/avx2/ama_*_avx2.c` (PR #260) |
 | Dispatch auto-tune | Best-of-5 hysteresis (10% reversion threshold) for SHA-3 SIMD vs scalar selection | Opt-out: `AMA_DISPATCH_NO_AUTOTUNE=1` | Eliminates AVX2/NEON Keccak revert-to-scalar flakes on shared CI runners | `src/c/dispatch/ama_dispatch.c` |
 

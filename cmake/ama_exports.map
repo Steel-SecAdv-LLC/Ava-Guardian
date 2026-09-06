@@ -2,11 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # GNU ld / lld version script (audit B2).  Export ONLY AMA's own ama_* ABI from
-# libama_cryptography.so; localise everything else -- the vendored
-# ed25519-donna tree and every internal helper -- so no un-prefixed vendor name
-# (ed25519_sign, ed25519_sign_open, ed25519_sign_open_batch, ed25519_publickey,
-# curved25519_scalarmult_basepoint, batch_point_buffer) is exported where it
-# could be interposed by, or collide with, a co-loaded donna consumer.
+# libama_cryptography.so; localise everything else -- every internal helper,
+# and historically the un-prefixed names of the since-removed vendored Ed25519
+# tree -- so no un-prefixed name is exported where it could be interposed by,
+# or collide with, a co-loaded consumer.
 #
 # Anonymous version node: this controls symbol VISIBILITY only and introduces
 # no symbol versioning (no name@@NODE tags), so it is not itself an ABI change

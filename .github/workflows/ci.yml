@@ -961,13 +961,11 @@ jobs:
     - name: "audit B2: shared library exports only the ama_* ABI"
       # Companion to the vendor-isolation gate above: that checks what the
       # library pulls IN, this checks what it sends OUT.  Off-Windows AMA_API is
-      # empty, so before cmake/ama_exports.map the .so exported six un-prefixed
-      # ed25519-donna names (ed25519_sign / _sign_open / _sign_open_batch /
-      # _publickey / curved25519_scalarmult_basepoint) and the mutable data
-      # symbol batch_point_buffer, any of which a co-loaded donna consumer could
-      # interpose.  The version script now restricts exports to ama_*; this gate
-      # keeps them restricted (it fails on the pre-fix object, which exports the
-      # six names).
+      # empty, so before cmake/ama_exports.map the .so exported every defined
+      # symbol — at the time six un-prefixed names from the since-removed
+      # vendored Ed25519 tree and one mutable data symbol, any of which a
+      # co-loaded second copy could interpose.  The version script restricts
+      # exports to ama_*; this gate keeps them restricted.
       run: |
         python tools/check_export_allowlist.py \
           build/lib/libama_cryptography.so
@@ -1721,83 +1719,6 @@ jobs:
         fi
         echo "AVX-512 KAT executed under Intel SDE and passed: scalar = AVX2 = AVX-512, byte-identical."
 
-  ed25519-backend-differential:
-    name: Ed25519 backend differential (donna vs fe51)
-    # WHY THIS JOB EXISTS
-    #
-    # This repository ships TWO Ed25519 implementations and picks between them
-    # at configure time (CMakeLists.txt removes src/c/ama_ed25519.c from the
-    # source list and substitutes src/c/ed25519_donna_shim.c whenever
-    # AMA_ED25519_ASSEMBLY is ON, which is the default on x86-64):
-    #
-    #   * ed25519-donna  — x86-64 assembly, what every x86-64 lane builds
-    #   * fe51           — the portable path in ama_ed25519.c
-    #
-    # Until this job existed, no CI lane ever built fe51 on x86-64. It was
-    # exercised only incidentally on the ubuntu-24.04-arm runners, and nothing
-    # anywhere compared the two against each other.
-    #
-    # That is not a theoretical gap. INVARIANT-26 fixed an RFC 8032 §5.1.7
-    # canonical-S defect that was present in BOTH backends but for DIFFERENT
-    # reasons — donna's `RS[63] & 224` test was too weak, while fe51 had no
-    # range check at all — so a fix written against one could easily have left
-    # the other broken. Two implementations of one public API that nothing
-    # compares will drift; the only question is when it is noticed.
-    #
-    # This job builds both on the same runner and asserts they return the same
-    # verdict for every signature in a shared corpus. It is a differential
-    # test, not a KAT: it does not care which answer is right, only that the
-    # two backends cannot disagree without failing the build.
-    runs-on: ubuntu-latest
-    # Two full CMake builds of the native library plus a C test run.  Measured
-    # at roughly 4 minutes locally; 30 leaves headroom for a cold runner
-    # without letting a genuinely hung build sit for an hour.
-    timeout-minutes: 30
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-
-    - name: Set up Python
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-      with:
-        python-version: "3.11"
-
-    - name: Install build toolchain
-      run: |
-        .github/scripts/apt-install.sh build-essential cmake
-
-    - name: Build donna backend (x86-64 default)
-      run: |
-        cmake -S . -B build-donna \
-          -DAMA_ED25519_ASSEMBLY=ON \
-          -DAMA_USE_NATIVE_PQC=ON \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DAMA_BUILD_TESTS=ON \
-          -DAMA_BUILD_EXAMPLES=OFF
-        cmake --build build-donna -j"$(nproc)"
-
-    - name: Build fe51 backend (portable path, never built on x86-64 before)
-      run: |
-        cmake -S . -B build-fe51 \
-          -DAMA_ED25519_ASSEMBLY=OFF \
-          -DAMA_USE_NATIVE_PQC=ON \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DAMA_BUILD_TESTS=ON \
-          -DAMA_BUILD_EXAMPLES=OFF
-        cmake --build build-fe51 -j"$(nproc)"
-
-    - name: Run the C test suite against the fe51 backend
-      # The donna backend's C tests already run in ci-build-test.yml on every
-      # x86-64 lane. This is the half that had no coverage.
-      working-directory: build-fe51
-      run: ctest --output-on-failure
-
-    - name: Differential — both backends must agree on every signature
-      run: |
-        python tools/check_ed25519_backend_parity.py \
-          --donna build-donna/lib/libama_cryptography.so \
-          --fe51  build-fe51/lib/libama_cryptography.so
-
   c-consumer:
     name: C consumer (install + link, gcc & clang, shared & static)
     runs-on: ubuntu-latest
@@ -1866,7 +1787,6 @@ jobs:
       - benchmark-regression
       - constant-time-check
       - test-avx512
-      - ed25519-backend-differential
       - c-consumer
     runs-on: ubuntu-latest
     timeout-minutes: 3

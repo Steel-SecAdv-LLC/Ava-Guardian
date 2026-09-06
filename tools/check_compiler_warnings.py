@@ -19,8 +19,8 @@ file exists.
 ``the allowlist could not be reused``
     The step ran in exactly one configuration — x86-64, one compiler at a
     time, **no** ``CMAKE_BUILD_TYPE`` — and its conclusion ("no warnings
-    outside ``src/c/vendor/`` beyond the two documented extension classes")
-    was reported as a property of the repository.  It was a property of that
+    beyond the two documented extension classes") was reported as a
+    property of the repository.  It was a property of that
     configuration.  Two whole classes of diagnostic were unreachable from it:
 
     *optimizer-dependent warnings*
@@ -54,9 +54,8 @@ Both configurations and both architectures now feed this one allowlist.
 
 What is allowed, and why
 ------------------------
-``src/c/vendor/**``
-    INVARIANT-1 keeps vendored sources byte-for-byte unmodified, so their
-    diagnostics are not ours to fix.
+(There is no vendored C source: the tree's one vendored backend was removed
+in the twenty-first maintenance pass, and its exemption with it.)
 
 ``fe51.h`` / ``fe64.h`` — ``ISO C does not support '__int128' types``
     ``-Wpedantic`` under GCC.  The 128-bit limbs are what the field
@@ -126,14 +125,6 @@ class Exemption(NamedTuple):
 
 
 EXEMPTIONS: tuple[Exemption, ...] = (
-    Exemption(
-        name="vendored-source",
-        pattern=re.compile(r"[/\\]src[/\\]c[/\\]vendor[/\\]"),
-        reason=(
-            "INVARIANT-1 keeps vendored sources byte-for-byte unmodified, so "
-            "their diagnostics are not ours to fix."
-        ),
-    ),
     Exemption(
         name="int128-extension",
         # `.*` between the file name and the diagnostic text rather than the

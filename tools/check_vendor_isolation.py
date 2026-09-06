@@ -37,19 +37,13 @@ Nothing checked the four things that actually decide the question:
     this repository names it.
 
 ``the C tree``
-    Where the only ``#include <openssl/...>`` lines in this repository
-    actually live.  The vendored ed25519-donna carries an OpenSSL SHA-512 and
-    an OpenSSL ``RAND_bytes`` as the ``#else`` arm of its hash and RNG
-    selection — the arm taken when nothing else is defined.  They are not
-    compiled, because ``src/c/ed25519_donna_shim.c`` defines
-    ``ED25519_REFHASH`` and ``ED25519_CUSTOMRANDOM`` first; two lines in one
-    file are the whole of what stands between the shipped library and OpenSSL
-    doing its Ed25519 hashing and its randomness.  Nothing verified those
-    lines were still there: the source scan below reads ``ama_cryptography``
-    and has never looked at ``src/c`` at all.  A build that lost them would
-    take the OpenSSL arm, and whether that then fails to link depends on
-    whether the headers happen to be installed on the machine — which is not
-    a boundary, it is a coincidence.
+    Whether any ``#include <openssl/...>`` (or another forbidden vendor's
+    header) exists under ``src/c`` at all, and whether the directory the
+    vendored Ed25519 backend once lived in, ``src/c/vendor/``, has come back.
+    Until 2026-09 that vendored tree carried an OpenSSL SHA-512 and an OpenSSL
+    ``RAND_bytes`` as the ``#else`` arm of its hash and RNG selection, kept
+    out of the build by two macro definitions in one shim file that nothing
+    verified; the tree is gone and the rule is now absolute.
 
 ``the comparator boundary``
     ``benchmarks/`` is explicitly authorised to invoke peer implementations —
@@ -239,39 +233,30 @@ class Violation(NamedTuple):
 # C source check
 # --------------------------------------------------------------------------
 #
-# The Python source check below scans the package.  It has never scanned
-# `src/c/`, which is where the only `#include <openssl/...>` lines in this
-# repository actually are: the vendored ed25519-donna carries OpenSSL arms for
-# its hash and its RNG, and both are the `#else` — the arm taken when no
-# alternative macro is defined.
+# The Python source check below scans the package.  The C tree needs its own
+# rule, because a `#include <openssl/...>` is a vendor performing an internal
+# operation whether or not anything links it deliberately.
 #
-#     ed25519-hash.h:197         #include <openssl/sha.h>     (SHA512_Init …)
-#     ed25519-randombytes.h:78   #include <openssl/rand.h>    (RAND_bytes)
+# History matters here.  Until 2026-09 the tree carried a vendored copy of
+# a public-domain Ed25519 implementation under `src/c/vendor/`, whose hash
+# and RNG selection fell back
+# to OpenSSL in their `#else` arms; the check then had to know which vendored
+# files legitimately named OpenSSL and which macros the shim defined to keep
+# those arms out of the build — two lines in one file standing between the
+# shipped library and OpenSSL doing its Ed25519 hashing.  The vendored tree
+# is gone: every Ed25519 operation runs on the in-house arithmetic in
+# `src/c/ama_ed25519.c` and `src/c/internal/ama_ed25519_ge.h`, and
+# INVARIANT-1's vendoring addendum now says there is nothing to vendor.
 #
-# They are not compiled today, because `src/c/ed25519_donna_shim.c` defines
-# ED25519_REFHASH and ED25519_CUSTOMRANDOM before pulling the unit in.  That
-# is two lines in one file standing between the shipped library and OpenSSL
-# performing its Ed25519 hashing and its randomness — and until this check
-# existed, nothing verified they were still there.  A build that lost them
-# would take the OpenSSL arm; whether that then fails to link depends on
-# whether the headers happen to be installed, which is not a boundary.
-#
-# So the rule is positive rather than absentee: outside the vendored tree no
-# forbidden vendor header may be included at all, inside it every such
-# include must be a KNOWN fallback arm, and every in-tree translation unit
-# that compiles the vendored tree must define the macros that disable them.
+# So the rule is absolute rather than inventoried: `src/c/vendor/` must not
+# exist, and no file under `src/c/` may include a forbidden vendor header at
+# all.  A future vendoring would have to reintroduce the directory AND
+# rewrite this check, in the open, with an INVARIANT-1 amendment to match.
 
-#: Vendored upstream files that legitimately carry a forbidden-vendor include
-#: in a fallback arm, and the macro that must be defined to avoid it.  A
-#: vendor include found anywhere else — or here but not listed — is a
-#: violation, so a new one cannot arrive unnoticed.
-VENDORED_FALLBACK_INCLUDES: dict[str, tuple[str, str]] = {
-    "src/c/vendor/ed25519-donna/ed25519-hash.h": ("OpenSSL", "ED25519_REFHASH"),
-    "src/c/vendor/ed25519-donna/ed25519-randombytes.h": ("OpenSSL", "ED25519_CUSTOMRANDOM"),
-}
+#: The directory the vendored tree lived in.  Its existence is a violation.
+VENDOR_TREE = "src/c/vendor"
 
 _C_INCLUDE_RE = re.compile(r"^\s*#\s*include\s*[<\"](?P<path>[^>\"]+)[>\"]", re.M)
-_C_DEFINE_RE = re.compile(r"^\s*#\s*define\s+(?P<name>[A-Za-z_]\w*)", re.M)
 
 
 def _c_sources(root: Path) -> list[Path]:
@@ -289,7 +274,7 @@ def _vendor_for_include(include_path: str) -> str | None:
 
 
 def check_c_source(c_root: Path, repo_root: Path) -> list[Violation]:
-    """No forbidden vendor may be reachable from the C tree."""
+    """No vendored tree, and no forbidden vendor reachable from the C tree."""
     violations: list[Violation] = []
     files = _c_sources(c_root)
     if not files:
@@ -301,7 +286,18 @@ def check_c_source(c_root: Path, repo_root: Path) -> list[Violation]:
             )
         ]
 
-    seen_fallbacks: set[str] = set()
+    vendor_dir = repo_root / VENDOR_TREE
+    if vendor_dir.exists():
+        violations.append(
+            Violation(
+                "c source",
+                VENDOR_TREE,
+                "the vendored tree exists. INVARIANT-1 no longer permits vendored "
+                "cryptographic source; every primitive is in-house. Remove the "
+                "directory, or amend INVARIANT-1 and this gate together, in the open.",
+            )
+        )
+
     for path in files:
         rel = path.relative_to(repo_root).as_posix()
         text = path.read_text(encoding="utf-8", errors="replace")
@@ -310,70 +306,14 @@ def check_c_source(c_root: Path, repo_root: Path) -> list[Violation]:
             if vendor_name is None:
                 continue
             line = text.count("\n", 0, match.start()) + 1
-            known = VENDORED_FALLBACK_INCLUDES.get(rel)
-            if known is not None and known[0] == vendor_name:
-                seen_fallbacks.add(rel)
-                continue
             violations.append(
                 Violation(
                     "c source",
                     f"{rel}:{line}",
                     f"includes <{match.group('path')}> — {vendor_name} may not perform "
-                    f"an internal operation. If this is a vendored upstream's fallback "
-                    f"arm, record it in VENDORED_FALLBACK_INCLUDES with the macro that "
-                    f"disables it, and make every translation unit that compiles the "
-                    f"vendored tree define that macro.",
+                    f"an internal operation, in a fallback arm or anywhere else.",
                 )
             )
-
-    for rel, (vendor_name, _macro) in VENDORED_FALLBACK_INCLUDES.items():
-        if rel not in seen_fallbacks:
-            violations.append(
-                Violation(
-                    "c source",
-                    rel,
-                    f"declared as carrying a {vendor_name} fallback arm, but no such "
-                    f"include was found. A stale entry here weakens the check: remove "
-                    f"it, or restore the file this gate is meant to be watching.",
-                )
-            )
-
-    required_macros = sorted({macro for _v, macro in VENDORED_FALLBACK_INCLUDES.values()})
-    compilers = [
-        path
-        for path in files
-        if "vendor" not in path.relative_to(repo_root).parts
-        and any(
-            "vendor/" in m.group("path")
-            for m in _C_INCLUDE_RE.finditer(path.read_text(encoding="utf-8", errors="replace"))
-        )
-    ]
-    if not compilers:
-        violations.append(
-            Violation(
-                "c source",
-                str(c_root),
-                "no translation unit includes the vendored tree, so the macros that "
-                "disable its forbidden-vendor arms are unverifiable. If the vendored "
-                "code is gone, remove VENDORED_FALLBACK_INCLUDES with it.",
-            )
-        )
-    for path in compilers:
-        rel = path.relative_to(repo_root).as_posix()
-        text = path.read_text(encoding="utf-8", errors="replace")
-        defined = {m.group("name") for m in _C_DEFINE_RE.finditer(text)}
-        for macro in required_macros:
-            if macro not in defined:
-                violations.append(
-                    Violation(
-                        "c source",
-                        rel,
-                        f"compiles the vendored tree without defining {macro}. Without "
-                        f"it the upstream takes its forbidden-vendor fallback arm, and "
-                        f"the boundary holds only by whichever headers happen to be "
-                        f"absent from the build machine.",
-                    )
-                )
     return violations
 
 

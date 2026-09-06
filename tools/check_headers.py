@@ -72,7 +72,6 @@ _C_SUFFIXES = frozenset({".c", ".h"})
 EXEMPTIONS: dict[str, str] = {
     "LICENSE": "the license text itself",
     "NOTICE": "required verbatim by Apache-2.0 section 4(d)",
-    "src/c/vendor/": "vendored ed25519-donna; must stay byte-identical to upstream",
     "tests/c/dudect/": "vendored dudect harness; must stay byte-identical to upstream",
     ".well-known/security.txt": "RFC 9116 fixed field list; a header breaks parsers",
 }

@@ -194,8 +194,6 @@ class TestCppcheckSuppressionsArePerSite:
                 if error_id not in self.RUN_WIDE_IDS:
                     offenders.append(line)
                 continue
-            if target.startswith("src/c/vendor/"):
-                continue  # third-party code this project does not maintain
             if ":" not in target:  # a path with no line number == file-wide
                 offenders.append(line)
         assert not offenders, (

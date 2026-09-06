@@ -3,10 +3,11 @@
 """The pre-commit fixers must not rewrite bytes that have to stay verbatim.
 
 ``trailing-whitespace`` and ``end-of-file-fixer`` do not report — they
-REWRITE.  Unscoped, ``pre-commit run --all-files`` on this tree modified 150
-files: 94 binary seeds under ``fuzz/seed_corpus/``, all 32 vendored
-ed25519-donna headers, 19 NIST/Ascon KAT vector files, the FIPS 140-3
-power-on self-test KAT JSON, and generated charts and benchmark JSON.
+REWRITE.  Unscoped, ``pre-commit run --all-files`` on the tree as it stood
+when this scope was set modified 150 files: 94 binary seeds under
+``fuzz/seed_corpus/``, the vendored Ed25519 headers the tree then carried,
+19 NIST/Ascon KAT vector files, the FIPS 140-3 power-on self-test KAT JSON,
+and generated charts and benchmark JSON.
 
 Nothing in CI catches that.  Measured on the rewritten tree, the corpus
 generators' ``--check``, ``check_corpus_originality.py``,
@@ -39,7 +40,6 @@ REWRITING_HOOKS = ("trailing-whitespace", "end-of-file-fixer")
 PROTECTED_ROOTS = {
     "fuzz/seed_corpus": "binary fuzzer inputs; whitespace is content",
     "tests/kat": "NIST/Ascon reference vectors as published",
-    "src/c/vendor": "third-party source, INVARIANT-1 keeps it diffable against upstream",
     "ama_cryptography/_post_kats": "FIPS 140-3 power-on self-test vectors",
 }
 

@@ -11,16 +11,14 @@ one checks what it sends OUT: the shared object must export ONLY AMA's own
 ``ama_*`` ABI.
 
 Off-Windows ``AMA_API`` expands to nothing, so before ``cmake/ama_exports.map``
-the linked ``.so`` exported all ~246 of its defined symbols -- six of them
-un-prefixed vendor names from the bundled ed25519-donna tree (``ed25519_sign``,
-``ed25519_sign_open``, ``ed25519_sign_open_batch``, ``ed25519_publickey``,
-``curved25519_scalarmult_basepoint``) plus the mutable data symbol
-``batch_point_buffer``.  A process that loaded AMA alongside another
-ed25519-donna consumer could have AMA's Ed25519 silently serviced by the other
-copy (ELF flat-namespace interposition; a static consumer's symbols always win),
+the linked ``.so`` exported all ~246 of its defined symbols -- at the time six
+of them un-prefixed names from the since-removed vendored Ed25519 tree plus one
+mutable data symbol.  A process that loaded AMA alongside a second copy of that
+code could have had AMA's Ed25519 silently serviced by the other copy (ELF
+flat-namespace interposition; a static consumer's symbols always win),
 bypassing the canonical-R/S/y hardening -- and once ``.so.5`` publishes, every
-exported name becomes an ABI promise.  CMakeLists.txt now restricts the export
-set with a version script; this gate is what keeps it restricted.
+exported name becomes an ABI promise.  CMakeLists.txt restricts the export set
+with a version script; this gate is what keeps it restricted.
 
 Any exported (defined, dynamic) symbol whose name does not begin with ``ama_``,
 and is not one of the linker-generated ELF markers below, fails the gate.  A
@@ -152,9 +150,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"  {symbol}", file=sys.stderr)
         print(
             "\nThe shared library must export only AMA's own ama_* surface (audit B2).\n"
-            "These are almost always the bundled ed25519-donna names — localise them\n"
-            "via cmake/ama_exports.map; if a symbol is genuinely public, give it the\n"
-            "ama_ prefix.",
+            "Localise internal names via cmake/ama_exports.map; if a symbol is\n"
+            "genuinely public, give it the ama_ prefix.",
             file=sys.stderr,
         )
         return 1

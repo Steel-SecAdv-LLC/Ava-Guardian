@@ -336,11 +336,12 @@ def test_generated_signature_module_carries_the_header() -> None:
     ), "the generated integrity-signature module would not carry the canonical header"
 
 
-def test_vendored_tree_is_exempt(tool_module: ModuleType) -> None:
+def test_dudect_is_exempt_and_the_c_tree_is_not(tool_module: ModuleType) -> None:
     """Vendored third-party sources must keep upstream provenance
-    byte-identical, so they are never rewritten."""
-    assert tool_module.is_exempt("src/c/vendor/ed25519-donna/ed25519-donna.h")
+    byte-identical, so they are never rewritten.  The only vendored tree left
+    is the dudect harness; the C tree carries no exemption any more."""
     assert tool_module.is_exempt("tests/c/dudect/dudect.h")
+    assert not tool_module.is_exempt("src/c/vendor/anything.h")
     assert not tool_module.is_exempt("src/c/ama_ed25519.c")
 
 

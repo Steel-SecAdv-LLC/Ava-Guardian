@@ -74,7 +74,7 @@ int ama_ed25519_test_table_entry(int backend, int which, int i, int j, uint8_t o
  * 0, or -1 for a backend this build does not carry.
  */
 int ama_ed25519_test_table_geometry(int backend, int *tables, int *entries,
-                                    int *stride_bits, int *odd_count);
+                                    int *stride_bits, int *odd_count, int *odd_shift);
 
 /* --- src/c/ama_kyber.c -------------------------------------------------- */
 /* Defined under AMA_KYBER_BUILD_DIAGNOSTICS — a switch separate from
