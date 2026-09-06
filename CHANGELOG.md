@@ -42,6 +42,183 @@ All notable changes to AMA Cryptography will be documented in this file. The for
 > was removed from this branch in the eighteenth pass below and remains in the
 > branch's commit history.
 
+### Maintenance pass, twenty-first (2026-09-06) — the in-house Ed25519 overtakes the vendored backend, and the vendored backend leaves
+
+Since #290 the x86-64 wheels have shipped Ed25519 through a vendored copy of
+ed25519-donna behind `AMA_ED25519_ASSEMBLY`, with the in-house radix-2^51
+backend as the fallback everywhere else.  Measured at this pass's starting
+head (e848740, Release, three runs of `benchmark_c_raw` each, same host, back
+to back), the fallback was 1.94x slower than donna on key generation, 1.87x
+on signing and 1.46x on verification — the only row it won was the
+double-scalar multiplication, at 0.87x.  This pass rewrites the in-house
+backend until it is measurably faster than donna on every one of those rows,
+proves the two agree on donna's own verdicts, and then removes donna, its
+shim, its build option and every reference to them.  The library now carries
+one Ed25519 implementation, written in this tree, with a second field
+instantiation it can switch to at run time.
+
+- **What changed in the backend, rung by rung, with the instruction count
+  under callgrind after each (x86-64, GCC 13 -O3; the vendored backend's
+  figures were 154,482 instructions per key generation, 169,816 per
+  signature and 526,854 per verification).**  (1) The fixed-base comb moved
+  to the affine Niels representation with a 7M mixed addition and a
+  constant-time masked row select over tables generated in-tree by
+  `tools/gen_ed25519_tables.py` (`src/c/internal/ama_ed25519_tables.h`,
+  pinned against the tree's own point arithmetic by
+  `tests/c/test_ed25519_static_tables.c`), and the lazy table
+  initialisation went with it.  (2) The comb widened from 4-bit to 5-bit
+  signed digits — 26 tables of 16 entries, 52 digits — which only paid once
+  the select was rewritten as a PCMPEQD-mask fold straight into the output:
+  key generation 152,782 -> 143,950.  (3) An AVX2 unit for the same fold
+  (`src/c/avx2/ama_ed25519_select_avx2.c`, dispatched on `ama_has_avx2()`
+  once per scalar multiplication, symbols carrying the `_avx2` marker the
+  scoping gate requires): 143,950 -> 134,512.  (4) The inversion in point
+  encoding became the Bernstein–Yang constant-time safegcd
+  (`src/c/internal/ama_fe25519_safegcd.h`: 590 divsteps in ten batches of 59,
+  62-bit transition matrices, a constant-time product check with a Fermat
+  fallback; 21,031 inputs against the Fermat chain, zero mismatches, 3.8 ->
+  2.0 µs per inversion).  (5) Verification became half-size: a Lehmer-batched
+  extended Euclid on (8l, h) (`src/c/internal/ama_ed25519_halfsize.h`) turns
+  the verification scalar into (v0, v1) of about 128 bits each, the check
+  becomes v0·R + v1·A − (v0·s mod l)·B = O evaluated as a four-way width-5/7
+  wNAF ladder over B and 2^128·B, with the two decodes sharing one
+  exponentiation and the identity tested projectively with no inversion:
+  verification 485,295 -> 406,238.  (6) The SHA-512 compression loop is
+  unrolled eight rounds per iteration (5,340 -> 4,965 instructions per block)
+  and `ama_secure_memzero` clears eight bytes per volatile store on aligned
+  buffers.  Final counts: key generation 132,080 (−14.5%), signing 147,952
+  (−12.9%), verification 400,513 (−24.0%).
+- **The radix-2^64 MULX+ADX instantiation exists and is not the default.**
+  The group-arithmetic template (`src/c/internal/ama_ed25519_ge.h`) is
+  instantiated twice: over radix 2^51 in `src/c/ama_ed25519.c` and over
+  radix 2^64 in `src/c/x86/ama_ed25519_fe64_mulx.c`, the latter inlining the
+  X25519 kernel's fused multiply and square (moved unchanged into
+  `src/c/internal/ama_fe64_mulx_kernel.h`; the X25519 unit's object is
+  byte-identical before and after) and using carry-flag add / sub / neg.
+  Measured in one process with the two paths alternating block by block, the
+  MULX instantiation ties key generation and signing and is 1.10x slower on
+  verification and 1.13–1.15x on double-scalar multiplication: the fused
+  multiply wins the field-operation microbenchmark (18.4 against 23.1 cycles
+  per multiply, throughput) but the formulas spend about 1.5 carried
+  additions per multiplication on radix 2^64, and radix 2^51's carry-free
+  lazy subtraction wins at the group level.  So the dispatcher defaults to
+  radix 2^51; the MULX instantiation stays compiled, byte-identical in output
+  (`tests/c/test_ed25519_fe51_mulx_equiv.c`) and selectable through
+  `ama_ed25519_set_mulx_override(1)`, and `ama_ed25519_active_backend()`
+  reports which one ran.  Two attempts were measured and reverted along the
+  way: a second reduction fold in `src/c/fe64.h` slowed the X25519 MULX
+  ladder from 42.9 to 49.0 µs, and a `memset`-plus-barrier scrub slowed
+  X25519 by 2–3%.
+- **Acceptance, measured honestly.**  Configuration C (this backend) against
+  Configuration A (the donna build kept on disk from e848740), Release,
+  three runs each, interleaved, same host, `taskset -c 0`: medians of medians
+  0.864 (key generation), 0.900 (signing), 0.770 (verification) and 0.724
+  (double-scalar multiplication) of donna's time.  The strict rule this pass
+  set itself — the maximum of the three C medians strictly below the minimum
+  of the three A medians on every row — holds on verification and
+  double-scalar multiplication and fails on key generation and signing, for
+  one reason: the host switches between two performance states about 20–25%
+  apart between whole benchmark runs, and one of the three A runs landed in
+  the fast state (A key generation 11.06 / 11.40 / 8.94 µs against C 7.50 /
+  9.55 / 9.56).  The control that settles it: Configuration A measured
+  against an identical copy of itself under the same protocol "beat itself"
+  by 11% on every Ed25519 row and "regressed" on six X25519 rows.  A rule
+  that passes and fails independently of the code is not a measurement, so
+  the paired in-process comparison — both libraries loaded into one process
+  and alternated block by block, so both see the same host state — is the
+  one this pass stands on: 0.848 / 0.870 / 0.737 / 0.669 of donna on the
+  four Ed25519 rows, X25519 unchanged within 1.5% (0.986–0.994).  The
+  instruction counts above are the host-independent record of the same
+  result.  Every number, run file and driver is in the PR description.
+- **Equivalence with donna, before it left.**  The vendored backend's
+  verdicts on 2,022 records — RFC 8032 and Wycheproof vectors, non-canonical
+  S and R, small-order and mixed-order points, the sign-bit and
+  non-canonical-y encodings — are frozen in
+  `tests/oracle/ed25519_frozen_oracle.txt` (written by
+  `tools/freeze_ed25519_oracle.py` from the donna library at e848740, whose
+  SHA-256 the header records) and replayed by
+  `tests/c/test_ed25519_frozen_oracle.c` and
+  `tests/test_ed25519_frozen_oracle.py`; while both backends were in the
+  tree, `tools/check_ed25519_backend_parity.py` agreed on 5,195 generated
+  cases at every rung.  That tool and its gate test leave with donna; the
+  frozen replay and the radix-2^51-versus-MULX differential are the
+  standing equivalence checks.  The callgrind constant-time gate on the
+  signing path passes with the AVX2 fold and the safegcd on it.
+- **Windows.**  `src/c/fe51.h` no longer fails with `#error` on MSVC: the
+  128-bit products go through a small `fe51_wide` type that is `__int128`
+  under GCC and Clang and `_umul128` / `__shiftright128` (x64) or `__umulh`
+  (ARM64) under MSVC, with `src/c/internal/ama_wide_mul.h` doing the same for
+  the half-size reduction.  Under GCC the rewrite is byte-identical on
+  x86-64 (the X25519 unit's `.text`, 26,923 bytes, before and after) and
+  forty instructions shorter on AArch64.  The MULX instantiation stays
+  GCC/Clang-only.  The `windows-latest` lanes build the radix-2^51 path and
+  run the KATs and the frozen fixture against it.
+- **Removed.**  `src/c/vendor/ed25519-donna/` (27 files) and
+  `src/c/ed25519_donna_shim.c`; the `AMA_ED25519_ASSEMBLY` option, its MSVC
+  auto-enable, the sanitizer lanes' `ED25519_NO_INLINE_ASM`, the
+  `ama_apply_donna_settings` CMake function and the export-map notes; the
+  `AMA_ED25519_VERIFY_SHAMIR` and `AMA_ED25519_VERIFY_WINDOW` cache variables,
+  which selected a verification strategy the half-size ladder supersedes; the
+  `Ed25519 backend differential (donna vs fe51)` CI job;
+  `tools/check_ed25519_backend_parity.py` and
+  `tests/test_ed25519_backend_parity_gate.py`; the cppcheck, clang-tidy,
+  CodeQL, semgrep, pre-commit, `.gitignore`, SBOM, header, secrets and
+  compiler-warning exemptions that existed for vendored source.
+  INVARIANT-1's vendoring addendum now states that no cryptographic source
+  is vendored and that `src/c/vendor` must not exist, and
+  `tools/check_vendor_isolation.py` asserts exactly that (the invariant
+  keeps its number).  A repository-wide search for the backend's names
+  returns nothing outside this file's history and the two baseline ledgers,
+  whose acknowledgement entries must name the deleted paths exactly.
+- **Ledger and measurements.**  Both baseline JSONs acknowledge every
+  changed or deleted floored file: 38 new entries (the deleted vendored
+  files, the new headers and units, and the comment-only edits — for which
+  the reason is a measured byte-identical `.text`, not an assertion) and
+  11 existing entries extended with this pass's change.  No floor moves in
+  this commit: the Ed25519 floors are raised from the benchmark-regression
+  jobs' measurement of this head on the canonical runners, in a commit
+  that carries those measured figures, because a floor raised from a
+  developer host would describe the wrong machine.  The vendored backend's
+  last canonical measurement, for the record: `ubuntu-latest` 11,855 /
+  59,847 / 21,322 ops/sec (key generation / signing / verification) against
+  floors of 10,822 / 53,885 / 19,181.
+- **Tests.**  Five C suites added since the twentieth pass
+  (`test_ed25519_static_tables`, `test_ed25519_frozen_oracle`,
+  `test_ed25519_fe51_mulx_equiv`, `test_ed25519_safegcd`,
+  `test_ed25519_half_reduce`; the C suite is 72 files / 74 translation
+  units), the half-size reduction checked against an independent long
+  division on every output, the static-table test extended to the
+  2^128-shifted table, `tests/test_vendor_isolation_gate.py` extended to
+  the vendor-directory rule, and every test that named the vendored
+  backend reworded to say what it now checks.
+- **Examined and decided, on evidence, from the twentieth pass's kept
+  list.**  The eight donna variant headers: gone with the backend.  The
+  three `ChannelState` members nothing enters (`RESPONDER_START`,
+  `HANDSHAKE_RECEIVED`, `REKEYING`; zero references in package and tests):
+  kept — they are the responder-side and rekey states the module docstring
+  names for the protocol, in a public enum whose initiator-side state
+  machine is the only one this class implements.  `release.yml`'s `dry_run`
+  input: kept — nothing reads `inputs.dry_run` because a dispatch cannot
+  publish regardless, and its only reader is the operator the dispatch form
+  tells that; `tools/check_workflow_commands.py`, `tools/update_docs.py`
+  and `tests/test_update_docs_changelog_guard.py` pin the name.
+  `LANGUAGES C CXX`: kept — `CMakeLists.txt` line 296 scrubs the CXX flag
+  variables and three workflows pass `-DCMAKE_CXX_*`, the MSan lane's
+  `-stdlib=libc++` among them.  The `develop` / `feature/**` / `fix/**`
+  filters: kept — `CONTRIBUTING.md` line 113 tells contributors to branch as
+  `feature/<name>`, and a filter for a documented convention is not dead
+  because no such branch exists today.  Duplicated test bodies: by AST
+  identity three cross-file groups exist (`test_apt_retry_gate` /
+  `test_choco_retry_gate`, `test_bandit_severity_gate` /
+  `test_semgrep_severity_gate`, `test_corpus_originality` /
+  `test_verification_claim_honesty_gate`), each the same driver aimed at a
+  different tool: kept.  The `if __name__ == "__main__"` blocks (fifteen
+  test files by this pass's count): kept — pytest never executes them and
+  each is the run-this-file-directly idiom.  The public size constants no
+  in-tree code reads (twelve by this pass's rule, which also counts `_LEN`
+  names): kept — each completes a per-parameter-set family whose siblings
+  are read, and the header is the consumer's contract.
+
 ### Maintenance pass, twentieth (2026-09-05) — dead code inside the tree, found by cross-reference rather than by directory
 
 The nineteenth pass removed whole directories on one test: not shipped, not
@@ -5980,7 +6157,7 @@ resolved here.  The ones that changed behaviour rather than prose:
 
 Documentation claims corrected against measurement rather than restated: the
 SoftHSM2 lane runs **one** real-token test (`test_full_lifecycle`), not 51; the
-C suite is 67 suite files / 69 translation units (65 / 68 when the twelfth pass measured it; the 2026-08-31 v5 pre-merge audit added `tests/c/test_secure_memory_dontdump.c` and `tests/c/test_secure_free_scrub.c`; the twentieth pass removed the never-built `tests/c/bench_ed25519.c`), not 58 / 61 (60 / 63 when that pass measured it, 62 / 65 after it; the eleventh debt-closure pass added `tests/c/test_ed25519_canonical_r.c` and `tests/c/test_ed25519_scalarmult_contract.c`, and registered `tests/c/test_field_bench.c`, which had existed unbuilt since #370, and the thirteenth added `tests/c/test_dilithium_invntt_bound.c`, `tests/c/test_concurrent_init.c` and `tests/c/test_ed25519_unaligned_input.c`); the gated
+C suite is 72 suite files / 74 translation units (65 / 68 when the twelfth pass measured it; the 2026-08-31 v5 pre-merge audit added `tests/c/test_secure_memory_dontdump.c` and `tests/c/test_secure_free_scrub.c`; the twentieth pass removed the never-built `tests/c/bench_ed25519.c`; the twenty-first pass added five Ed25519 suites: `test_ed25519_static_tables.c`, `test_ed25519_frozen_oracle.c`, `test_ed25519_fe51_mulx_equiv.c`, `test_ed25519_safegcd.c` and `test_ed25519_half_reduce.c`), not 58 / 61 (60 / 63 when that pass measured it, 62 / 65 after it; the eleventh debt-closure pass added `tests/c/test_ed25519_canonical_r.c` and `tests/c/test_ed25519_scalarmult_contract.c`, and registered `tests/c/test_field_bench.c`, which had existed unbuilt since #370, and the thirteenth added `tests/c/test_dilithium_invntt_bound.c`, `tests/c/test_concurrent_init.c` and `tests/c/test_ed25519_unaligned_input.c`); the gated
 surface is what `tools/check_error_state_gating.py` reports (89
 native plus 10 Cython entry points), replacing two documents that disagreed at
 80 and 81; the canonical-host performance tables understate 5.0.0 on the AEAD
