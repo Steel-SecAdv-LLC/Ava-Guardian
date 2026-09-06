@@ -91,20 +91,6 @@ endif()
 # the fallback when the bundle fails or when this flag is OFF.
 option(AMA_ENABLE_AVX512 "Enable AVX-512 SHA3 4-way kernel (x86-64 only)" OFF)
 
-# Ed25519 verify-path tuning gates.  Propagated to the in-tree ama_ed25519.c
-# via target_compile_definitions further below.  Ignored by the donna shim
-# path (AMA_ED25519_ASSEMBLY=ON), which has its own scalarmult.
-option(AMA_ED25519_VERIFY_SHAMIR
-       "Use Shamir/Straus joint [s]B+[h](-A) in Ed25519 verify (1=on, 0=legacy split)"
-       ON)
-set(AMA_ED25519_VERIFY_WINDOW "5" CACHE STRING
-    "wNAF window width for Ed25519 verify scalar mults (integer in [2,6]; 5 default)")
-set_property(CACHE AMA_ED25519_VERIFY_WINDOW PROPERTY STRINGS "2" "3" "4" "5" "6")
-if(NOT AMA_ED25519_VERIFY_WINDOW MATCHES "^[2-6]$")
-    message(FATAL_ERROR
-        "AMA_ED25519_VERIFY_WINDOW must be an integer in [2,6]; got '${AMA_ED25519_VERIFY_WINDOW}'")
-endif()
-
 # MSVC lacks __uint128_t required by fe51 field arithmetic. Auto-enable the
 # donna shim (which provides its own field ops) so Windows builds compile.
 # On MSVC ARM64, neither fe51 nor donna is available — fail at configure time.
@@ -539,6 +525,26 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64" AND NOT MSVC)
     message(STATUS "X25519: MULX+ADX fe64 kernel enabled (BMI2 + ADX, x86-64 GCC/Clang)")
 endif()
 
+# Ed25519 radix-2^64 instantiation on the same MULX+ADX kernel (x86-64
+# GCC/Clang only).  src/c/x86/ama_ed25519_fe64_mulx.c compiles the group
+# arithmetic template (src/c/internal/ama_ed25519_ge.h) over fe64 with the
+# fused multiply/square blocks of internal/ama_fe64_mulx_kernel.h inlined,
+# under per-file -mbmi2 -madx.  Defines AMA_HAVE_ED25519_FE64_MULX_IMPL so
+# src/c/ama_ed25519.c dispatches to it at run time behind the same
+# ama_cpuid_has_x25519_mulx() gate X25519 uses; the fe51 instantiation in
+# ama_ed25519.c is the fallback and the only path everywhere else.  Same
+# MSVC exclusion, same reason, as AMA_X25519_MULX_SOURCES above.
+set(AMA_ED25519_MULX_SOURCES "")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64" AND NOT MSVC)
+    set(AMA_ED25519_MULX_SOURCES
+        src/c/x86/ama_ed25519_fe64_mulx.c
+    )
+    set_source_files_properties(${AMA_ED25519_MULX_SOURCES} PROPERTIES
+        COMPILE_FLAGS "-mbmi2 -madx")
+    add_compile_definitions(AMA_HAVE_ED25519_FE64_MULX_IMPL)
+    message(STATUS "Ed25519: MULX+ADX fe64 instantiation enabled (BMI2 + ADX, x86-64 GCC/Clang)")
+endif()
+
 # NIST prime-curve 4-limb Montgomery multiply, MULX+ADX (x86-64 GCC/Clang).
 #
 # Compiles src/c/x86/ama_nistp_mont_mulx.c with -mbmi2 -madx.  Defines
@@ -835,6 +841,7 @@ set(AMA_SOURCES
     ${AMA_X86_AESNI_SOURCES}
     ${AMA_AVX512_SOURCES}
     ${AMA_X25519_MULX_SOURCES}
+    ${AMA_ED25519_MULX_SOURCES}
     ${AMA_KECCAK_BMI_SOURCES}
     ${AMA_NISTP_MULX_SOURCES}
     ${AMA_NEON_SOURCES}
@@ -986,18 +993,6 @@ function(ama_apply_donna_settings target)
                 COMPILE_FLAGS "-Wno-unused-function -Wno-missing-prototypes -Wno-strict-prototypes"
             )
         endif()
-    else()
-        # In-tree ama_ed25519.c path: propagate the verify-gate CMake cache
-        # variables to the compiler so `-DAMA_ED25519_VERIFY_SHAMIR=0` and
-        # `-DAMA_ED25519_VERIFY_WINDOW=W` actually change codegen.  The
-        # donna shim ignores these (it has its own scalar-mult routines).
-        if(AMA_ED25519_VERIFY_SHAMIR)
-            target_compile_definitions(${target} PRIVATE AMA_ED25519_VERIFY_SHAMIR=1)
-        else()
-            target_compile_definitions(${target} PRIVATE AMA_ED25519_VERIFY_SHAMIR=0)
-        endif()
-        target_compile_definitions(${target} PRIVATE
-            AMA_ED25519_VERIFY_WINDOW=${AMA_ED25519_VERIFY_WINDOW})
     endif()
 endfunction()
 
@@ -1297,9 +1292,6 @@ if(MSVC AND AMA_ED25519_ASSEMBLY)
     message(STATUS "  Ed25519 donna:  Auto (MSVC — fe51 requires __uint128_t)")
 else()
     message(STATUS "  Ed25519 donna:  ${AMA_ED25519_ASSEMBLY}")
-endif()
-if(NOT AMA_ED25519_ASSEMBLY)
-    message(STATUS "  Ed25519 verify: Shamir=${AMA_ED25519_VERIFY_SHAMIR}, wNAF W=${AMA_ED25519_VERIFY_WINDOW}")
 endif()
 message(STATUS "")
 message(STATUS "Post-Quantum Cryptography:")

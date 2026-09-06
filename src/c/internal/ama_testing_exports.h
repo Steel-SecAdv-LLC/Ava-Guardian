@@ -56,6 +56,26 @@ void ama_frost_test_scalar_negate(uint8_t neg[32], const uint8_t s[32]);
 /** Test-only export of FROST's `scalar_add`, for the same reason. */
 void ama_frost_test_scalar_add(uint8_t c[32], const uint8_t a[32], const uint8_t b[32]);
 
+/* --- src/c/ama_ed25519.c ------------------------------------------------ */
+
+/**
+ * Test-only: the compressed encoding of one entry of the static base-point
+ * tables, recovered from its Niels form by the named instantiation
+ * (backend 0 = fe51, 1 = fe64-mulx; which 0 = comb[i][j], 1 = odd[i]).
+ * Returns 0 and writes out, or -1 for an index out of range or a backend this
+ * build does not carry.  tests/c/test_ed25519_static_tables.c compares every
+ * entry against ama_ed25519_scalarmult_public over the RFC 8032 base point.
+ */
+int ama_ed25519_test_table_entry(int backend, int which, int i, int j, uint8_t out[32]);
+
+/**
+ * Test-only: the comb geometry (tables, entries per table, stride in bits)
+ * and the odd-multiple count of the named backend's static tables.  Returns
+ * 0, or -1 for a backend this build does not carry.
+ */
+int ama_ed25519_test_table_geometry(int backend, int *tables, int *entries,
+                                    int *stride_bits, int *odd_count);
+
 /* --- src/c/ama_kyber.c -------------------------------------------------- */
 /* Defined under AMA_KYBER_BUILD_DIAGNOSTICS — a switch separate from
  * AMA_TESTING_MODE, and likewise kept out of the production .so. */

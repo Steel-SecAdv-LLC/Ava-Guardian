@@ -229,6 +229,56 @@ static inline void fe51_sub(fe51 h, const fe51 f, const fe51 g) {
     h[0] = t0; h[1] = t1; h[2] = t2; h[3] = t3; h[4] = t4;
 }
 
+/*
+ * Carry-free subtractions for the group law.
+ *
+ * fe51_sub above ends with a carry chain, which is a dependent sequence of
+ * about fifteen instructions on a path that otherwise consists of independent
+ * limb operations.  In the Edwards formulas nearly every subtraction result
+ * is consumed by a multiplication, and fe51_mul / fe51_sq accept limbs far
+ * wider than 51 bits: with every input limb below 2^58 the 19-scaled operands
+ * stay below 2^64 and each five-term 128-bit accumulator stays below 2^124.
+ * So a subtraction whose result feeds a multiply only needs to avoid
+ * underflow, which a bias of k*p (k*p ≡ 0 mod p) provides, and can leave the
+ * carry to the multiplier's own reduction.  That turns a ~15-cycle dependent
+ * chain into five independent one-cycle operations on the ladder's critical
+ * path.
+ *
+ * The two biases are chosen by the bound on the subtrahend g, which the
+ * caller states at each use in src/c/internal/ama_ed25519_ge.h:
+ *
+ *   fe51_sub_2p:  every g limb <= 2^52 - 38.  Holds for a fe51_mul / fe51_sq
+ *                 output (limbs 0, 2, 3, 4 below 2^51; limb 1 below
+ *                 2^51 + 2^13) and for a fe51_add of two such outputs.
+ *                 Result limbs are below f's limbs + 2^52.
+ *   fe51_sub_8p:  every g limb <= 2^54 - 152.  Holds for any result of
+ *                 fe51_sub_2p on those inputs (below 2^53) and any sum of
+ *                 two such values.  Result limbs are below f's limbs + 2^54.
+ *
+ * The exact limb values of 2p and 8p in this radix:
+ *   2p = (2^52 - 38, 2^52 - 2, 2^52 - 2, 2^52 - 2, 2^52 - 2)
+ *   8p = (2^54 - 152, 2^54 - 8, 2^54 - 8, 2^54 - 8, 2^54 - 8)
+ * Each is exactly k * (2^255 - 19) read as a five-limb radix-2^51 number, so
+ * the result is congruent to f - g and never underflows under the stated
+ * bound.  Outputs are consumed only by fe51_mul / fe51_sq, whose reduction
+ * brings limbs back below 2^52, or by fe51_tobytes, which carries fully.
+ */
+static inline void fe51_sub_2p(fe51 h, const fe51 f, const fe51 g) {
+    h[0] = (f[0] + 0xFFFFFFFFFFFDAULL) - g[0];
+    h[1] = (f[1] + 0xFFFFFFFFFFFFEULL) - g[1];
+    h[2] = (f[2] + 0xFFFFFFFFFFFFEULL) - g[2];
+    h[3] = (f[3] + 0xFFFFFFFFFFFFEULL) - g[3];
+    h[4] = (f[4] + 0xFFFFFFFFFFFFEULL) - g[4];
+}
+
+static inline void fe51_sub_8p(fe51 h, const fe51 f, const fe51 g) {
+    h[0] = (f[0] + 0x3FFFFFFFFFFF68ULL) - g[0];
+    h[1] = (f[1] + 0x3FFFFFFFFFFFF8ULL) - g[1];
+    h[2] = (f[2] + 0x3FFFFFFFFFFFF8ULL) - g[2];
+    h[3] = (f[3] + 0x3FFFFFFFFFFFF8ULL) - g[3];
+    h[4] = (f[4] + 0x3FFFFFFFFFFFF8ULL) - g[4];
+}
+
 static inline void fe51_neg(fe51 h, const fe51 f) {
     fe51 zero;
     fe51_0(zero);

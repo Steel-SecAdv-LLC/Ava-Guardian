@@ -1370,16 +1370,42 @@ AMA_API ama_error_t ama_ed25519_batch_verify(
 );
 
 /**
- * @brief Name the Ed25519 backend this build selected.
- * @return A static string, "donna" (x86-64 assembly shim) or "fe51" (portable
- *         in-tree path).  The two are compile-time mutually exclusive.
+ * @brief Name the Ed25519 group-arithmetic instantiation the next call runs on.
+ * @return A static string: "fe64-mulx" when the radix-2^64 MULX+ADX
+ *         instantiation is compiled in and selected (x86-64 GCC/Clang build,
+ *         CPUID reports BMI2 and ADX, no override forcing it off), otherwise
+ *         "fe51" (the portable radix-2^51 instantiation, the only one on
+ *         AArch64 and MSVC).  Both are in-house; there is no third-party
+ *         Ed25519 code in the library.
  *
- * Build introspection, not a cryptographic operation.  The backend differential
- * (tools/check_ed25519_backend_parity.py) uses it to refuse to run unless the
- * two libraries it compares report different backends — a differential handed
- * one library twice passes vacuously (audit M14).
+ * Build and dispatch introspection, not a cryptographic operation.  The
+ * fe51-versus-MULX differential (tests/c/test_ed25519_fe51_mulx_equiv.c) uses
+ * it, together with `ama_ed25519_set_mulx_override()`, to prove it exercised
+ * two different instantiations rather than one twice.
  */
 AMA_API const char *ama_ed25519_active_backend(void);
+
+/**
+ * @brief Benchmark/test-only override for the Ed25519 fe64 MULX+ADX runtime gate.
+ *
+ * The in-house Ed25519 backend carries two instantiations of one group
+ * arithmetic: the portable radix-2^51 field (fe51) and, on x86-64 GCC/Clang
+ * builds, the radix-2^64 field on the MULX+ADX kernel, selected per call when
+ * `ama_cpuid_has_x25519_mulx()` reports BMI2 and ADX.  This sets a
+ * process-wide override of that selection, with the same contract as
+ * `ama_x25519_set_mulx_override()`: -1 = auto (default; honour CPUID),
+ * 0 = force the fe51 instantiation, 1 = force the MULX instantiation (a no-op
+ * unless the unit was compiled in AND the host has BMI2+ADX).
+ *
+ * **NOT a production policy knob.**  Both instantiations are byte-identical
+ * (tests/c/test_ed25519_fe51_mulx_equiv.c); the override exists so
+ * benchmarks can measure both on one host and so the equivalence test can
+ * pin the fe51 path on a host that would otherwise select MULX.  Single-
+ * threaded by contract: call it during harness setup with no Ed25519 work
+ * in flight on any thread.  On builds without the MULX unit it is a no-op.
+ * `ama_ed25519_active_backend()` reports the selection in effect.
+ */
+AMA_API void ama_ed25519_set_mulx_override(int mode);
 
 /* ----------------------------------------------------------------------------
  * Ed25519 Group Primitives (for FROST / Threshold Signatures)

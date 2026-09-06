@@ -31,7 +31,8 @@
  * threads sequentially reproduces the old vacuity with more code.  The
  * entry points are the ones with lazily-built shared state: the dispatch
  * table, the CPUID probes behind it, the NIST-P and secp256k1 generator
- * combs, and the Ed25519 base-point tables.
+ * combs.  Ed25519 no longer has any: its block below asserts the first call on
+ * every thread is already the RFC 8032 answer.
  */
 
 #include <pthread.h>
@@ -148,23 +149,52 @@ static void *worker(void *arg) {
             }
         }
 
-        /* Ed25519: base-point comb tables, lazily built under the tri-state
-         * CAS protocol in ama_ed25519.c. */
+        /* Ed25519: there is NO lazily-built state on this path any more.  The
+         * base-point tables are `static const` (src/c/internal/
+         * ama_ed25519_tables.h) and neither src/c/ama_ed25519.c nor the group
+         * template writes a file-scope variable, which
+         * tests/test_ed25519_no_lazy_state.py pins at the source and object
+         * level.  What N threads entering cold can still prove here is the
+         * behavioural half of that claim: the very first call on every thread
+         * returns the RFC 8032 §7.1 test-1 public key and signature, with no
+         * warm-up call anywhere in the process and no ordering between
+         * threads.  A backend that still depended on a first-caller
+         * initialiser would have to get that right under this contention;
+         * one with nothing to initialise gets it right by construction. */
         {
+            static const uint8_t seed[32] = {
+                0x9d, 0x61, 0xb1, 0x9d, 0xef, 0xfd, 0x5a, 0x60,
+                0xba, 0x84, 0x4a, 0xf4, 0x92, 0xec, 0x2c, 0xc4,
+                0x44, 0x49, 0xc5, 0x69, 0x7b, 0x32, 0x69, 0x19,
+                0x70, 0x3b, 0xac, 0x03, 0x1c, 0xae, 0x7f, 0x60
+            };
+            static const uint8_t pk_expected[32] = {
+                0xd7, 0x5a, 0x98, 0x01, 0x82, 0xb1, 0x0a, 0xb7,
+                0xd5, 0x4b, 0xfe, 0xd3, 0xc9, 0x64, 0x07, 0x3a,
+                0x0e, 0xe1, 0x72, 0xf3, 0xda, 0xa6, 0x23, 0x25,
+                0xaf, 0x02, 0x1a, 0x68, 0xf7, 0x07, 0x51, 0x1a
+            };
+            static const uint8_t sig_expected[64] = {
+                0xe5, 0x56, 0x43, 0x00, 0xc3, 0x60, 0xac, 0x72,
+                0x90, 0x86, 0xe2, 0xcc, 0x80, 0x6e, 0x82, 0x8a,
+                0x84, 0x87, 0x7f, 0x1e, 0xb8, 0xe5, 0xd9, 0x74,
+                0xd8, 0x73, 0xe0, 0x65, 0x22, 0x49, 0x01, 0x55,
+                0x5f, 0xb8, 0x82, 0x15, 0x90, 0xa3, 0x3b, 0xac,
+                0xc6, 0x1e, 0x39, 0x70, 0x1c, 0xf9, 0xb4, 0x6b,
+                0xd2, 0x5b, 0xf5, 0xf0, 0x59, 0x5b, 0xbe, 0x24,
+                0x65, 0x51, 0x41, 0x43, 0x8e, 0x7a, 0x10, 0x0b
+            };
             uint8_t pk[32], sk[64], sig[64];
-            const uint8_t msg[3] = { 'a', 'b', 'c' };
-            /* The keypair contract is "caller provides the 32-byte seed in
-             * secret_key[0..31]" (src/c/ed25519_donna_shim.c) — an
-             * uninitialised `sk` here is a read of uninitialised memory, the
-             * defect test_ed25519_canonical_r.c records MemorySanitizer
-             * catching.  Same fixed-seed idiom as that file; the secp256k1
-             * block above already does this for the same reason. */
-            memset(sk, 0x42, 32);
+            memcpy(sk, seed, 32);
             if (ama_ed25519_keypair(pk, sk) != AMA_SUCCESS) {
                 record_failure("ama_ed25519_keypair");
-            } else if (ama_ed25519_sign(sig, msg, sizeof(msg), sk) != AMA_SUCCESS) {
+            } else if (memcmp(pk, pk_expected, 32) != 0) {
+                record_failure("ama_ed25519_keypair: first call on this thread is not RFC 8032 test 1");
+            } else if (ama_ed25519_sign(sig, NULL, 0, sk) != AMA_SUCCESS) {
                 record_failure("ama_ed25519_sign");
-            } else if (ama_ed25519_verify(sig, msg, sizeof(msg), pk) != AMA_SUCCESS) {
+            } else if (memcmp(sig, sig_expected, 64) != 0) {
+                record_failure("ama_ed25519_sign: first call on this thread is not RFC 8032 test 1");
+            } else if (ama_ed25519_verify(sig, NULL, 0, pk) != AMA_SUCCESS) {
                 record_failure("ama_ed25519_verify");
             }
         }

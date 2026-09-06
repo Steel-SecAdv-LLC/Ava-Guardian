@@ -212,18 +212,30 @@ if(AMA_ED25519_ASSEMBLY)
     target_compile_definitions(test_ed25519_scalarmult_contract PRIVATE AMA_ED25519_ASSEMBLY)
 endif()
 
-# test_ed25519_comb_equiv validates the in-tree signed 4-bit window comb
-# (ge25519_scalarmult_base_comb_signed) against the variable-base wNAF
-# reference.  When AMA_ED25519_ASSEMBLY=ON (default on x86-64), the donna
-# shim replaces ama_ed25519.c, so the comb is not compiled and this test
-# would be a no-op tautology.  Only build it on the in-tree backend.
+# test_ed25519_comb_equiv validates the constant-time fixed-base comb against
+# the variable-base wNAF ladder through the public API: for any 32-byte scalar,
+# point_from_scalar(s) == scalarmult_public(s, B).  Two independent group
+# arithmetic paths over the same static table header.
 if(NOT AMA_ED25519_ASSEMBLY)
     add_ama_test(test_ed25519_comb_equiv test_ed25519_comb_equiv.c)
     # Verify-path equivalence: behavioral accept/reject parity and
-    # byte-identity of the Shamir/Straus joint scalar mult against the
-    # legacy split layout.  Only built on the in-tree backend (the donna
-    # shim replaces ama_ed25519.c entirely).
+    # byte-identity of the Shamir/Straus joint scalar mult against the split
+    # composition scalarmult_public + point_add.
     add_ama_test(test_ed25519_verify_equiv test_ed25519_verify_equiv.c)
+
+    # The static base-point tables (src/c/internal/ama_ed25519_tables.h): every
+    # entry, recovered from its Niels form through the testing-mode export, is
+    # compared against [k]B computed by the wNAF ladder from the RFC 8032
+    # compressed base point.  Checks both radices when the build carries both.
+    add_ama_test(test_ed25519_static_tables test_ed25519_static_tables.c)
+
+    # The frozen ed25519-donna oracle (tests/oracle/ed25519_frozen_oracle.txt):
+    # 2,022 recorded inputs and answers replayed against the linked backend.
+    # Reads the fixture from the source tree, like test_kat and test_lms.
+    add_executable(test_ed25519_frozen_oracle test_ed25519_frozen_oracle.c)
+    target_link_libraries(test_ed25519_frozen_oracle ama_cryptography_test)
+    add_test(NAME test_ed25519_frozen_oracle COMMAND test_ed25519_frozen_oracle
+             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
 # X25519 lives under AMA_USE_NATIVE_PQC (see top-level CMakeLists.txt),
@@ -291,6 +303,19 @@ if(AMA_USE_NATIVE_PQC)
                  COMMAND test_x25519_fe64_mulx_equiv)
         set_tests_properties(test_x25519_fe64_mulx_equiv PROPERTIES
                              SKIP_RETURN_CODE 77)
+    endif()
+
+    # The two in-house Ed25519 instantiations (fe51 and fe64-mulx) must be
+    # byte-identical.  Drives both through the public API under
+    # ama_ed25519_set_mulx_override(); skips (77) where the host lacks
+    # BMI2+ADX or the unit is not compiled, and refuses to compare an
+    # instantiation with itself.  This is the differential that replaced the
+    # donna-versus-fe51 CI job.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64" AND NOT MSVC)
+        add_executable(test_ed25519_fe51_mulx_equiv test_ed25519_fe51_mulx_equiv.c)
+        target_link_libraries(test_ed25519_fe51_mulx_equiv ama_cryptography_test)
+        add_test(NAME test_ed25519_fe51_mulx_equiv COMMAND test_ed25519_fe51_mulx_equiv)
+        set_tests_properties(test_ed25519_fe51_mulx_equiv PROPERTIES SKIP_RETURN_CODE 77)
     endif()
 
     # 2026-05 — public-API regression for `ama_x25519_set_mulx_override()`.
