@@ -52,3 +52,22 @@ uninitvar:src/c/ama_kyber.c:577
 
 # ama_dilithium.c — w1_packed is filled by polyveck_pack_w1 through a pointer.
 uninitvar:src/c/ama_dilithium.c:2363
+
+# ama_ed25519_ge.h — the group-arithmetic template.  recip / u / v / w / v3 are
+# GE_FE locals passed by address to fe_invert_ct and ge_decode_prepare, which
+# write every limb before any read.  With --force cppcheck invents a config in
+# which GE_SUFFIX is defined and then cannot follow the GE_SYM()-named helpers,
+# so it reads the address-of as a read of an uninitialised object — the same
+# out-parameter false positive as the ama_nistp / ama_kyber / ama_dilithium
+# entries above.
+uninitvar:src/c/internal/ama_ed25519_ge.h:506
+uninitvar:src/c/internal/ama_ed25519_ge.h:591
+uninitvar:src/c/internal/ama_ed25519_ge.h:602
+uninitvar:src/c/internal/ama_ed25519_ge.h:603
+
+# ama_fe25519_safegcd.h — `c1 = (uint64_t)(zeta >> 63)` broadcasts the sign bit
+# of the signed zeta as an all-ones / all-zeros mask, the constant-time idiom
+# this codebase uses throughout (see the shiftTooManyBitsSigned note in
+# static-analysis.yml: arithmetic right shift on every supported target, result
+# cast straight to uint64_t and used only as a mask).
+shiftNegativeLHS:src/c/internal/ama_fe25519_safegcd.h:124
