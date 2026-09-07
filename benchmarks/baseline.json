@@ -118,6 +118,11 @@
         "date": "2026-08-14",
         "release": "5.0.0",
         "change": "WINDOW EXTENDED TO 5.0.0, NO FLOOR CHANGES. The 5.0.0 major bump pushes the package past `applies_through_release` (4.0.0) and would trip test_benchmark_baseline_freshness. Every `baseline_value` in this file is carried forward unchanged; only `applies_through_release` moves. Rationale: these floors ARE the 2026-08-14 full recalibration recorded in the previous entry — measured in this same PR (#394) from the repaired harness on the canonical benchmark-regression runner class for this file (ubuntu-latest, x86_64) — and 5.0.0 is cut from the tree those medians describe. The only commits between the recalibration head and the 5.0.0 cut are: the CodeQL alert cleanup (an error-path log line in `keypair_generate`'s ctypes guard, import-style unification), the polynomial-regex (ReDoS) hardening in three tools/ gate scripts (no shipped code path), the fail-closed unreadable-candidate rule in library discovery (load-time, not per-operation), the binding-extension digest signing (build- and import-time), CI probe and C-test-lane fixes, documentation and CHANGELOG restructuring, and the version bump itself. Code the floors describe DID change after they were measured, and this entry no longer claims otherwise: the Kyber barrett_reduce rewrite (an NTT inner-loop function), the ChaCha20-Poly1305 post-verify control flow, the dispatch auto-tune sentinel, a SHA3 squeeze-entry guard, and the benchmark harness itself all landed after the calibration head. Each is itemised with its reasoning in metadata.floor_drift_acknowledged, which benchmarks/check_baseline_justification.py now verifies against `git diff` from the calibration commit — the previous sentence here asserted the opposite and nothing checked it. The floors are therefore carried as a coarse safety net that describes a very slightly older tree, not as a measurement of the shipped one — the same tree-delta argument as the 3.5.0 and 4.0.0 window extensions above, this time with floors measured inside the same PR rather than carried forward from an earlier release. AUTHORITY: no new measurement was taken for this entry; the benchmark-regression CI job gates this PR against these floors on the canonical runner class, which is the check that matters. If that job fails on this PR, the floors need a genuine canonical re-measure, not a further window extension."
+      },
+      {
+        "date": "2026-09-07",
+        "release": "5.0.0",
+        "change": "ED25519 FLOORS RE-MEASURED UPWARD on the in-house backend. The vendored ed25519-donna backend was removed in PR #394's twenty-first maintenance pass and replaced by the in-house radix-2^51 backend, which the benchmark-regression job on the canonical runner class for this file (ubuntu-latest (x86_64)) measures faster on every Ed25519 row at head c6020ac: ed25519_keygen 10822 -> 16751 ops/sec, ed25519_sign 53885 -> 77991 ops/sec, ed25519_verify 19181 -> 32019 ops/sec. baseline_value is the measurement from that job (the file's convention: baseline_value IS the measured value on the canonical runner); tolerance_percent is unchanged and absorbs run-to-run variance. This is a single canonical CI measurement on c6020ac, not a five-run recalibration; the coarse tolerance is why that is sufficient here. calibration_evidence still names the 2026-08-14 multi-run calibration for the non-Ed25519 floors, which did not move; the Ed25519 code that changed since that calibration is itemised in floor_drift_acknowledged."
       }
     ],
     "calibration_evidence": {
@@ -766,7 +771,7 @@
     "ed25519_keygen": {
       "description": "Ed25519 key pair generation (native C)",
       "metric": "operations_per_second",
-      "baseline_value": 10822,
+      "baseline_value": 16751,
       "unit": "ops/sec",
       "tolerance_percent": 45,
       "tier": "microbenchmark"
@@ -774,7 +779,7 @@
     "ed25519_sign": {
       "description": "Ed25519 signature generation (native C, expanded key)",
       "metric": "operations_per_second",
-      "baseline_value": 53885,
+      "baseline_value": 77991,
       "unit": "ops/sec",
       "tolerance_percent": 45,
       "tier": "microbenchmark"
@@ -782,7 +787,7 @@
     "ed25519_verify": {
       "description": "Ed25519 signature verification (native C)",
       "metric": "operations_per_second",
-      "baseline_value": 19181,
+      "baseline_value": 32019,
       "unit": "ops/sec",
       "tolerance_percent": 45,
       "tier": "microbenchmark"
