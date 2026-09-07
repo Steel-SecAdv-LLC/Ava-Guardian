@@ -14,7 +14,7 @@
  *     intermediates) on x86-64 GCC/Clang where the 64x64→128 native
  *     multiply is single-cycle and `__int128` is available. The fewest
  *     possible limbs on a 64-bit target — 16 cross-products per mul.
- *   - **fe51** (radix 2^51, 5 limbs) — the donna64 layout, 25 cross-
+ *   - **fe51** (radix 2^51, 5 limbs) — the classic 64-bit layout, 25 cross-
  *     products per mul. Used on non-x86-64 GCC/Clang 64-bit targets
  *     (e.g. aarch64, ppc64le) where `__int128` is available but the
  *     fe64 carry chain is less of a win or unverified at perf level.
@@ -173,7 +173,7 @@ AMA_API int ama_x25519_mulx_last_used_get(void) {
  * so a u in that band was consumed unreduced and produced a shared secret
  * that no other implementation computes.  Wycheproof x25519 tc88 is exactly
  * this case: its u is p + 3, and every reference implementation (ref10,
- * curve25519-donna, libsodium) derives the secret for u = 3.
+ * Andrew Moon's curve25519, libsodium) derives the secret for u = 3.
  *
  * Wycheproof classes the case `acceptable` — the RFC does not *require* the
  * reduction — so this is an interoperability decision rather than a break.
@@ -866,8 +866,8 @@ AMA_API ama_error_t ama_x25519_scalarmult_batch(
     /* 4-way SIMD path: process full chunks of 4 lanes at a time when
      * the AVX2 kernel is wired in AND the batch contains at least one
      * full 4-lane chunk.  The dispatcher leaves `tbl->x25519_x4 ==
-     * NULL` by default on x86-64 (the scalar fe64 path beats 4×
-     * donna-32bit on Skylake-class cores; the kernel is opt-in via
+     * NULL` by default on x86-64 (the scalar fe64 path beats four
+     * 32-bit-limb lanes on Skylake-class cores; the kernel is opt-in via
      * `AMA_DISPATCH_USE_X25519_AVX2=1` for the constant-time test lane
      * and a future AVX-512 IFMA port).  `count >= 4` matches the only
      * way the kernel is actually invoked: `chunks = count / 4` would

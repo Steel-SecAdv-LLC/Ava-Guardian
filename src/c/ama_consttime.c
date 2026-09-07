@@ -11,6 +11,7 @@
  */
 
 #include "../include/ama_cryptography.h"
+#include "internal/ama_testing_exports.h"
 #include <string.h>
 #include <stdint.h>
 #ifdef _MSC_VER
@@ -53,17 +54,40 @@ int ama_consttime_memcmp(const void* a, const void* b, size_t len) {
 /**
  * Secure memory zeroing
  *
- * Scrubs memory to zero in a way that cannot be optimized away by the compiler.
- * Uses volatile pointer to prevent optimization.
+ * Scrubs memory to zero in a way that cannot be optimized away by the compiler:
+ * every store goes through a volatile pointer, and a compiler barrier follows.
+ *
+ * Whole 64-bit words are stored when the buffer is 8-byte aligned, which every
+ * caller's field element, hash state and key buffer is, then the byte tail.
+ * The previous byte-at-a-time loop was correct but cost three instructions per
+ * byte, and the callers scrub a lot: one SHA-512 compression scrubs its
+ * 640-byte message schedule, so the loop was 40% of every hashed block and a
+ * tenth of an Ed25519 signature.  A memset-plus-barrier rendering was measured
+ * too and rejected: the X25519 ladder's dozen small scrubs became library
+ * calls and its exchange slowed by 2-3%, while the word loop stays inline.
  *
  * @param ptr Memory to zero
  * @param len Number of bytes to zero
  */
 void ama_secure_memzero(void* ptr, size_t len) {
     volatile uint8_t* vptr = (volatile uint8_t*)ptr;
-    size_t i;
+    size_t i = 0;
 
-    for (i = 0; i < len; i++) {
+    if (((uintptr_t)ptr & 7u) == 0) {
+        /* Type-puns the aligned buffer as volatile 64-bit words to scrub eight
+         * bytes per store.  Formally a strict-aliasing deviation, but benign:
+         * the stores are volatile (never elided or reordered away) and the
+         * object is dead after this call.  The branch is on the public pointer
+         * alignment and length only. */
+        volatile uint64_t* vwords = (volatile uint64_t*)ptr;
+        size_t words = len / 8;
+        size_t w;
+        for (w = 0; w < words; w++) {
+            vwords[w] = 0;
+        }
+        i = words * 8;
+    }
+    for (; i < len; i++) {
         vptr[i] = 0;
     }
 
@@ -195,3 +219,27 @@ void ama_consttime_copy(int condition, void* dst, const void* src, size_t len) {
         vdst[i] = (vdst[i] & ~mask) | (vsrc[i] & mask);
     }
 }
+
+#ifdef AMA_TESTING_MODE
+/**
+ * Whether THIS translation unit — and therefore the library it is part of —
+ * was compiled with optimization enabled.
+ *
+ * See internal/ama_testing_exports.h for why this exists and what the return
+ * values mean.  It is deliberately in ama_consttime.c: the caller is the
+ * constant-time instruction-count gate, and this file is the one every such
+ * build must contain.
+ */
+int ama_build_optimization_probe(void) {
+#if defined(__GNUC__) || defined(__clang__)
+    /* Defined by gcc and clang at -O1 and above; absent at -O0. */
+#  if defined(__OPTIMIZE__)
+    return 1;
+#  else
+    return 0;
+#  endif
+#else
+    return -1;
+#endif
+}
+#endif /* AMA_TESTING_MODE */

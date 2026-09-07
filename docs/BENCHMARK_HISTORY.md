@@ -97,8 +97,10 @@ The 10× jump is therefore not explained by code.
 
 - The C primitives themselves have not been degraded. The commit
   history of `src/c/ama_{sha3,ed25519,kyber,dilithium,aes_gcm}.c`
-  shows monotonic improvement (donna integration `3ea4aa6`, SIMD
-  dispatch `86f02bd`/`c9f4722`, AVX2 wiring `2c26a90`, etc.).
+  shows monotonic improvement (integration of the formerly vendored
+  Ed25519 x86-64 backend `3ea4aa6` — since removed in the twenty-first
+  maintenance pass — SIMD dispatch `86f02bd`/`c9f4722`, AVX2 wiring
+  `2c26a90`, etc.).
   The code got faster; only the *baselines* moved unaccountably.
 
 - The current baselines (post-`6b2cf82`, stable through v2.1.5)
@@ -165,7 +167,9 @@ binary can produce paired scalar-vs-dispatched and kernel-on-vs-off
 rows without per-row rebuilds.
 
 Sample raw-C medians on the sandbox host (Linux x86-64, GCC, AVX2,
-ed25519-donna + ML-DSA AVX2 dispatched, MULX+ADX kernel available):
+the Ed25519 x86-64 backend of the time — the formerly vendored one, since
+removed in the twenty-first maintenance pass — and ML-DSA AVX2 dispatched,
+MULX+ADX kernel available):
 
 | Row | Median latency | Throughput |
 |-----|---------------:|-----------:|
